@@ -119,3 +119,24 @@ export const clientApi = {
     fbCall("client", "support", "ticket_get", { id }, opts),
   profile: (opts?: CallOptions) => fbCall("client", "profile", "get", {}, opts),
 };
+
+export const adminApi = {
+  profile: (opts?: CallOptions) => fbCall("admin", "profile", "get", {}, opts),
+  statsSummary: (opts?: CallOptions) => fbCall("admin", "stats", "get_summary", {}, opts),
+  statsOrderStatuses: (opts?: CallOptions) =>
+    fbCall("admin", "stats", "get_orders_statuses", {}, opts),
+  clientList: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall("admin", "client", "get_list", params, opts),
+  clientGet: (id: number | string, opts?: CallOptions) =>
+    fbCall("admin", "client", "get", { id }, opts),
+  orderList: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall("admin", "order", "get_list", params, opts),
+  orderGet: (id: number | string, opts?: CallOptions) =>
+    fbCall("admin", "order", "get", { id }, opts),
+  invoiceList: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall("admin", "invoice", "get_list", params, opts),
+  ticketList: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall("admin", "support", "ticket_get_list", params, opts),
+  ticketGet: (id: number | string, opts?: CallOptions) =>
+    fbCall("admin", "support", "ticket_get", { id }, opts),
+};

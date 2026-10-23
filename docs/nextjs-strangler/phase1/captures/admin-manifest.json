@@ -1,0 +1,100 @@
+[
+  {
+    "name": "guest_staff_login",
+    "route": "/api/guest/staff/login",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_profile_get",
+    "route": "/api/admin/profile/get",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_stats_get_summary",
+    "route": "/api/admin/stats/get_summary",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_stats_get_orders_statuses",
+    "route": "/api/admin/stats/get_orders_statuses",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_client_get_list",
+    "route": "/api/admin/client/get_list",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_client_get",
+    "route": "/api/admin/client/get",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_get_list",
+    "route": "/api/admin/order/get_list",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_get",
+    "route": "/api/admin/order/get",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_get_list",
+    "route": "/api/admin/invoice/get_list",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_support_ticket_get_list",
+    "route": "/api/admin/support/ticket_get_list",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_support_ticket_get",
+    "route": "/api/admin/support/ticket_get",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_support_ticket_reply",
+    "route": "/api/admin/support/ticket_reply",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_profile_logout",
+    "route": "/api/admin/profile/logout",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_profile_get_after_logout",
+    "route": "/api/admin/profile/get",
+    "http": 401,
+    "ok": false,
+    "error": "Authentication Failed"
+  }
+]
