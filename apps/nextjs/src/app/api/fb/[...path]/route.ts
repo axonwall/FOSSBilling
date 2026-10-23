@@ -11,8 +11,28 @@ import type { NextRequest } from "next/server";
 const phpBaseUrl = () =>
   (process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080").replace(/\/$/, "");
 
+function forwardCookies(res: Response, out: Headers) {
+  const all =
+    typeof res.headers.getSetCookie === "function"
+      ? res.headers.getSetCookie()
+      : [res.headers.get("set-cookie")].filter((v): v is string => !!v);
+  for (const c of all) out.append("set-cookie", c);
+}
+
 async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
   const { path } = await ctx.params;
+
+  // Cookie priming: the dispatcher's CSRF cookie (fossbilling_csrf) is set
+  // ONLY by PHP web pages, never by API responses (verified live, Phase 1).
+  // GET /api/fb/__prime relays the cookies of the PHP login page so the
+  // browser holds the CSRF cookie before its first form POST.
+  if (path.length === 1 && path[0] === "__prime") {
+    const res = await fetch(`${phpBaseUrl()}/login`, { cache: "no-store" });
+    const out = new Headers({ "content-type": "application/json" });
+    forwardCookies(res, out);
+    return new Response(JSON.stringify({ primed: res.ok }), { status: 200, headers: out });
+  }
+
   const target = new URL(`/api/${path.join("/")}`, `${phpBaseUrl()}/`);
   target.search = req.nextUrl.search;
 
@@ -30,8 +50,7 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
   });
 
   const out = new Headers({ "content-type": res.headers.get("content-type") ?? "application/json" });
-  const setCookie = res.headers.get("set-cookie");
-  if (setCookie) out.set("set-cookie", setCookie);
+  forwardCookies(res, out);
   return new Response(await res.text(), { status: res.status, headers: out });
 }
 

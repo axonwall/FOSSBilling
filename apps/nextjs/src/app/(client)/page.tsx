@@ -46,8 +46,10 @@ export default async function ClientHome() {
       )}
 
       <nav className="mt-6 flex gap-4 text-sm text-blue-700 underline">
+        <Link href="/dashboard">Dashboard</Link>
         <Link href="/invoices">My invoices</Link>
         <Link href="/login">Sign in</Link>
+        <Link href="/signup">Create account</Link>
         <Link href="/admin">Admin</Link>
       </nav>
     </main>

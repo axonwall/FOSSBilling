@@ -1,37 +1,31 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { fbPost } from "@/lib/browser";
 
 /**
- * Client sign-in (Phase 1). Posts through the same-origin /api/fb proxy to
+ * Client sign-in. Posts through the same-origin /api/fb proxy to
  * guest/client/login on the PHP side, which sets the PHP session cookie.
- * The CSRF token is read from the `fossbilling_csrf` cookie set by any PHP
- * page/API response and sent as the CSRFToken form field, per the
- * dispatcher's double-submit check (verified live in Phase 0).
+ * The CSRF cookie (fossbilling_csrf) is set only by PHP web pages — never
+ * by API responses (verified live, Phase 1) — so fbPost primes it via the
+ * proxy's __prime route before the first POST.
  */
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const csrf = document.cookie
-      .split("; ")
-      .find((c) => c.startsWith("fossbilling_csrf="))
-      ?.split("=")[1];
-    const form = new URLSearchParams({ email, password });
-    if (csrf) form.set("CSRFToken", decodeURIComponent(csrf));
-    const res = await fetch("/api/fb/guest/client/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: form,
-    });
-    const json = await res.json().catch(() => null);
-    setMessage(
-      json?.error?.message ??
-        (res.ok ? "Signed in. Session cookie set by the PHP API." : `HTTP ${res.status}`),
-    );
+    try {
+      await fbPost("guest", "client", "login", { email, password });
+      router.push("/dashboard");
+      router.refresh();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : String(err));
+    }
   }
 
   return (
@@ -58,7 +52,7 @@ export default function LoginPage() {
           Sign in
         </button>
       </form>
-      {message && <p className="mt-4 text-sm text-zinc-600">{message}</p>}
+      {message && <p className="mt-4 text-sm text-red-700">{message}</p>}
     </main>
   );
 }
