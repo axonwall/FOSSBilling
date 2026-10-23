@@ -31,12 +31,26 @@ FOSSBILLING_URL=http://127.0.0.1:8080 npm run dev   # http://localhost:3001
 
 - `/` — client area home; renders `guest/system/company` live (smoke test
   for the seam).
-- `/invoices` — client invoice list (`client/invoice/get_list`, session
-  cookie forwarded server-side).
 - `/login` — client sign-in via the proxy to `guest/client/login`
   (CSRF: `fossbilling_csrf` cookie → `CSRFToken` field).
+- `/signup` — client signup via `guest/client/create` (auto-login on
+  success).
+- `/dashboard` — profile + order/invoice/ticket counts.
+- `/orders`, `/orders/[id]` — order list and detail (`client/order/*`).
+- `/invoices` — client invoice list (`client/invoice/get_list`, session
+  cookie forwarded server-side).
+- `/invoices/[hash]` — invoice detail (client-role access is by hash).
+- `/invoices/[hash]/pdf` — streams the PHP web route
+  `GET /invoice/pdf/<hash>` through this origin.
+- `/support`, `/support/new`, `/support/[id]` — ticket list, create, and
+  detail with reply/close (`client/support/*`).
 - `/admin` — placeholder; the PHP admin theme stays authoritative until
   admin modules are ported in later Scope B phases.
+- `/api/fb/__prime` — cookie priming: the `fossbilling_csrf` cookie is set
+  only by PHP **web pages**, never by API responses (verified live,
+  Phase 1), so this proxy route relays the PHP login page's cookies and
+  `fbPost` calls it before the browser's first POST. See
+  `docs/nextjs-strangler/phase1/findings.md`.
 
 ## Auth facts (verified live, Phase 0)
 

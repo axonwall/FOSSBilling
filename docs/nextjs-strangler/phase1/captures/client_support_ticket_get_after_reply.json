@@ -1,0 +1,66 @@
+{
+  "result": {
+    "id": 1,
+    "author_name": null,
+    "author_email": null,
+    "subject": "Phase1 capture ticket",
+    "status": "open",
+    "created_at": "2026-10-23 21:22:27",
+    "updated_at": "2026-10-23 21:22:29",
+    "replies": 2,
+    "first": {
+      "id": 1,
+      "content": "Hello from the Phase 1 capture corpus.",
+      "attachment": null,
+      "created_at": "2026-10-23 21:22:27",
+      "updated_at": "2026-10-23 21:22:27",
+      "author": {
+        "name": "Phase Zero",
+        "role": "client"
+      }
+    },
+    "helpdesk": {
+      "id": 1,
+      "name": "General",
+      "can_reopen": false
+    },
+    "author": {
+      "id": 1,
+      "name": "Phase Zero",
+      "first_name": "Phase",
+      "last_name": "Zero",
+      "email": "phase0.client@example.com",
+      "role": "client"
+    },
+    "client": {
+      "id": 1,
+      "first_name": "Phase",
+      "last_name": "Zero"
+    },
+    "messages": [
+      {
+        "id": 1,
+        "content": "Hello from the Phase 1 capture corpus.",
+        "attachment": null,
+        "created_at": "2026-10-23 21:22:27",
+        "updated_at": "2026-10-23 21:22:27",
+        "author": {
+          "name": "Phase Zero",
+          "role": "client"
+        }
+      },
+      {
+        "id": 2,
+        "content": "A follow-up reply from the capture corpus.",
+        "attachment": null,
+        "created_at": "2026-10-23 21:22:29",
+        "updated_at": "2026-10-23 21:22:29",
+        "author": {
+          "name": "Phase Zero",
+          "role": "client"
+        }
+      }
+    ]
+  },
+  "error": null
+}

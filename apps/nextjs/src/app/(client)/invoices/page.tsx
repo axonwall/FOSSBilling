@@ -1,5 +1,5 @@
-import { cookies } from "next/headers";
 import { clientApi } from "@/lib/fossbilling";
+import { sessionOpts } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +7,8 @@ interface InvoiceRow {
   id: number;
   serie?: string;
   nr?: string;
+  serie_nr?: string;
+  hash?: string;
   currency?: string;
   total?: string | number;
   status?: string;
@@ -20,13 +22,13 @@ interface InvoiceRow {
  * left to a later phase; an unauthenticated visitor sees the API error.
  */
 export default async function InvoicesPage() {
-  const cookieHeader = (await cookies()).toString();
+  const opts = await sessionOpts();
   let rows: InvoiceRow[] = [];
   let error: string | null = null;
   try {
     const data = (await clientApi.invoiceList(
       { page: 1, per_page: 25 },
-      { cookieHeader },
+      opts,
     )) as { list?: InvoiceRow[] } | InvoiceRow[];
     rows = Array.isArray(data) ? data : (data.list ?? []);
   } catch (e) {
@@ -55,8 +57,13 @@ export default async function InvoicesPage() {
             {rows.map((inv) => (
               <tr key={inv.id} className="border-b">
                 <td className="py-2">
-                  {inv.serie ?? ""}
-                  {inv.nr ?? inv.id}
+                  {inv.hash ? (
+                    <a className="text-blue-700 underline" href={`/invoices/${inv.hash}`}>
+                      {inv.serie_nr ?? `${inv.serie ?? ""}${inv.nr ?? inv.id}`}
+                    </a>
+                  ) : (
+                    (inv.serie_nr ?? `${inv.serie ?? ""}${inv.nr ?? inv.id}`)
+                  )}
                 </td>
                 <td>
                   {inv.total ?? ""} {inv.currency ?? ""}

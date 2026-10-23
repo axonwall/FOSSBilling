@@ -1,0 +1,114 @@
+[
+  {
+    "name": "guest_client_login",
+    "route": "/api/guest/client/login",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_order_get_list",
+    "route": "/api/client/order/get_list",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_order_get",
+    "route": "/api/client/order/get",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_order_service",
+    "route": "/api/client/order/service",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_invoice_get_list",
+    "route": "/api/client/invoice/get_list",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_invoice_get",
+    "route": "/api/client/invoice/get",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_invoice_pdf",
+    "route": "/invoice/pdf/473d69f8652dbf55ed837e4542776254",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_support_helpdesk_get_pairs",
+    "route": "/api/client/support/helpdesk_get_pairs",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_support_ticket_create",
+    "route": "/api/client/support/ticket_create",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_support_ticket_get_list",
+    "route": "/api/client/support/ticket_get_list",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_support_ticket_get",
+    "route": "/api/client/support/ticket_get",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_support_ticket_reply",
+    "route": "/api/client/support/ticket_reply",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_support_ticket_get_after_reply",
+    "route": "/api/client/support/ticket_get",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_support_ticket_close",
+    "route": "/api/client/support/ticket_close",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_profile_logout",
+    "route": "/api/client/profile/logout",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_profile_get_after_logout",
+    "route": "/api/client/profile/get",
+    "http": 401,
+    "ok": false,
+    "error": "Authentication Failed"
+  }
+]

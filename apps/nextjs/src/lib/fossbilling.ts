@@ -104,5 +104,18 @@ export const guest = {
 export const clientApi = {
   invoiceList: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
     fbCall("client", "invoice", "get_list", params, opts),
+  /** Client-role invoice access is by hash, not id (verified Phase 1). */
+  invoiceGet: (hash: string, opts?: CallOptions) =>
+    fbCall("client", "invoice", "get", { hash }, opts),
+  orderList: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall("client", "order", "get_list", params, opts),
+  orderGet: (id: number | string, opts?: CallOptions) =>
+    fbCall("client", "order", "get", { id }, opts),
+  helpdeskPairs: (opts?: CallOptions) =>
+    fbCall("client", "support", "helpdesk_get_pairs", {}, opts),
+  ticketList: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall("client", "support", "ticket_get_list", params, opts),
+  ticketGet: (id: number | string, opts?: CallOptions) =>
+    fbCall("client", "support", "ticket_get", { id }, opts),
   profile: (opts?: CallOptions) => fbCall("client", "profile", "get", {}, opts),
 };
