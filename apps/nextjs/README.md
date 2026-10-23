@@ -17,6 +17,16 @@ recommended defaults unless Josh directs otherwise).
   in `src/lib/fossbilling.ts` (server-side) or the same-origin proxy in
   `src/app/api/fb/[...path]/route.ts` (browser), both targeting the PHP API
   at `FOSSBILLING_URL` (default `http://127.0.0.1:8080`).
+- **Phase 2 (started):** backend modules are being ported to TypeScript
+  behind the same dispatcher contract, sharing the PHP database. The seam
+  lives in `src/server/` (dispatcher, DB layer, PHP-session auth); the
+  proxy serves a call from TS only when its module is enabled via
+  `FB_TS_MODULES` (comma list) and falls back to PHP otherwise. Ported so
+  far: `system` (guest reads) and `currency` (guest + admin reads),
+  verified at 16/16 parity against PHP (`FB_PARITY=1` deep-compares TS
+  vs PHP responses; see `docs/nextjs-strangler/phase2/`). TS modules need
+  `FB_DATABASE_PATH` pointing at the install's SQLite file in the
+  reference setup.
 
 ## Run
 

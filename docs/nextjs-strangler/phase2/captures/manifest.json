@@ -1,0 +1,149 @@
+[
+  {
+    "name": "guest_system_company",
+    "route": "/api/guest/system/company",
+    "params": {},
+    "http": 200,
+    "ok": true
+  },
+  {
+    "name": "guest_system_periods",
+    "route": "/api/guest/system/periods",
+    "params": {},
+    "http": 200,
+    "ok": true
+  },
+  {
+    "name": "guest_system_period_title_1M",
+    "route": "/api/guest/system/period_title",
+    "params": {
+      "code": "1M"
+    },
+    "http": 200,
+    "ok": true
+  },
+  {
+    "name": "guest_system_period_title_empty",
+    "route": "/api/guest/system/period_title",
+    "params": {
+      "code": ""
+    },
+    "http": 200,
+    "ok": true
+  },
+  {
+    "name": "guest_currency_get_pairs",
+    "route": "/api/guest/currency/get_pairs",
+    "params": {},
+    "http": 200,
+    "ok": true
+  },
+  {
+    "name": "guest_currency_get_default",
+    "route": "/api/guest/currency/get",
+    "params": {},
+    "http": 200,
+    "ok": true
+  },
+  {
+    "name": "guest_currency_get_USD",
+    "route": "/api/guest/currency/get",
+    "params": {
+      "code": "USD"
+    },
+    "http": 200,
+    "ok": true
+  },
+  {
+    "name": "guest_currency_get_missing",
+    "route": "/api/guest/currency/get",
+    "params": {
+      "code": "XXX"
+    },
+    "http": 200,
+    "ok": false
+  },
+  {
+    "name": "guest_currency_format_100",
+    "route": "/api/guest/currency/format",
+    "params": {
+      "price": 100
+    },
+    "http": 200,
+    "ok": true
+  },
+  {
+    "name": "guest_currency_format_noconvert",
+    "route": "/api/guest/currency/format",
+    "params": {
+      "price": 100,
+      "convert": 0
+    },
+    "http": 200,
+    "ok": true
+  },
+  {
+    "name": "guest_currency_format_number_only",
+    "route": "/api/guest/currency/format",
+    "params": {
+      "price": 100,
+      "without_currency": 1
+    },
+    "http": 200,
+    "ok": true
+  },
+  {
+    "name": "guest_staff_login",
+    "route": "/api/guest/staff/login",
+    "params": {
+      "email": "admin@phase0.local",
+      "password": "Phase1-Admin!42"
+    },
+    "http": 200,
+    "ok": true
+  },
+  {
+    "name": "admin_currency_get_list",
+    "route": "/api/admin/currency/get_list",
+    "params": {},
+    "http": 200,
+    "ok": true
+  },
+  {
+    "name": "admin_currency_get_pairs",
+    "route": "/api/admin/currency/get_pairs",
+    "params": {},
+    "http": 200,
+    "ok": true
+  },
+  {
+    "name": "admin_currency_get_default",
+    "route": "/api/admin/currency/get_default",
+    "params": {},
+    "http": 200,
+    "ok": true
+  },
+  {
+    "name": "admin_currency_get_1",
+    "route": "/api/admin/currency/get",
+    "params": {
+      "id": 1
+    },
+    "http": 200,
+    "ok": false
+  },
+  {
+    "name": "admin_profile_logout",
+    "route": "/api/admin/profile/logout",
+    "params": {},
+    "http": 200,
+    "ok": true
+  },
+  {
+    "name": "admin_currency_get_list_after_logout",
+    "route": "/api/admin/currency/get_list",
+    "params": {},
+    "http": 401,
+    "ok": false
+  }
+]
