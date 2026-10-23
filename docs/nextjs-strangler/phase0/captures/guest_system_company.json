@@ -1,0 +1,16 @@
+{
+  "result": {
+    "www": "http://127.0.0.1:8080/",
+    "name": "Company Name",
+    "signature": "FOSSBilling.org - Client Management, Invoicing and Support Software",
+    "logo_url": "http://127.0.0.1:8080/public/branding/logo-light.svg",
+    "logo_url_dark": "http://127.0.0.1:8080/public/branding/logo-dark.svg",
+    "favicon_url": "http://127.0.0.1:8080/public/branding/favicon.svg",
+    "display_bank_info": null,
+    "bank_info_pagebottom": null,
+    "note": "This is a placeholder for your About Us page. It will be available in /about-us.\nReplace this with information about your company, such as:\n- Your company history and mission\n- Services offered\n- Values and vision\n- Contact or support information\n- Any other details you want your clients to know about your business",
+    "privacy_policy": "This is a sample Privacy Policy. Please replace this with your company's actual privacy terms.\nInclude details such as:\n- How customer data is collected and used\n- Security measures\n- Third-party sharing policies\n- Customer rights",
+    "tos": "This is a sample Terms of Service. Please replace this with your own legal terms.\nInclude details such as:\n- Your company name and address\n- Conditions of service\n- Payment and refund policies\n- Service-level agreements (SLAs)"
+  },
+  "error": null
+}

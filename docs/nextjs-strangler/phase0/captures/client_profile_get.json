@@ -1,0 +1,29 @@
+{
+  "result": {
+    "id": 1,
+    "email": "phase0.client@example.com",
+    "email_approved": null,
+    "type": null,
+    "first_name": "Phase",
+    "last_name": "Zero",
+    "gender": null,
+    "birthday": null,
+    "phone_cc": "1",
+    "phone": "5125550100",
+    "company": null,
+    "company_vat": null,
+    "company_number": null,
+    "address_1": "1 Phase Way",
+    "address_2": null,
+    "city": "Austin",
+    "state": "Texas",
+    "postcode": "78701",
+    "country": "US",
+    "currency": null,
+    "lang": null,
+    "timezone": null,
+    "billing_email": null,
+    "balance": 0
+  },
+  "error": null
+}
