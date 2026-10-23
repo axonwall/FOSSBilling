@@ -39,6 +39,25 @@ with `LOCK_NONE` on sqlite (runtime copy only — NOT in this branch).
 A proper fix would select the lock mode by DB driver in `di.php`
 (advisory on MySQL/PostgreSQL, none/transactional on SQLite).
 
+## Refinements from the full auth/fixtures recon
+
+5. **Node password verification was empirically proven, not just argued:**
+   `bcryptjs` v3 verifies PHP `$2y$12$` hashes directly (and PHP accepts
+   bcryptjs `$2b$` hashes), so the two stacks can share the user table
+   during the strangler. Native `bcrypt` v6 silently returns `false` on
+   `$2y$` without the prefix swap — use bcryptjs.
+6. **There is no proration in 0.8.9** — no code and no tests implement it,
+   so the conversion has no proration parity obligation (the plan listed
+   it as a generic money-path risk; it does not exist here).
+7. **Cron is a single fixed-order batch:** `runCrons()` runs all 13 batch
+   jobs on every invocation in a fixed order and silently ignores the
+   `$interval` argument `cron.php` passes; expected cadence is ~5 minutes.
+   The first two jobs (invoice pay-with-credits, activate-paid) are
+   unisolated — a failure aborts the run; the other 11 are per-task
+   isolated. Currency rate refresh is NOT a cron job (externally
+   scheduled admin API call upstream). This supersedes the interval-tier
+   framing in the recon summary.
+
 ## Sandbox/environment notes (not app defects)
 
 - Guest signup fetches the Antispam disposable-domain list from
