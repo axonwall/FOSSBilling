@@ -66,6 +66,17 @@ A proper fix would select the lock mode by DB driver in `di.php`
    chat summaries — it came from an interim progress summary and was
    never in the catalog artifact; 579 governs.
 
+9. **Schema count correction:** the schema map contains **66 entities →
+   66 tables, 725 columns, 43 relations**; a fresh Doctrine-generated
+   install carries **35 DB-level FK constraints** (one per ManyToOne,
+   verified via `PRAGMA foreign_key_list` on the live Phase 0 database).
+   The first Phase 0 report draft's "64 tables / 643 columns / zero FK
+   constraints / legacy-path tables" figures came from the same interim
+   summary as erratum 8 and are retracted. RedBeanPHP is not a runtime
+   dependency at all in 0.8.9; raw DBAL SQL against entity tables is the
+   remaining legacy pattern. The installer eagerly creates 63 of the 66
+   tables (lazy modules create theirs on activation).
+
 ## Sandbox/environment notes (not app defects)
 
 - Guest signup fetches the Antispam disposable-domain list from
