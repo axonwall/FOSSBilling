@@ -44,8 +44,12 @@ FOSSBILLING_URL=http://127.0.0.1:8080 npm run dev   # http://localhost:3001
   `GET /invoice/pdf/<hash>` through this origin.
 - `/support`, `/support/new`, `/support/[id]` — ticket list, create, and
   detail with reply/close (`client/support/*`).
-- `/admin` — placeholder; the PHP admin theme stays authoritative until
-  admin modules are ported in later Scope B phases.
+- `/admin` — staff dashboard (`admin/stats/get_summary` +
+  `get_orders_statuses`); `/admin/login` staff sign-in
+  (`guest/staff/login`); `/admin/clients[/id]`, `/admin/orders[/id]`,
+  `/admin/invoices`, `/admin/tickets[/id]` (with staff reply) — the admin
+  theme's top surfaces, ported in Phase 1 batch 2. Deeper admin modules
+  remain on the PHP theme until later phases.
 - `/api/fb/__prime` — cookie priming: the `fossbilling_csrf` cookie is set
   only by PHP **web pages**, never by API responses (verified live,
   Phase 1), so this proxy route relays the PHP login page's cookies and

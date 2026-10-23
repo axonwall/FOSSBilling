@@ -1,0 +1,25 @@
+{
+  "result": {
+    "clients_total": 3,
+    "clients_today": 3,
+    "clients_yesterday": 0,
+    "clients_this_month": 3,
+    "clients_last_month": 0,
+    "orders_total": 3,
+    "orders_today": 3,
+    "orders_yesterday": 0,
+    "orders_this_month": 3,
+    "orders_last_month": 0,
+    "invoices_total": 1,
+    "invoices_today": 1,
+    "invoices_yesterday": 0,
+    "invoices_this_month": 1,
+    "invoices_last_month": 0,
+    "tickets_total": 2,
+    "tickets_today": 2,
+    "tickets_yesterday": 0,
+    "tickets_this_month": 2,
+    "tickets_last_month": 0
+  },
+  "error": null
+}
