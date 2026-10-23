@@ -1,0 +1,198 @@
+[
+  {
+    "name": "guest_system_company",
+    "route": "/api/guest/system/company",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_system_periods",
+    "route": "/api/guest/system/periods",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_client_required",
+    "route": "/api/guest/client/required",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_product_get_list",
+    "route": "/api/guest/product/get_list",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_currency_get_list",
+    "route": "/api/admin/currency/get_list",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_system_env",
+    "route": "/api/admin/system/env",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_product_prepare",
+    "route": "/api/admin/product/prepare",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_product_update",
+    "route": "/api/admin/product/update",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_product_get",
+    "route": "/api/admin/product/get",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_client_create",
+    "route": "/api/guest/client/create",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_client_get_list_pre",
+    "route": "/api/admin/client/get_list",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_client_login",
+    "route": "/api/guest/client/login",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_profile_get",
+    "route": "/api/client/profile/get",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_invoice_get_list",
+    "route": "/api/client/invoice/get_list",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_order_get_list",
+    "route": "/api/client/order/get_list",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_client_get_list",
+    "route": "/api/admin/client/get_list",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_create",
+    "route": "/api/admin/order/create",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_get_list",
+    "route": "/api/admin/invoice/get_list",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_get_list",
+    "route": "/api/admin/order/get_list",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_invoice_get_list_after_order",
+    "route": "/api/client/invoice/get_list",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_prepare",
+    "route": "/api/admin/invoice/prepare",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_update_add_item",
+    "route": "/api/admin/invoice/update",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_update_add_item",
+    "route": "/api/admin/invoice/update",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_issue",
+    "route": "/api/admin/invoice/issue",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_get",
+    "route": "/api/admin/invoice/get",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_mark_as_paid",
+    "route": "/api/admin/invoice/mark_as_paid",
+    "http": 200,
+    "ok": false,
+    "error": "Payment gateway is required when marking an invoice as paid."
+  },
+  {
+    "name": "admin_invoice_get_paid",
+    "route": "/api/admin/invoice/get",
+    "http": 200,
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_invoice_get_list_final",
+    "route": "/api/client/invoice/get_list",
+    "http": 200,
+    "ok": true,
+    "error": null
+  }
+]

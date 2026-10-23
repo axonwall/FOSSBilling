@@ -1,0 +1,44 @@
+{
+  "result": {
+    "id": 8,
+    "product_category_id": 1,
+    "type": "custom",
+    "title": "Phase0 Widget Hosting",
+    "slug": "phase0-widget-hosting-1562",
+    "description": null,
+    "unit": "product",
+    "priority": 71,
+    "pricing": {
+      "type": "once",
+      "free": {
+        "price": 0,
+        "setup": 0
+      },
+      "once": {
+        "price": 10,
+        "setup": 0
+      },
+      "recurrent": []
+    },
+    "config": [],
+    "addons": [],
+    "price_starting_from": 10,
+    "icon_url": null,
+    "allow_quantity_select": false,
+    "form_id": null,
+    "created_at": "2026-10-23 20:41:06",
+    "updated_at": "2026-10-23 20:41:07",
+    "suspension_grace_days": 0,
+    "quantity_in_stock": 0,
+    "stock_control": false,
+    "upgrades": [],
+    "status": "enabled",
+    "hidden": false,
+    "setup": "after_payment",
+    "category": {
+      "id": 1,
+      "title": "Default category"
+    }
+  },
+  "error": null
+}
