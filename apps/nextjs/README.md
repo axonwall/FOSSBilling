@@ -6,8 +6,8 @@ recommended defaults unless Josh directs otherwise).
 
 - **Phase 0 (done, 2026-10-23):** contract capture against a live PHP 0.8.9
   reference instance. Artifacts live in `docs/nextjs-strangler/phase0/` of
-  this repo: the full API catalog (506 unique dispatcher methods / 1,054 route
-  entries), the Doctrine schema map (66 entities / 64 tables), auth &
+  this repo: the full API catalog (579 endpoints: 449 admin / 54 client /
+  76 guest), the Doctrine schema map (66 entities / 64 tables), auth &
   password-portability findings (bcrypt `$2y$` cost 12 for both clients and
   staff — existing passwords carry over), the cron inventory, and a live
   capture corpus (guest → signup → login → order → invoice → paid).

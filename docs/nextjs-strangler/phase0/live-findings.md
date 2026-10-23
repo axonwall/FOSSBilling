@@ -58,6 +58,14 @@ A proper fix would select the lock mode by DB driver in `di.php`
    scheduled admin API call upstream). This supersedes the interval-tier
    framing in the recon summary.
 
+8. **Catalog count correction:** the API catalog contains **579 endpoint
+   records** (449 admin / 54 client / 76 guest, incl. 1 magic `__call`),
+   with extractor and grep counts in exact agreement and zero duplicate
+   routes. A "506 unique methods / 1,054 route entries" figure appeared
+   in the Phase 0 report's first draft, the scaffold commit message, and
+   chat summaries — it came from an interim progress summary and was
+   never in the catalog artifact; 579 governs.
+
 ## Sandbox/environment notes (not app defects)
 
 - Guest signup fetches the Antispam disposable-domain list from
