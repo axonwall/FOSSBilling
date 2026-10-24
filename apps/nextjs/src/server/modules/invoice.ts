@@ -1431,3 +1431,91 @@ register("admin", "invoice", "batch_invoke_due_event", (ctx: CallContext) => {
   requireAdmin(ctx);
   return true;
 });
+
+// ---------------------------------------------------------------------------
+// Transaction processing + approval (Phase 4 batch 1). Parity oracle:
+// capture13.py. The Custom gateway is manual-approval: processing it
+// is refused (7002) and settlement happens through approve, which
+// pays the invoice from the existing transaction record.
+// ---------------------------------------------------------------------------
+
+const MANUAL_APPROVAL_GATEWAYS = new Set(["Custom"]);
+
+export function manualApprovalMessage(gatewayCode: string): string {
+  return `${gatewayCode} payments must be approved by an administrator.`;
+}
+
+export function processTransactionRow(tx: TransactionRowFull): void {
+  const gateway = tx.gateway_id ? findGatewayFull(tx.gateway_id) : undefined;
+  if (!gateway) {
+    throw new FbError("Cannot handle transaction received from unknown payment gateway", 704);
+  }
+  if (MANUAL_APPROVAL_GATEWAYS.has(gateway.gateway)) {
+    throw new FbError(manualApprovalMessage(gateway.gateway), 7002);
+  }
+  // Non-manual gateways settle through their webhook/IPN adapters
+  // (Stripe below); a bare process call has no adapter payload here.
+  throw new FbError("Transaction could not be processed", 9999);
+}
+
+export function approveTransactionRow(tx: TransactionRowFull): void {
+  const gateway = tx.gateway_id ? findGatewayFull(tx.gateway_id) : undefined;
+  if (!gateway || !MANUAL_APPROVAL_GATEWAYS.has(gateway.gateway)) {
+    throw new FbError("This payment gateway does not require manual approval.", 7003);
+  }
+  if (!tx.invoice_id) throw new FbError("Invoice not found");
+  const inv = findInvoiceById(tx.invoice_id);
+  if (!inv) throw new FbError("Invoice not found");
+  const totals = invoiceTotals(listInvoiceItems(inv.id), inv.taxrate ?? "0");
+  const gatewayName = gateway.name ?? gateway.gateway;
+  updateTransactionRow(tx.id, {
+    status: "processed",
+    amount: String(totals.total),
+    currency: inv.currency,
+    note: `${gatewayName} transaction No: ${tx.txn_id ?? ""}`,
+    error: null,
+    error_code: null,
+  });
+  if (inv.status !== "paid") {
+    markInvoicePaid(inv.id);
+  }
+}
+
+register("admin", "invoice", "transaction_process", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const tx = getTransactionOrThrow(ctx);
+  processTransactionRow(tx);
+  return true;
+});
+
+register("admin", "invoice", "transaction_approve", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const tx = getTransactionOrThrow(ctx);
+  approveTransactionRow(tx);
+  return true;
+});
+
+register("admin", "invoice", "transaction_process_all", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  // processReceivedATransactions: every 'received' row is attempted;
+  // failures land on the transaction's error fields, not the caller.
+  for (const tx of listTransactions({ status: "received" })) {
+    try {
+      processTransactionRow(tx);
+    } catch (e) {
+      updateTransactionRow(tx.id, {
+        status: "error",
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+  return true;
+});
+
+register("admin", "invoice", "transaction_claim_for_processing", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const tx = getTransactionOrThrow(ctx);
+  if (tx.status !== "received") return false;
+  updateTransactionRow(tx.id, { status: "processing" });
+  return true;
+});

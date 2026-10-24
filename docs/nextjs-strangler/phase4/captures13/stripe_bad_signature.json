@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Invalid Stripe webhook signature",
+    "code": 9999
+  }
+}

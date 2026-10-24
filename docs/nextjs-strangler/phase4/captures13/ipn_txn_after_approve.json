@@ -1,0 +1,65 @@
+{
+  "result": {
+    "id": 93,
+    "invoice_id": 247,
+    "txn_id": null,
+    "txn_status": null,
+    "gateway_id": 1,
+    "gateway": "Custom",
+    "gateway_code": "Custom",
+    "requires_manual_approval": true,
+    "amount": 40,
+    "currency": "USD",
+    "type": null,
+    "status": "processed",
+    "ip": "127.0.0.1",
+    "error": null,
+    "error_code": null,
+    "note": "Custom transaction No: ",
+    "created_at": "2026-10-24 05:59:07",
+    "updated_at": "2026-10-24 05:59:10",
+    "ipn": {
+      "source": "ipn",
+      "get": {
+        "gateway_id": "1",
+        "invoice_id": "247"
+      },
+      "post": {
+        "txn_id": "IPN-CAP13-1792821547",
+        "invoice_id": "247"
+      },
+      "http_raw_post_data": "txn_id=IPN-CAP13-1792821547&invoice_id=247",
+      "server": {
+        "DOCUMENT_ROOT": "/home/hatch/scratch/fossbilling/runtime/src",
+        "REMOTE_ADDR": "127.0.0.1",
+        "REMOTE_PORT": "44168",
+        "SERVER_SOFTWARE": "PHP/8.3.28 (Development Server)",
+        "SERVER_PROTOCOL": "HTTP/1.1",
+        "SERVER_NAME": "127.0.0.1",
+        "SERVER_PORT": "8080",
+        "REQUEST_URI": "/ipn.php?gateway_id=1&invoice_id=247",
+        "REQUEST_METHOD": "POST",
+        "SCRIPT_NAME": "/ipn.php",
+        "SCRIPT_FILENAME": "/home/hatch/scratch/fossbilling/runtime/src/ipn.php",
+        "PHP_SELF": "/ipn.php",
+        "QUERY_STRING": "gateway_id=1&invoice_id=247",
+        "HTTP_ACCEPT_ENCODING": "identity",
+        "CONTENT_LENGTH": "42",
+        "HTTP_CONTENT_LENGTH": "42",
+        "HTTP_HOST": "127.0.0.1:8080",
+        "HTTP_USER_AGENT": "Python-urllib/3.12",
+        "HTTP_COOKIE": "fossbilling_session=ea1991a54666b761e40f2c740b78ad56; fossbilling_csrf=1110bb46c2c4f86fedb29e0b5f95d5ae15dd5b51e29917f0490948bbedf883ad",
+        "CONTENT_TYPE": "application/x-www-form-urlencoded",
+        "HTTP_CONTENT_TYPE": "application/x-www-form-urlencoded",
+        "HTTP_CONNECTION": "close",
+        "REQUEST_TIME_FLOAT": 1792821547.748868,
+        "REQUEST_TIME": 1792821547,
+        "argv": [
+          "gateway_id=1&invoice_id=247"
+        ],
+        "argc": 1
+      }
+    }
+  },
+  "error": null
+}

@@ -3,11 +3,11 @@
     "status": "PASS",
     "failures": [],
     "saved": {
-      "inv": 246
+      "inv": 255
     },
     "steps": [
       {
-        "result": 246,
+        "result": 255,
         "error": null
       },
       {
@@ -20,11 +20,11 @@
       },
       {
         "result": {
-          "id": 246,
+          "id": 255,
           "serie": "FOSS",
-          "nr": "172",
+          "nr": "180",
           "client_id": 1,
-          "serie_nr": "FOSS00172",
+          "serie_nr": "FOSS00180",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": null,
@@ -45,7 +45,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 216,
+              "id": 224,
               "title": "Taxed line",
               "period": null,
               "quantity": 1,
@@ -144,11 +144,11 @@
     "failures": [],
     "saved": {
       "de_client": 4,
-      "inv": 246
+      "inv": 255
     },
     "steps": [
       {
-        "result": 246,
+        "result": 255,
         "error": null
       },
       {
@@ -161,11 +161,11 @@
       },
       {
         "result": {
-          "id": 246,
+          "id": 255,
           "serie": "FOSS",
-          "nr": "172",
+          "nr": "180",
           "client_id": 4,
-          "serie_nr": "FOSS00172",
+          "serie_nr": "FOSS00180",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": null,
@@ -186,7 +186,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 216,
+              "id": 224,
               "title": "Taxed line",
               "period": null,
               "quantity": 1,
@@ -285,11 +285,11 @@
     "failures": [],
     "saved": {
       "fr_client": 4,
-      "inv": 246
+      "inv": 255
     },
     "steps": [
       {
-        "result": 246,
+        "result": 255,
         "error": null
       },
       {
@@ -302,11 +302,11 @@
       },
       {
         "result": {
-          "id": 246,
+          "id": 255,
           "serie": "FOSS",
-          "nr": "172",
+          "nr": "180",
           "client_id": 4,
-          "serie_nr": "FOSS00172",
+          "serie_nr": "FOSS00180",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": null,
@@ -327,7 +327,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 216,
+              "id": 224,
               "title": "Taxed line",
               "period": null,
               "quantity": 1,
@@ -425,11 +425,11 @@
     "status": "PASS",
     "failures": [],
     "saved": {
-      "inv": 246
+      "inv": 255
     },
     "steps": [
       {
-        "result": 246,
+        "result": 255,
         "error": null
       },
       {
@@ -442,11 +442,11 @@
       },
       {
         "result": {
-          "id": 246,
+          "id": 255,
           "serie": "FOSS",
-          "nr": "172",
+          "nr": "180",
           "client_id": 1,
-          "serie_nr": "FOSS00172",
+          "serie_nr": "FOSS00180",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": null,
@@ -467,7 +467,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 216,
+              "id": 224,
               "title": "Taxed line",
               "period": null,
               "quantity": 1,
@@ -566,11 +566,11 @@
     "failures": [],
     "saved": {
       "ex_client": 4,
-      "inv": 246
+      "inv": 255
     },
     "steps": [
       {
-        "result": 246,
+        "result": 255,
         "error": null
       },
       {
@@ -583,11 +583,11 @@
       },
       {
         "result": {
-          "id": 246,
+          "id": 255,
           "serie": "FOSS",
-          "nr": "172",
+          "nr": "180",
           "client_id": 4,
-          "serie_nr": "FOSS00172",
+          "serie_nr": "FOSS00180",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": null,
@@ -608,7 +608,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 216,
+              "id": 224,
               "title": "Taxed line",
               "period": null,
               "quantity": 1,
@@ -706,11 +706,11 @@
     "status": "PASS",
     "failures": [],
     "saved": {
-      "inv": 246
+      "inv": 255
     },
     "steps": [
       {
-        "result": 246,
+        "result": 255,
         "error": null
       },
       {
@@ -723,11 +723,11 @@
       },
       {
         "result": {
-          "id": 246,
+          "id": 255,
           "serie": "FOSS",
-          "nr": "172",
+          "nr": "180",
           "client_id": 1,
-          "serie_nr": "FOSS00172",
+          "serie_nr": "FOSS00180",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": null,
@@ -748,7 +748,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 216,
+              "id": 224,
               "title": "Taxed line",
               "period": null,
               "quantity": 1,
@@ -846,11 +846,11 @@
     "status": "PASS",
     "failures": [],
     "saved": {
-      "inv": 246
+      "inv": 255
     },
     "steps": [
       {
-        "result": 246,
+        "result": 255,
         "error": null
       },
       {
@@ -867,11 +867,11 @@
       },
       {
         "result": {
-          "id": 246,
+          "id": 255,
           "serie": "FOSS",
-          "nr": "172",
+          "nr": "180",
           "client_id": 1,
-          "serie_nr": "FOSS00172",
+          "serie_nr": "FOSS00180",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": null,
@@ -892,7 +892,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 216,
+              "id": 224,
               "title": "Taxed line",
               "period": null,
               "quantity": 1,
@@ -910,7 +910,7 @@
               "remaining_quantity": 1
             },
             {
-              "id": 217,
+              "id": 225,
               "title": "Untaxed line",
               "period": null,
               "quantity": 1,
@@ -1008,11 +1008,11 @@
     "status": "PASS",
     "failures": [],
     "saved": {
-      "inv": 246
+      "inv": 255
     },
     "steps": [
       {
-        "result": 246,
+        "result": 255,
         "error": null
       },
       {
@@ -1025,11 +1025,11 @@
       },
       {
         "result": {
-          "id": 246,
+          "id": 255,
           "serie": "FOSS",
-          "nr": "172",
+          "nr": "180",
           "client_id": 1,
-          "serie_nr": "FOSS00172",
+          "serie_nr": "FOSS00180",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": null,
@@ -1050,7 +1050,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 216,
+              "id": 224,
               "title": "Bulk line",
               "period": null,
               "quantity": 3,
@@ -1149,7 +1149,7 @@
     "failures": [],
     "saved": {
       "ord": 30,
-      "invhash": "a3c28628c861a7c9a15dfbbcb137de7f5890d063"
+      "invhash": "a12ec303eeed5c31d27bbcebf775118991f2911b"
     },
     "steps": [
       {
@@ -1203,7 +1203,7 @@
       {
         "result": {
           "gateway_id": "1",
-          "invoice_hash": "a3c28628c861a7c9a15dfbbcb137de7f5890d063",
+          "invoice_hash": "a12ec303eeed5c31d27bbcebf775118991f2911b",
           "order_id": 30,
           "orders": [
             30
@@ -1220,12 +1220,12 @@
           "promo_id": null,
           "promo_recurring": null,
           "promo_used": null,
-          "group_id": "104_1",
+          "group_id": "105_1",
           "group_master": true,
           "invoice_option": "issue-invoice",
           "title": "Phase0 Widget Hosting",
           "currency": "USD",
-          "unpaid_invoice_id": 246,
+          "unpaid_invoice_id": 255,
           "service_id": null,
           "service_type": "custom",
           "period": null,
@@ -1292,11 +1292,11 @@
       },
       {
         "result": {
-          "id": 246,
+          "id": 255,
           "serie": "FOSS",
-          "nr": "172",
+          "nr": "180",
           "client_id": 1,
-          "serie_nr": "FOSS00172",
+          "serie_nr": "FOSS00180",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": 1,
@@ -1317,7 +1317,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 216,
+              "id": 224,
               "title": "Phase0 Widget Hosting",
               "period": null,
               "quantity": 1,
@@ -1423,7 +1423,7 @@
     "failures": [],
     "saved": {
       "ord": 30,
-      "invhash": "55aa0dd5bd58c3229d457d44fa779ce4afe0c4efd955"
+      "invhash": "d1f019d72ed845dd2382dd8a8368b841dadf6388cc727e97"
     },
     "steps": [
       {
@@ -1481,7 +1481,7 @@
       {
         "result": {
           "gateway_id": "1",
-          "invoice_hash": "55aa0dd5bd58c3229d457d44fa779ce4afe0c4efd955",
+          "invoice_hash": "d1f019d72ed845dd2382dd8a8368b841dadf6388cc727e97",
           "order_id": 30,
           "orders": [
             30
@@ -1491,11 +1491,11 @@
       },
       {
         "result": {
-          "id": 246,
+          "id": 255,
           "serie": "FOSS",
-          "nr": "172",
+          "nr": "180",
           "client_id": 1,
-          "serie_nr": "FOSS00172",
+          "serie_nr": "FOSS00180",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": 1,
@@ -1516,7 +1516,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 216,
+              "id": 224,
               "title": "Phase0 Widget Hosting",
               "period": null,
               "quantity": 1,
@@ -1533,7 +1533,7 @@
               "status": "pending_payment"
             },
             {
-              "id": 217,
+              "id": 225,
               "title": "Discount: Phase0 Widget Hosting",
               "period": null,
               "quantity": 1,
@@ -1638,11 +1638,11 @@
     "status": "PASS",
     "failures": [],
     "saved": {
-      "inv": 246
+      "inv": 255
     },
     "steps": [
       {
-        "result": 246,
+        "result": 255,
         "error": null
       },
       {
@@ -1659,11 +1659,11 @@
       },
       {
         "result": {
-          "id": 246,
+          "id": 255,
           "serie": "FOSS",
-          "nr": "172",
+          "nr": "180",
           "client_id": 1,
-          "serie_nr": "FOSS00172",
+          "serie_nr": "FOSS00180",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": null,
@@ -1684,7 +1684,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 216,
+              "id": 224,
               "title": "Credit-paid line",
               "period": null,
               "quantity": 1,
@@ -1782,11 +1782,11 @@
     "status": "PASS",
     "failures": [],
     "saved": {
-      "inv": 246
+      "inv": 255
     },
     "steps": [
       {
-        "result": 246,
+        "result": 255,
         "error": null
       },
       {
@@ -1803,11 +1803,11 @@
       },
       {
         "result": {
-          "id": 246,
+          "id": 255,
           "serie": "FOSS",
-          "nr": "172",
+          "nr": "180",
           "client_id": 1,
-          "serie_nr": "FOSS00172",
+          "serie_nr": "FOSS00180",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": 1,
@@ -1828,7 +1828,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 216,
+              "id": 224,
               "title": "Gateway-paid line",
               "period": null,
               "quantity": 1,
@@ -1926,7 +1926,7 @@
     "status": "PASS",
     "failures": [],
     "saved": {
-      "invhash": "8324f35e98da5668da40edda71bed8d6c7ce14d8d476"
+      "invhash": "66a4c33234d101ae31c74bf492358c445a6e3174878e24d6f43df1"
     },
     "steps": [
       {
@@ -1981,7 +1981,7 @@
       {
         "result": {
           "gateway_id": "1",
-          "invoice_hash": "8324f35e98da5668da40edda71bed8d6c7ce14d8d476",
+          "invoice_hash": "66a4c33234d101ae31c74bf492358c445a6e3174878e24d6f43df1",
           "order_id": 30,
           "orders": [
             30
@@ -1991,11 +1991,11 @@
       },
       {
         "result": {
-          "id": 246,
+          "id": 255,
           "serie": "FOSS",
-          "nr": "172",
+          "nr": "180",
           "client_id": 1,
-          "serie_nr": "FOSS00172",
+          "serie_nr": "FOSS00180",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": 1,
@@ -2016,7 +2016,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 216,
+              "id": 224,
               "title": "Phase3 Recurring Widget",
               "period": "1M",
               "quantity": 1,
@@ -2033,7 +2033,7 @@
               "status": "pending_payment"
             },
             {
-              "id": 217,
+              "id": 225,
               "title": "Phase3 Recurring Widget setup",
               "period": null,
               "quantity": 1,

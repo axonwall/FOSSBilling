@@ -1,0 +1,92 @@
+[
+  {
+    "name": "guest_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "ipn_custom",
+    "ok": false,
+    "error": "Custom payments must be approved by an administrator."
+  },
+  {
+    "name": "ipn_custom_invoice_after",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "ipn_custom_txn_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "ipn_custom_txn_after",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "ipn_custom_duplicate",
+    "ok": false,
+    "error": "Custom payments must be approved by an administrator."
+  },
+  {
+    "name": "admin_transaction_process_custom",
+    "ok": false,
+    "error": "Custom payments must be approved by an administrator."
+  },
+  {
+    "name": "admin_transaction_approve",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "ipn_invoice_after_approve",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "ipn_txn_after_approve",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_client_balance_after",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_transaction_create_received",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_transaction_approve_received",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "approve_received_invoice_after",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "approve_received_txn_after",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_client_balance_final",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_transaction_process_all",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_transaction_claim",
+    "ok": true,
+    "error": null
+  }
+]
