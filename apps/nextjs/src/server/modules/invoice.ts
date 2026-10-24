@@ -26,6 +26,8 @@ import {
   findInvoiceItemRow,
   findTaxById,
   findTransactionByTxnId,
+  insertBalanceRow,
+  insertInvoice,
   insertInvoiceItem,
   insertTax,
   insertTransaction,
@@ -68,9 +70,16 @@ function randomHex(bytes: number): string {
 
 function getCurrencyRate(code: string): number {
   const row = getDb()
-    .prepare("SELECT rate FROM currency WHERE code = ?")
-    .get(code) as { rate: number } | undefined;
-  return row?.rate ?? 1;
+    .prepare("SELECT conversion_rate FROM currency WHERE code = ?")
+    .get(code) as { conversion_rate: number } | undefined;
+  return row?.conversion_rate ?? 1;
+}
+
+function isDepositInvoice(invoiceId: number): boolean {
+  const row = getDb()
+    .prepare("SELECT COUNT(*) AS c FROM invoice_item WHERE invoice_id = ? AND type = 'deposit'")
+    .get(invoiceId) as { c: number };
+  return row.c > 0;
 }
 import { clientSubscriptionArray } from "./client";
 import {
@@ -515,7 +524,7 @@ register("admin", "invoice", "mark_as_paid", (ctx: CallContext) => {
     throw new FbError("This invoice was canceled and cannot be marked as paid");
   }
   const gatewayId = ctx.params["gateway_id"] ? Number(ctx.params["gateway_id"]) : inv.gateway_id;
-  const gateway = gatewayId ? findGateway(gatewayId) : undefined;
+  const gateway = gatewayId ? findGatewayFull(gatewayId) : undefined;
   if (!gateway) throw new FbError("Payment gateway not found");
   const transactionId = ctx.params["transactionId"] ?? null;
   if (transactionId) {
@@ -523,6 +532,9 @@ register("admin", "invoice", "mark_as_paid", (ctx: CallContext) => {
     if (existing && existing.invoice_id !== inv.id) {
       throw new FbError("Transaction ID is already associated with another invoice.");
     }
+  }
+  if (gateway.gateway === "Custom" && !transactionId) {
+    throw new FbError("Transaction ID is required when using the Custom payment gateway.");
   }
   if (gateway.id !== inv.gateway_id) {
     updateInvoiceFields(inv.id, { gateway_id: gateway.id });
@@ -553,6 +565,21 @@ register("admin", "invoice", "mark_as_paid", (ctx: CallContext) => {
   const paidAt = ctx.params["paid_at"];
   markInvoicePaid(inv.id);
   if (paidAt) updateInvoiceFields(inv.id, { paid_at: paidAt });
+  // PHP's markAsPaidByAdmin credits deposit invoices to the balance
+  // (type 'invoice', rel_id = invoice id) — plain markAsPaid does not.
+  if (isDepositInvoice(inv.id)) {
+    const gatewayName = gateway.name ?? gateway.gateway;
+    const totals = invoiceTotals(listInvoiceItems(inv.id), inv.taxrate ?? "0");
+    insertBalanceRow({
+      client_id: inv.client_id,
+      type: "invoice",
+      rel_id: inv.id,
+      amount: totals.total,
+      description: transactionId
+        ? `${gatewayName} transaction No: ${transactionId}`
+        : `${gatewayName} manual payment`,
+    });
+  }
   return true;
 });
 
@@ -697,6 +724,69 @@ register("client", "invoice", "get_list", (ctx: CallContext) => {
   if (ctx.params["status"]) filters.status = ctx.params["status"];
   const all = listInvoices(filters);
   return paginateLocal(all.map((i) => invoiceArray(i)), ctx.params);
+});
+
+register("client", "invoice", "funds_invoice", (ctx: CallContext) => {
+  requireClient(ctx);
+  if (ctx.params["amount"] === undefined || ctx.params["amount"] === null || ctx.params["amount"] === "") {
+    throw new FbError("Amount is required");
+  }
+  const amount = parseFloat(ctx.params["amount"]);
+  if (Number.isNaN(amount)) {
+    throw new FbError("You need to enter numeric value");
+  }
+  const client = findClientById(ctx.session!.client!.id);
+  if (!client) throw new FbError("Client not found");
+  if (!client.currency) {
+    throw new FbError("You must have at least one active order before you can add funds so you cannot proceed at the current time!");
+  }
+  if ((getSetting("funds_enabled") ?? "1") === "0") {
+    throw new FbError("Adding funds to the account balance is currently disabled", 980);
+  }
+  const minRaw = getSetting("funds_min_amount");
+  if (minRaw && amount < parseFloat(minRaw)) {
+    throw new FbError(`Amount must be at least ${minRaw}`, 981);
+  }
+  const maxRaw = getSetting("funds_max_amount");
+  if (maxRaw && amount > parseFloat(maxRaw)) {
+    throw new FbError(`Amount cannot exceed ${maxRaw}`, 982);
+  }
+  const dueDaysRaw = getSetting("invoice_due_days");
+  const dueDays = dueDaysRaw ? parseInt(dueDaysRaw, 10) : 5;
+  const dueAt = new Date(Date.now() + dueDays * 86400_000).toISOString().slice(0, 19).replace("T", " ");
+  const hash = randomHex(24);
+  const id = insertInvoice({
+    client_id: client.id,
+    serie: null,
+    nr: "",
+    hash,
+    hash_expires_at: hashExpiry(),
+    currency: client.currency,
+    currency_rate: getCurrencyRate(client.currency),
+    credit: 0,
+    status: "unpaid",
+    taxname: "",
+    taxrate: "0",
+    gateway_id: null,
+    due_at: dueAt,
+    notes: null,
+  });
+  insertInvoiceItem({
+    invoice_id: id,
+    type: "deposit",
+    rel_id: null,
+    task: "void",
+    status: "pending_payment",
+    title: "Add funds to account",
+    period: null,
+    quantity: 1,
+    unit: null,
+    price: amount,
+    taxed: 0,
+    charged: 1,
+  });
+  issueInvoice(id, client, {});
+  return hash;
 });
 
 register("guest", "invoice", "get", (ctx: CallContext) => {
@@ -1127,31 +1217,16 @@ function hashExpiry(): string {
   return new Date(Date.now() + days * 86400_000).toISOString().slice(0, 19).replace("T", " ");
 }
 
-register("admin", "invoice", "refund", (ctx: CallContext) => {
-  requireAdmin(ctx);
-  const inv = getInvoiceOrThrow(ctx);
-  if (inv.status !== "paid") {
-    throw new FbError("Only paid invoices can be refunded");
-  }
-  const client = findClientById(inv.client_id);
-  if (!client) throw new FbError("Client not found");
+/** Shared refund core: the admin handler and the PayPal Refunded
+ * IPN branch both land here. onlyIds restricts the note to given
+ * lines; null means a full refund of the remaining amount. */
+export function refundInvoiceCore(inv: InvoiceRowFull, onlyIds: Set<number> | null): number {
   const totals = invoiceTotals(listInvoiceItems(inv.id), inv.taxrate ?? "0");
   const alreadyRefunded = round2(inv.refund ?? 0);
   const remaining = round2(totals.total - alreadyRefunded);
   if (remaining <= 0) {
     throw new FbError("Only paid invoices can be refunded");
   }
-  // Full-refund path (optionally restricted to the given line ids).
-  // Partial-quantity refunds and live gateway refunds are deferred:
-  // for the Custom gateway there is no gateway money movement.
-  const itemsParam = ctx.rawParams["items"];
-  const onlyIds = Array.isArray(itemsParam)
-    ? new Set(
-        itemsParam.map((x) =>
-          typeof x === "object" && x !== null ? Number((x as { id?: unknown }).id) : Number(x),
-        ),
-      )
-    : null;
   const lines = listInvoiceItems(inv.id).filter((l) => !onlyIds || onlyIds.has(l.id));
   const refundAmount = round2(
     lines.reduce((s, l) => s + Math.abs(round2(l.price * l.quantity)), 0) *
@@ -1211,6 +1286,28 @@ register("admin", "invoice", "refund", (ctx: CallContext) => {
   insertInvoiceEvent(inv.id, "refunded", { status: "refunded" });
   queueInvoiceEmail("mod_invoice_refunded", noteId);
   return noteId;
+}
+
+register("admin", "invoice", "refund", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const inv = getInvoiceOrThrow(ctx);
+  if (inv.status !== "paid") {
+    throw new FbError("Only paid invoices can be refunded");
+  }
+  const client = findClientById(inv.client_id);
+  if (!client) throw new FbError("Client not found");
+  // Full-refund path (optionally restricted to the given line ids).
+  // Partial-quantity refunds and live gateway refunds are deferred:
+  // for the Custom gateway there is no gateway money movement.
+  const itemsParam = ctx.rawParams["items"];
+  const onlyIds = Array.isArray(itemsParam)
+    ? new Set(
+        itemsParam.map((x) =>
+          typeof x === "object" && x !== null ? Number((x as { id?: unknown }).id) : Number(x),
+        ),
+      )
+    : null;
+  return refundInvoiceCore(inv, onlyIds);
 });
 
 register("admin", "invoice", "debit", (ctx: CallContext) => {
@@ -1451,7 +1548,10 @@ export function manualApprovalMessage(gatewayCode: string): string {
   return `${gatewayCode} payments must be approved by an administrator.`;
 }
 
-export function processTransactionRow(tx: TransactionRowFull): void {
+export async function processTransactionRow(
+  tx: TransactionRowFull,
+  payload?: { post: Record<string, string>; get: Record<string, string>; rawBody: string },
+): Promise<void> {
   const gateway = tx.gateway_id ? findGatewayFull(tx.gateway_id) : undefined;
   if (!gateway) {
     throw new FbError("Cannot handle transaction received from unknown payment gateway", 704);
@@ -1459,8 +1559,28 @@ export function processTransactionRow(tx: TransactionRowFull): void {
   if (MANUAL_APPROVAL_GATEWAYS.has(gateway.gateway)) {
     throw new FbError(manualApprovalMessage(gateway.gateway), 7002);
   }
-  // Non-manual gateways settle through their webhook/IPN adapters
-  // (Stripe below); a bare process call has no adapter payload here.
+  if (gateway.gateway === "PayPalEmail") {
+    // Admin process replays the stored IPN envelope; the live route
+    // passes the fresh request payload.
+    let post = payload?.post ?? {};
+    let get = payload?.get ?? {};
+    let rawBody = payload?.rawBody ?? "";
+    if (!payload && tx.ipn) {
+      try {
+        const env = JSON.parse(tx.ipn) as { post?: Record<string, string>; get?: Record<string, string>; http_raw_post_data?: string };
+        post = env.post ?? {};
+        get = env.get ?? {};
+        rawBody = env.http_raw_post_data ?? "";
+      } catch {
+        post = {};
+      }
+    }
+    const { processPayPalTransaction } = await import("../paypal");
+    await processPayPalTransaction(tx.id, post, get, rawBody, gateway.id);
+    return;
+  }
+  // Other non-manual gateways settle through their webhook/IPN
+  // adapters (Stripe); a bare process call has no adapter payload.
   throw new FbError("Transaction could not be processed", 9999);
 }
 
@@ -1485,12 +1605,24 @@ export function approveTransactionRow(tx: TransactionRowFull): void {
   if (inv.status !== "paid") {
     markInvoicePaid(inv.id);
   }
+  // The transaction-approve path credits deposits differently from
+  // mark_as_paid: type 'gift', no rel_id (PHP's approve service calls
+  // addFunds with no type/rel data).
+  if (isDepositInvoice(inv.id)) {
+    insertBalanceRow({
+      client_id: inv.client_id,
+      type: "gift",
+      rel_id: null,
+      amount: totals.total,
+      description: `${gatewayName} transaction No: ${tx.txn_id ?? ""}`,
+    });
+  }
 }
 
-register("admin", "invoice", "transaction_process", (ctx: CallContext) => {
+register("admin", "invoice", "transaction_process", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const tx = getTransactionOrThrow(ctx);
-  processTransactionRow(tx);
+  await processTransactionRow(tx);
   return true;
 });
 
@@ -1501,13 +1633,13 @@ register("admin", "invoice", "transaction_approve", (ctx: CallContext) => {
   return true;
 });
 
-register("admin", "invoice", "transaction_process_all", (ctx: CallContext) => {
+register("admin", "invoice", "transaction_process_all", async (ctx: CallContext) => {
   requireAdmin(ctx);
   // processReceivedATransactions: every 'received' row is attempted;
   // failures land on the transaction's error fields, not the caller.
   for (const tx of listTransactions({ status: "received" })) {
     try {
-      processTransactionRow(tx);
+      await processTransactionRow(tx);
     } catch (e) {
       updateTransactionRow(tx.id, {
         status: "error",

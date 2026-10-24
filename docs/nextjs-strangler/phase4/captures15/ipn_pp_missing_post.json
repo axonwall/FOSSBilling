@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "PayPal payment data is missing.",
+    "code": 7021
+  }
+}

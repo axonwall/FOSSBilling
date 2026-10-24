@@ -157,7 +157,7 @@ export async function POST(req: Request) {
     const tx = findTransactionById(txId);
     if (!tx) throw new FbError("Transaction not found");
     try {
-      processTransactionRow(tx);
+      await processTransactionRow(tx, { post, get: query, rawBody });
     } catch (e) {
       // createAndProcess parks the failure on the transaction and the
       // caller still sees the error envelope (PHP behavior).

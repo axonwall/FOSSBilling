@@ -11,8 +11,9 @@ money flows, and the invoice PDF is generated in TS.
   stacks**. tsc clean, build PASS.
 - PDF gate is content-level (pdftotext): the TS document for
   invoice 1 carries the number, both lines, prices, total, and
-  status that PHP's mPDF document carries. Layout is a clean-room
-  approximation, not a pixel clone.
+  status that PHP's dompdf document carries (correction: upstream
+  uses dompdf, not mPDF as an earlier draft said). Layout is a
+  clean-room approximation, not a pixel clone.
 
 ## What the captures pinned
 

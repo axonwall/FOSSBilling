@@ -1,0 +1,97 @@
+[
+  {
+    "name": "guest_client_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_funds_missing_amount",
+    "ok": false,
+    "error": "Amount is required"
+  },
+  {
+    "name": "client_funds_non_numeric",
+    "ok": false,
+    "error": "You need to enter numeric value"
+  },
+  {
+    "name": "client_funds_invoice",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_funds_mark_as_paid_no_txn",
+    "ok": false,
+    "error": "Transaction ID is required when using the Custom payment gateway."
+  },
+  {
+    "name": "admin_funds_mark_as_paid",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_funds_invoice_2",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "ipn_custom_funds",
+    "ok": false,
+    "error": "Custom payments must be approved by an administrator."
+  },
+  {
+    "name": "admin_transaction_get_list_funds",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_funds_approve",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_prepare_pp",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_issue_pp",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "ipn_pp_missing_post",
+    "ok": false,
+    "error": "PayPal payment data is missing."
+  },
+  {
+    "name": "ipn_pp_bad_sig",
+    "ok": false,
+    "error": "TLS connect error: error:0A00010B:SSL routines::wrong version number for \"https://www.paypal.com/cgi-bin/webscr\"."
+  },
+  {
+    "name": "ipn_pp_wrong_currency",
+    "ok": false,
+    "error": "TLS connect error: error:0A00010B:SSL routines::wrong version number for \"https://www.paypal.com/cgi-bin/webscr\"."
+  },
+  {
+    "name": "ipn_pp_pending",
+    "ok": false,
+    "error": "TLS connect error: error:0A00010B:SSL routines::wrong version number for \"https://www.paypal.com/cgi-bin/webscr\"."
+  },
+  {
+    "name": "ipn_pp_completed",
+    "ok": false,
+    "error": "TLS connect error: error:0A00010B:SSL routines::wrong version number for \"https://www.paypal.com/cgi-bin/webscr\"."
+  },
+  {
+    "name": "ipn_pp_replay",
+    "ok": false,
+    "error": "TLS connect error: error:0A00010B:SSL routines::wrong version number for \"https://www.paypal.com/cgi-bin/webscr\"."
+  }
+]

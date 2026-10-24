@@ -1206,14 +1206,15 @@ export function insertInvoiceItem(row: {
   price: number;
   taxed: number;
   refunded_item_id?: number | null;
+  charged?: number;
 }): number {
   const now = nowTimestamp();
   const info = getDbWrite()
     .prepare(
       `INSERT INTO invoice_item (type, rel_id, refunded_item_id, task, status, title, period, quantity, unit, price, charged, taxed, attempts, created_at, updated_at, invoice_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 0, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`,
     )
-    .run(row.type, row.rel_id, row.refunded_item_id ?? null, row.task, row.status, row.title, row.period, row.quantity, row.unit, String(row.price), row.taxed, now, now, row.invoice_id);
+    .run(row.type, row.rel_id, row.refunded_item_id ?? null, row.task, row.status, row.title, row.period, row.quantity, row.unit, String(row.price), row.charged ?? 0, row.taxed, now, now, row.invoice_id);
   return Number(info.lastInsertRowid);
 }
 
@@ -1312,7 +1313,8 @@ export function setClientCurrency(clientId: number, currency: string): void {
 export function insertBalanceRow(row: {
   client_id: number;
   type: string;
-  rel_id: number | null;
+  // VARCHAR(20) in the schema — PHP stores PayPal txn ids here.
+  rel_id: number | string | null;
   amount: number;
   description: string;
 }): void {
@@ -1321,7 +1323,9 @@ export function insertBalanceRow(row: {
     .prepare(
       "INSERT INTO client_balance (type, rel_id, invoice_item_id, amount, description, created_at, updated_at, client_id) VALUES (?, ?, NULL, ?, ?, ?, ?, ?)",
     )
-    .run(row.type, row.rel_id, row.amount, row.description, now, now, row.client_id);
+    // rel_id is VARCHAR: bind as text, or node:sqlite stores a float
+    // ('263.0') where PHP stores '263'.
+    .run(row.type, row.rel_id === null ? null : String(row.rel_id), row.amount, row.description, now, now, row.client_id);
 }
 
 // ---------------------------------------------------------------------------
@@ -1809,6 +1813,12 @@ export interface SubscriptionRowFull {
 
 export function findSubscriptionById(id: number): SubscriptionRowFull | undefined {
   return getDb().prepare("SELECT * FROM subscription WHERE id = ?").get(id) as
+    | SubscriptionRowFull
+    | undefined;
+}
+
+export function findSubscriptionBySid(sid: string): SubscriptionRowFull | undefined {
+  return getDb().prepare("SELECT * FROM subscription WHERE sid = ?").get(sid) as
     | SubscriptionRowFull
     | undefined;
 }

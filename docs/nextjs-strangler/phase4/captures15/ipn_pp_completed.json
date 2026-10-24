@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "TLS connect error: error:0A00010B:SSL routines::wrong version number for \"https://www.paypal.com/cgi-bin/webscr\".",
+    "code": 9999
+  }
+}
