@@ -1,0 +1,42 @@
+[
+  {
+    "name": "guest_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_email_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_email_send",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_email_get_list_after",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_email_template_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_email_template_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_send_reminder",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_email_get_list_reminder",
+    "ok": true,
+    "error": null
+  }
+]

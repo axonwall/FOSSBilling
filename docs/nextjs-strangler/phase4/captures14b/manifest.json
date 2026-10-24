@@ -1,0 +1,42 @@
+[
+  {
+    "name": "guest_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_email_get_missing",
+    "ok": false,
+    "error": "Email not found"
+  },
+  {
+    "name": "admin_email_resend_missing",
+    "ok": false,
+    "error": "Email not found"
+  },
+  {
+    "name": "admin_email_delete_missing",
+    "ok": false,
+    "error": "Email not found"
+  },
+  {
+    "name": "admin_email_send_missing_name",
+    "ok": false,
+    "error": "Receiver name is required"
+  },
+  {
+    "name": "admin_email_template_render",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_email_template_create",
+    "ok": false,
+    "error": "Email template rendering error: Variable \"c\" does not exist in \"__string_template__1141b7deaedde69ba55c58bb2e6ad6cb\" at line 1."
+  },
+  {
+    "name": "admin_email_batch_sendmail",
+    "ok": true,
+    "error": null
+  }
+]

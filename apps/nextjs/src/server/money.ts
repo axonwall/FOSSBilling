@@ -22,6 +22,7 @@ import {
   type ClientRow,
 } from "./db";
 import { getCompany } from "./modules/system";
+import { queueInvoiceEmail } from "./emailer";
 
 /**
  * Invoice core (Phase 3) — the shared money semantics the Cart checkout
@@ -213,6 +214,8 @@ export function issueInvoice(
     status: "unpaid",
     issued: true,
   });
+  // PHP queues the 'Invoice Created' email via the issued event.
+  queueInvoiceEmail("mod_invoice_created", invoiceId);
   if (opts.useCredits) tryPayWithCredits(invoiceId);
 }
 
@@ -254,6 +257,8 @@ export function markInvoicePaid(invoiceId: number): void {
     "UPDATE invoice_item SET status = 'pending_setup', updated_at = ? WHERE invoice_id = ? AND status = 'pending_payment'",
   ).run(nowTimestamp(), invoiceId);
   insertInvoiceEvent(invoiceId, "paid", { status: "paid" });
+  // PHP queues the 'Payment Received' email via the paid event.
+  queueInvoiceEmail("mod_invoice_paid", invoiceId);
 }
 
 function currentTaxrate(invoiceId: number): string {

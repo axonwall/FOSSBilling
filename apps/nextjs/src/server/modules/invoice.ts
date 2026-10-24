@@ -82,6 +82,7 @@ import {
   tryPayWithCredits,
   type InvoiceItemInput,
 } from "../money";
+import { queueInvoiceEmail } from "../emailer";
 
 /**
  * Invoice module (Phase 3 batch 2) — TS port of
@@ -1208,6 +1209,7 @@ register("admin", "invoice", "refund", (ctx: CallContext) => {
       inv.id,
     );
   insertInvoiceEvent(inv.id, "refunded", { status: "refunded" });
+  queueInvoiceEmail("mod_invoice_refunded", noteId);
   return noteId;
 });
 
@@ -1259,6 +1261,7 @@ register("admin", "invoice", "debit", (ctx: CallContext) => {
       taxed: it["taxed"] ? 1 : 0,
     });
   }
+  queueInvoiceEmail("mod_invoice_debited", noteId);
   return noteId;
 });
 
@@ -1378,6 +1381,8 @@ register("admin", "invoice", "attach_order", (ctx: CallContext) => {
 register("admin", "invoice", "send_reminder", (ctx: CallContext) => {
   requireAdmin(ctx);
   const inv = getInvoiceOrThrow(ctx);
+  // PHP also queues the rendered payment-reminder email.
+  queueInvoiceEmail("mod_invoice_payment_reminder", inv.id);
   updateInvoiceFields(inv.id, { reminded_at: nowTimestamp() });
   return true;
 });
@@ -1403,6 +1408,7 @@ export function runBatchSendReminders(): void {
     )
     .all(now) as unknown as { id: number }[];
   for (const r of rows) {
+    queueInvoiceEmail("mod_invoice_payment_reminder", r.id);
     updateInvoiceFields(r.id, { reminded_at: now });
   }
 }

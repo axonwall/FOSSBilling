@@ -1,28 +1,29 @@
 import type { NextRequest } from "next/server";
+import { invoicePdfByHash } from "@/server/pdf";
 
 /**
- * Streams the PHP invoice PDF (web route GET /invoice/pdf/<hash>, session
- * authenticated) through the Next origin, forwarding the visitor's
- * cookies. Verified Phase 1: PHP returns a real application/pdf document.
+ * Invoice PDF, generated in TS (Phase 4 batch 2) instead of being
+ * proxied from PHP's mPDF route. The hash is the capability, as with
+ * the guest invoice view. Layout is a clean-room approximation of
+ * the PHP document: same data, not a pixel clone.
  */
-const phpBaseUrl = () =>
-  (process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080").replace(/\/$/, "");
-
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   ctx: { params: Promise<{ hash: string }> },
 ) {
   const { hash } = await ctx.params;
   if (!/^[a-z0-9]+$/i.test(hash)) {
     return new Response("Invalid invoice hash", { status: 400 });
   }
-  const headers = new Headers();
-  const cookie = req.headers.get("cookie");
-  if (cookie) headers.set("cookie", cookie);
-  const res = await fetch(`${phpBaseUrl()}/invoice/pdf/${hash}`, { headers, cache: "no-store" });
-  const out = new Headers({
-    "content-type": res.headers.get("content-type") ?? "application/pdf",
-    "content-disposition": res.headers.get("content-disposition") ?? `inline; filename="invoice-${hash}.pdf"`,
+  const pdf = invoicePdfByHash(hash);
+  if (!pdf) {
+    return new Response("Invoice not found", { status: 404 });
+  }
+  return new Response(new Uint8Array(pdf), {
+    status: 200,
+    headers: {
+      "content-type": "application/pdf",
+      "content-disposition": `inline; filename="invoice-${hash}.pdf"`,
+    },
   });
-  return new Response(await res.arrayBuffer(), { status: res.status, headers: out });
 }

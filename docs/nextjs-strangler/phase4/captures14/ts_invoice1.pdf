@@ -1,0 +1,63 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [6 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Length 1468 >>
+stream
+BT /F2 16 Tf 50 770.0 Td (Invoice Number: FOSS00001) Tj ET
+BT /F1 10 Tf 50 754.0 Td (Invoice Date: Oct 23, 2026) Tj ET
+BT /F1 10 Tf 50 738.0 Td (Due Date: Oct 28, 2026) Tj ET
+BT /F1 10 Tf 50 722.0 Td (Invoice Status: Paid) Tj ET
+BT /F1 10 Tf 50 706.0 Td () Tj ET
+BT /F2 12 Tf 50 688.0 Td (Company Name) Tj ET
+BT /F1 10 Tf 50 672.0 Td (Demo address line 1, Demo address line 2, Demo address line 3) Tj ET
+BT /F1 10 Tf 50 656.0 Td (Phone : ) Tj ET
+BT /F1 10 Tf 50 640.0 Td (support@yourcompany.com) Tj ET
+BT /F1 10 Tf 50 624.0 Td () Tj ET
+BT /F2 12 Tf 50 606.0 Td (Client) Tj ET
+BT /F1 10 Tf 50 590.0 Td (Phase Zero) Tj ET
+BT /F1 10 Tf 50 574.0 Td (1 Phase Way) Tj ET
+BT /F1 10 Tf 50 558.0 Td (Austin) Tj ET
+BT /F1 10 Tf 50 542.0 Td (Texas 78701) Tj ET
+BT /F1 10 Tf 50 526.0 Td (US) Tj ET
+BT /F1 10 Tf 50 510.0 Td (Phone : 1 5125550100) Tj ET
+BT /F1 10 Tf 50 494.0 Td (Email: phase0.client@example.com) Tj ET
+BT /F1 10 Tf 50 478.0 Td () Tj ET
+BT /F2 11 Tf 50 461.0 Td (#   Product   Quantity & Price   Total) Tj ET
+BT /F1 10 Tf 50 445.0 Td (1   Phase0 line A   1x $60.00   $60.00) Tj ET
+BT /F1 10 Tf 50 429.0 Td (2   Phase0 line B   1x $40.00   $40.00) Tj ET
+BT /F1 10 Tf 50 413.0 Td () Tj ET
+BT /F1 10 Tf 50 397.0 Td (Subtotal: $100.00) Tj ET
+BT /F1 10 Tf 50 381.0 Td (Tax: $0.00) Tj ET
+BT /F2 12 Tf 50 363.0 Td (Total: $100.00) Tj ET
+BT /F1 10 Tf 50 347.0 Td () Tj ET
+BT /F1 9 Tf 50 332.0 Td (FOSSBilling.org - Client Management, Invoicing and Support Software) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 5 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000185 00000 n 
+0000000260 00000 n 
+0000001779 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+1915
+%%EOF

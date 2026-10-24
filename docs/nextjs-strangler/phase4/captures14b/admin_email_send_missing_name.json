@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Receiver name is required",
+    "code": 9999
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Email template rendering error: Variable \"c\" does not exist in \"__string_template__1141b7deaedde69ba55c58bb2e6ad6cb\" at line 1.",
+    "code": 9999
+  }
+}
