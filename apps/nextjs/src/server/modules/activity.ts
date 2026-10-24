@@ -1,4 +1,4 @@
-import { listActivity } from "../db";
+import { insertActivity, listActivity } from "../db";
 import { register, requireAdmin, type CallContext } from "../dispatch";
 import { paginate } from "../util";
 
@@ -48,4 +48,19 @@ register("admin", "activity", "log_get_list", (ctx: CallContext) => {
     return item;
   });
   return paginate(items, ctx.params);
+});
+
+/** admin/activity/log: writes an activity_system entry; false without `m`. */
+register("admin", "activity", "log", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const m = ctx.params["m"];
+  if (!m) return false;
+  insertActivity({
+    admin_id: ctx.params["admin_id"] ? Number(ctx.params["admin_id"]) : ctx.session!.admin!.id,
+    client_id: ctx.params["client_id"] ? Number(ctx.params["client_id"]) : null,
+    priority: ctx.params["priority"] ? Number(ctx.params["priority"]) : 6,
+    message: m,
+    ip: null,
+  });
+  return true;
 });

@@ -1,0 +1,327 @@
+[
+  {
+    "name": "guest_system_countries",
+    "route": "/api/guest/system/countries",
+    "params": {},
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "guest_system_default_country",
+    "route": "/api/guest/system/default_country",
+    "params": {},
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "guest_system_phone_codes",
+    "route": "/api/guest/system/phone_codes",
+    "params": {},
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "guest_system_timezones",
+    "route": "/api/guest/system/timezones",
+    "params": {},
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "guest_system_locale",
+    "route": "/api/guest/system/locale",
+    "params": {},
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "guest_system_param_company",
+    "route": "/api/guest/system/param",
+    "params": {
+      "key": "company_name"
+    },
+    "ok": false,
+    "error": "Parameter company_name does not exist",
+    "result": null
+  },
+  {
+    "name": "guest_system_param_missing",
+    "route": "/api/guest/system/param",
+    "params": {
+      "key": "no_such_param"
+    },
+    "ok": false,
+    "error": "Parameter no_such_param does not exist",
+    "result": null
+  },
+  {
+    "name": "guest_system_get_pending_messages",
+    "route": "/api/guest/system/get_pending_messages",
+    "params": {},
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "guest_staff_login",
+    "route": "/api/guest/staff/login",
+    "params": {
+      "email": "admin@phase0.local",
+      "password": "Phase1-Admin!42"
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_system_get_params",
+    "route": "/api/admin/system/get_params",
+    "params": {},
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_system_messages",
+    "route": "/api/admin/system/messages",
+    "params": {},
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_system_get_params_one",
+    "route": "/api/admin/system/get_params",
+    "params": {
+      "params": [
+        "company_name"
+      ]
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_system_update_params",
+    "route": "/api/admin/system/update_params",
+    "params": {
+      "company_name": "Company Name"
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_staff_group_create",
+    "route": "/api/admin/staff/group_create",
+    "params": {
+      "name": "Parity Group"
+    },
+    "ok": true,
+    "error": null,
+    "result": 5
+  },
+  {
+    "name": "admin_staff_group_get",
+    "route": "/api/admin/staff/group_get",
+    "params": {
+      "id": 5
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_staff_group_get_list",
+    "route": "/api/admin/staff/group_get_list",
+    "params": {},
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_staff_group_update",
+    "route": "/api/admin/staff/group_update",
+    "params": {
+      "id": 5,
+      "name": "Parity Group Renamed"
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_staff_create",
+    "route": "/api/admin/staff/create",
+    "params": {
+      "email": "parity.staff@example.com",
+      "password": "Parity-Staff!42",
+      "name": "Parity Staff",
+      "group_id": 5
+    },
+    "ok": true,
+    "error": null,
+    "result": 4
+  },
+  {
+    "name": "admin_staff_create_dup",
+    "route": "/api/admin/staff/create",
+    "params": {
+      "email": "parity.staff@example.com",
+      "password": "Parity-Staff!42",
+      "name": "Parity Staff",
+      "group_id": 5
+    },
+    "ok": false,
+    "error": "Staff member with email parity.staff@example.com is already registered.",
+    "result": null
+  },
+  {
+    "name": "admin_staff_create_weak",
+    "route": "/api/admin/staff/create",
+    "params": {
+      "email": "weak.staff@example.com",
+      "password": "weak",
+      "name": "Weak Staff",
+      "group_id": 5
+    },
+    "ok": false,
+    "error": "Minimum password length is 8 characters.",
+    "result": null
+  },
+  {
+    "name": "admin_staff_get_created",
+    "route": "/api/admin/staff/get",
+    "params": {
+      "id": 4
+    },
+    "ok": true,
+    "error": null,
+    "result": {
+      "id": 4,
+      "email": "parity.staff@example.com",
+      "name": "Parity Staff",
+      "system_name": null,
+      "status": "inactive",
+      "signature": null,
+      "timezone": null,
+      "created_at": "2026-10-24 01:13:27",
+      "updated_at": "2026-10-24 01:13:27",
+      "groups": [
+        {
+          "id": 5,
+          "name": "Parity Group Renamed",
+          "system_name": null,
+          "parent_id": 1,
+          "parent_name": "Super Administrator",
+          "path": "Super Administrator / Parity Group Renamed",
+          "depth": 1,
+          "permissions": [],
+          "protected": false,
+          "created_at": "2026-10-24 01:13:26",
+          "updated_at": "2026-10-24 01:13:26"
+        }
+      ]
+    }
+  },
+  {
+    "name": "admin_staff_group_member_get_list",
+    "route": "/api/admin/staff/group_member_get_list",
+    "params": {
+      "group_id": 5
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_staff_update",
+    "route": "/api/admin/staff/update",
+    "params": {
+      "id": 4,
+      "name": "Parity Staff Jr."
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_staff_change_password",
+    "route": "/api/admin/staff/change_password",
+    "params": {
+      "id": 4,
+      "password": "Parity-Staff!43",
+      "password_confirm": "Parity-Staff!43"
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_staff_change_password_mismatch",
+    "route": "/api/admin/staff/change_password",
+    "params": {
+      "id": 4,
+      "password": "Parity-Staff!44",
+      "password_confirm": "nope"
+    },
+    "ok": false,
+    "error": "Passwords do not match.",
+    "result": null
+  },
+  {
+    "name": "admin_staff_delete",
+    "route": "/api/admin/staff/delete",
+    "params": {
+      "id": 4
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_staff_group_member_add_self",
+    "route": "/api/admin/staff/group_member_add",
+    "params": {
+      "group_id": 5,
+      "admin_id": 1
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_staff_group_member_remove_self",
+    "route": "/api/admin/staff/group_member_remove",
+    "params": {
+      "group_id": 5,
+      "admin_id": 1
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_staff_group_delete",
+    "route": "/api/admin/staff/group_delete",
+    "params": {
+      "id": 5
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_staff_login_history",
+    "route": "/api/admin/staff/login_history_get_list",
+    "params": {},
+    "ok": true,
+    "error": null,
+    "result": null
+  }
+]

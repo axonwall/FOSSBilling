@@ -1,5 +1,18 @@
-import { getSetting, getSettings } from "../db";
-import { register, type CallContext } from "../dispatch";
+import {
+  findPublicSetting,
+  findSession,
+  findSettingValue,
+  getAllSettings,
+  getSetting,
+  getSettings,
+  updateSessionContent,
+  upsertSetting,
+} from "../db";
+import { FbError, register, requireAdmin, type CallContext } from "../dispatch";
+import { parseSessionContent, replaceSessionSegment } from "../php-serialize";
+import countriesJson from "../data/countries.json";
+import phoneCodesJson from "../data/phone-codes.json";
+import timezonesJson from "../data/timezones.json";
 
 /**
  * System module (guest reads) — TS port of
@@ -126,3 +139,63 @@ function periodTitle(ctx: CallContext) {
 register("guest", "system", "company", company);
 register("guest", "system", "periods", () => ({ ...PERIODS }));
 register("guest", "system", "period_title", periodTitle);
+
+// --- Batch 4: remaining guest data methods + admin settings.
+// Static reference data (country names, calling codes, timezone groups)
+// is vendored from the PHP implementation's own output (captures8), the
+// same approach as the currency tables: it changes only when upstream
+// refreshes its Intl data.
+
+register("guest", "system", "countries", () => ({ ...(countriesJson as Record<string, string>) }));
+register("guest", "system", "phone_codes", () => [...(phoneCodesJson as number[])]);
+register("guest", "system", "timezones", () => timezonesJson);
+register("guest", "system", "default_country", () => findSettingValue("default_country"));
+register("guest", "system", "locale", () => "en_US");
+
+register("guest", "system", "param", (ctx: CallContext) => {
+  const key = ctx.params["key"] ?? "";
+  const value = findPublicSetting(key);
+  if (value === undefined) throw new FbError(`Parameter ${key} does not exist`);
+  return value;
+});
+
+/**
+ * Pending messages live in the PHP session's attribute bag
+ * (`pending_messages`); reading them clears them, exactly as PHP does.
+ * Clearing is the one place TS rewrites a session row: the attributes
+ * segment is re-serialized without the key, every other segment is
+ * preserved byte-for-byte (see php-serialize.ts).
+ */
+register("guest", "system", "get_pending_messages", (ctx: CallContext) => {
+  if (!ctx.session) return [];
+  const row = findSession(ctx.session.id);
+  if (!row) return [];
+  let attrs: Record<string, unknown> = {};
+  try {
+    attrs = (parseSessionContent(row.content)["_sf2_attributes"] ?? {}) as Record<string, unknown>;
+  } catch {
+    return [];
+  }
+  const messages = attrs["pending_messages"];
+  if (!Array.isArray(messages)) return [];
+  const nextAttrs = { ...attrs };
+  delete nextAttrs["pending_messages"];
+  updateSessionContent(row.id, replaceSessionSegment(row.content, "_sf2_attributes", nextAttrs as import("../php-serialize").PhpValue));
+  return messages;
+});
+
+register("admin", "system", "get_params", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const out: Record<string, string | null> = {};
+  for (const row of getAllSettings()) out[row.param] = row.value;
+  return out;
+});
+
+register("admin", "system", "update_params", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  for (const [k, v] of Object.entries(ctx.params)) {
+    if (k === "CSRFToken") continue;
+    upsertSetting(k, v ?? "");
+  }
+  return true;
+});

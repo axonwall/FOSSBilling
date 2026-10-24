@@ -561,6 +561,211 @@ export function deletePageRow(id: number): void {
   getDbWrite().prepare("DELETE FROM custom_pages WHERE id = ?").run(id);
 }
 
+export function getAllSettings(): { param: string; value: string | null }[] {
+  return getDb()
+    .prepare("SELECT param, value FROM setting ORDER BY param")
+    .all() as unknown as { param: string; value: string | null }[];
+}
+
+export function findPublicSetting(param: string): string | null | undefined {
+  const row = getDb()
+    .prepare("SELECT value FROM setting WHERE param = ? AND public = 1")
+    .get(param) as { value: string | null } | undefined;
+  return row ? row.value : undefined;
+}
+
+export function findSettingValue(param: string): string | null {
+  const row = getDb()
+    .prepare("SELECT value FROM setting WHERE param = ?")
+    .get(param) as { value: string | null } | undefined;
+  return row?.value ?? null;
+}
+
+export function upsertSetting(param: string, value: string): void {
+  const ts = nowTimestamp();
+  const w = getDbWrite();
+  const res = w
+    .prepare("UPDATE setting SET value = ?, updated_at = ? WHERE param = ?")
+    .run(value, ts, param);
+  if (res.changes === 0) {
+    w.prepare(
+      "INSERT INTO setting (param, value, public, category, hash, created_at, updated_at) VALUES (?, ?, 0, NULL, NULL, ?, ?)",
+    ).run(param, value, ts, ts);
+  }
+}
+
+export function findAdminByEmail(email: string): AdminFullRow | undefined {
+  return getDb()
+    .prepare(
+      "SELECT id, email, name, signature, status, api_token, timezone, created_at, updated_at, system_name FROM admin WHERE email = ?",
+    )
+    .get(email) as unknown as AdminFullRow | undefined;
+}
+
+export function insertAdmin(row: {
+  email: string;
+  pass: string;
+  name: string;
+  status: string;
+  signature: string | null;
+  timezone: string | null;
+}): number {
+  const ts = nowTimestamp();
+  const info = getDbWrite()
+    .prepare(
+      "INSERT INTO admin (email, pass, name, status, signature, timezone, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+    .run(row.email, row.pass, row.name, row.status, row.signature, row.timezone, ts, ts);
+  return Number(info.lastInsertRowid);
+}
+
+export function updateAdminRow(
+  id: number,
+  fields: Partial<{
+    email: string;
+    name: string;
+    status: string;
+    signature: string | null;
+    timezone: string | null;
+    pass: string;
+  }>,
+): void {
+  const sets: string[] = [];
+  const values: (string | number | null)[] = [];
+  for (const [k, v] of Object.entries(fields)) {
+    sets.push(`${k} = ?`);
+    values.push(v);
+  }
+  if (sets.length === 0) return;
+  sets.push("updated_at = ?");
+  values.push(nowTimestamp(), id);
+  getDbWrite()
+    .prepare(`UPDATE admin SET ${sets.join(", ")} WHERE id = ?`)
+    .run(...(values as (string | number)[]));
+}
+
+export function deleteAdminRow(id: number): void {
+  const w = getDbWrite();
+  w.exec("BEGIN");
+  try {
+    w.prepare("DELETE FROM admin_group_member WHERE admin_id = ?").run(id);
+    w.prepare("DELETE FROM admin WHERE id = ?").run(id);
+    w.exec("COMMIT");
+  } catch (e) {
+    w.exec("ROLLBACK");
+    throw e;
+  }
+}
+
+export function addAdminToGroup(adminId: number, groupId: number): void {
+  getDbWrite()
+    .prepare("INSERT INTO admin_group_member (admin_id, admin_group_id, created_at) VALUES (?, ?, ?)")
+    .run(adminId, groupId, nowTimestamp());
+}
+
+export function removeAdminFromGroup(adminId: number, groupId: number): void {
+  getDbWrite()
+    .prepare("DELETE FROM admin_group_member WHERE admin_id = ? AND admin_group_id = ?")
+    .run(adminId, groupId);
+}
+
+export function insertAdminGroup(name: string, parentId: number): number {
+  const ts = nowTimestamp();
+  const info = getDbWrite()
+    .prepare(
+      "INSERT INTO admin_group (name, system_name, permissions, protected, parent_id, created_at, updated_at) VALUES (?, NULL, NULL, 0, ?, ?, ?)",
+    )
+    .run(name, parentId, ts, ts);
+  return Number(info.lastInsertRowid);
+}
+
+export function updateAdminGroupRow(
+  id: number,
+  fields: Partial<{ name: string; permissions: string | null; parent_id: number | null }>,
+): void {
+  const sets: string[] = [];
+  const values: (string | number | null)[] = [];
+  for (const [k, v] of Object.entries(fields)) {
+    sets.push(`${k} = ?`);
+    values.push(v);
+  }
+  if (sets.length === 0) return;
+  sets.push("updated_at = ?");
+  values.push(nowTimestamp(), id);
+  getDbWrite()
+    .prepare(`UPDATE admin_group SET ${sets.join(", ")} WHERE id = ?`)
+    .run(...(values as (string | number)[]));
+}
+
+export function deleteAdminGroupRow(id: number): void {
+  const w = getDbWrite();
+  w.exec("BEGIN");
+  try {
+    w.prepare("DELETE FROM admin_group_member WHERE admin_group_id = ?").run(id);
+    w.prepare("DELETE FROM admin_group WHERE id = ?").run(id);
+    w.exec("COMMIT");
+  } catch (e) {
+    w.exec("ROLLBACK");
+    throw e;
+  }
+}
+
+export function findAdminGroupById(id: number): AdminGroupRow | undefined {
+  return getDb()
+    .prepare(
+      "SELECT id, name, system_name, permissions, protected, parent_id, created_at, updated_at FROM admin_group WHERE id = ?",
+    )
+    .get(id) as unknown as AdminGroupRow | undefined;
+}
+
+export function countAdminGroupMembers(groupId: number): number {
+  const row = getDb()
+    .prepare("SELECT COUNT(*) AS n FROM admin_group_member WHERE admin_group_id = ?")
+    .get(groupId) as { n: number } | undefined;
+  return row?.n ?? 0;
+}
+
+export function listAdminLoginHistory(): {
+  id: number;
+  ip: string | null;
+  created_at: string | null;
+  staff_id: number | null;
+  staff_name: string | null;
+  staff_email: string | null;
+}[] {
+  return getDb()
+    .prepare(
+      `SELECT h.id AS id, h.ip AS ip, h.created_at AS created_at, a.id AS staff_id, a.name AS staff_name, a.email AS staff_email
+       FROM activity_admin_history h LEFT JOIN admin a ON a.id = h.admin_id ORDER BY h.id DESC`,
+    )
+    .all() as unknown as {
+    id: number;
+    ip: string | null;
+    created_at: string | null;
+    staff_id: number | null;
+    staff_name: string | null;
+    staff_email: string | null;
+  }[];
+}
+
+export function insertActivity(row: {
+  admin_id: number | null;
+  client_id: number | null;
+  priority: number;
+  message: string;
+  ip: string | null;
+}): void {
+  getDbWrite()
+    .prepare(
+      "INSERT INTO activity_system (admin_id, client_id, priority, message, ip, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+    )
+    .run(row.admin_id, row.client_id, row.priority, row.message, row.ip, nowTimestamp());
+}
+
+export function updateSessionContent(id: string, content: string): void {
+  getDbWrite().prepare("UPDATE session SET content = ? WHERE id = ?").run(content, id);
+}
+
 export interface SessionRow {
   id: string;
   content: string;

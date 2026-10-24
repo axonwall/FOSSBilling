@@ -24,9 +24,13 @@ recommended defaults unless Josh directs otherwise).
   `FB_TS_MODULES` (comma list) and falls back to PHP otherwise. Ported so
   far: `system` (guest reads), `currency` (guest + admin reads and admin
   mutations), `profile` (client + admin get), `client` (admin
-  get/get_list/get_pairs), `staff` (admin reads), `activity` (admin log
-  list), `news` and `custompages` (guest/admin reads + admin mutations)
-  — verified at 16/16 + 32/32 + 21/21 parity against PHP
+  get/get_list/get_pairs), `staff` (admin reads, mutations, and group
+  management), `activity` (admin log list + log writes), `news` and
+  `custompages` (guest/admin reads + admin mutations), and the System
+  data/settings methods (countries, timezones, params, settings) —
+  verified at 16/16 + 32/32 + 21/21 + 27/27 parity against PHP (96
+  checks). Runtime-bound System endpoints (env, updater, cache) stay
+  on PHP by design; see `docs/nextjs-strangler/phase2/`.
   (`FB_PARITY=1` deep-compares TS vs PHP responses; see
   `docs/nextjs-strangler/phase2/`). TS modules need
   `FB_DATABASE_PATH` pointing at the install's SQLite file in the

@@ -112,6 +112,17 @@ register("admin", "custompages", "update", (ctx: CallContext) => {
   return true;
 });
 
+register("admin", "custompages", "batch_delete", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const ids = ctx.params["ids"];
+  if (!ids) throw new FbError("Custom page IDs were not passed");
+  for (const part of ids.split(",")) {
+    const id = Number(part.trim());
+    if (id) deletePageRow(id);
+  }
+  return true;
+});
+
 register("admin", "custompages", "delete", (ctx: CallContext) => {
   requireAdmin(ctx);
   const id = Number(ctx.params["id"] ?? 0);

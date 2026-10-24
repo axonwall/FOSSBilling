@@ -1,9 +1,22 @@
+import bcrypt from "bcryptjs";
 import {
+  addAdminToGroup,
   adminGroupIdsFor,
+  countAdminGroupMembers,
+  deleteAdminGroupRow,
+  deleteAdminRow,
+  findAdminByEmail,
   findAdminFullById,
+  findAdminGroupById,
+  insertAdmin,
+  insertAdminGroup,
   listAdminGroups,
+  listAdminLoginHistory,
   listAdminPairs,
   listAdmins,
+  removeAdminFromGroup,
+  updateAdminGroupRow,
+  updateAdminRow,
   type AdminFullRow,
   type AdminGroupRow,
 } from "../db";
@@ -103,4 +116,240 @@ register("admin", "staff", "is_super_administrator", (ctx: CallContext) => {
   const all = listAdminGroups();
   const mine = adminGroupIdsFor(ctx.session!.admin!.id);
   return mine.some((id) => all.find((g) => g.id === id)?.system_name === "super_admin");
+});
+
+// --- Mutations + group management (Phase 2 batch 4). Messages/codes
+// mirror Staff Api/Service incl. the 788954 duplicate-email code and
+// the 403 super-admin group guard. PHP hashes with password_hash
+// (bcrypt $2y$ cost 12); bcryptjs emits $2b$, which PHP's
+// password_verify accepts — new hashes are interchangeable.
+
+function isSuperAdmin(ctx: CallContext): boolean {
+  const all = listAdminGroups();
+  return adminGroupIdsFor(ctx.session!.admin!.id).some(
+    (id) => all.find((g) => g.id === id)?.system_name === "super_admin",
+  );
+}
+
+function requireSuperAdminGroups(ctx: CallContext) {
+  if (!isSuperAdmin(ctx)) {
+    throw new FbError("Only super administrators can manage staff groups", 403);
+  }
+}
+
+function assertStrongPassword(pw: string | undefined) {
+  if (!pw) throw new FbError("Password is required.");
+  if (pw.length < 8) throw new FbError("Minimum password length is 8 characters.");
+  if (pw.length > 256) throw new FbError("Maximum password length is 256 characters.");
+  if (!/[0-9]/.test(pw)) throw new FbError("Password must include at least one number.");
+  if (!/[a-z]/.test(pw)) throw new FbError("Password must include at least one lowercase letter.");
+  if (!/[A-Z]/.test(pw)) throw new FbError("Password must include at least one uppercase letter.");
+}
+
+function getStaffOrThrow(idRaw: string | undefined): AdminFullRow {
+  if (!idRaw) throw new FbError("ID was not passed");
+  const row = findAdminFullById(Number(idRaw));
+  if (!row) throw new FbError("Staff member not found");
+  return row;
+}
+
+function getGroupOrThrow(idRaw: string | undefined): AdminGroupRow {
+  if (!idRaw) throw new FbError("Group ID was not passed");
+  const row = findAdminGroupById(Number(idRaw));
+  if (!row) throw new FbError("Group not found");
+  return row;
+}
+
+register("admin", "staff", "create", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const email = ctx.params["email"];
+  if (!email) throw new FbError("Email was not passed");
+  const password = ctx.params["password"];
+  if (!password) throw new FbError("Password was not passed");
+  const name = ctx.params["name"];
+  if (!name) throw new FbError("Name was not passed");
+  const groupIdRaw = ctx.params["group_id"];
+  if (!groupIdRaw) throw new FbError("Group ID was not passed");
+  assertStrongPassword(password);
+  const group = findAdminGroupById(Number(groupIdRaw));
+  if (!group) throw new FbError("Group not found");
+  if (findAdminByEmail(email)) {
+    throw new FbError(`Staff member with email ${email} is already registered.`, 788954);
+  }
+  const id = insertAdmin({
+    email,
+    pass: bcrypt.hashSync(password, 12),
+    name,
+    status: (ctx.params["status"] ?? "inactive").toLowerCase(),
+    signature: ctx.params["signature"] ?? null,
+    timezone: ctx.params["timezone"] ?? null,
+  });
+  addAdminToGroup(id, group.id);
+  return id;
+});
+
+register("admin", "staff", "update", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const row = getStaffOrThrow(ctx.params["id"]);
+  const fields: Parameters<typeof updateAdminRow>[1] = {};
+  let newStatus = row.status ?? "active";
+  if (ctx.params["status"] !== undefined) {
+    const s = ctx.params["status"].toLowerCase();
+    newStatus = s === "active" || s === "inactive" ? s : "active";
+    if (ctx.session!.admin!.id === row.id && row.status === "active" && newStatus !== "active") {
+      throw new FbError("You cannot deactivate your own staff account");
+    }
+    fields.status = newStatus;
+  }
+  if (ctx.params["email"] !== undefined) {
+    const clash = findAdminByEmail(ctx.params["email"]);
+    if (clash && clash.id !== row.id) {
+      throw new FbError(
+        `Staff member with email ${ctx.params["email"]} is already registered.`,
+        788954,
+      );
+    }
+    fields.email = ctx.params["email"];
+  }
+  if (ctx.params["name"] !== undefined) fields.name = ctx.params["name"];
+  if (ctx.params["signature"] !== undefined) fields.signature = ctx.params["signature"];
+  if (ctx.params["timezone"] !== undefined) fields.timezone = ctx.params["timezone"];
+  updateAdminRow(row.id, fields);
+  return true;
+});
+
+register("admin", "staff", "delete", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const row = getStaffOrThrow(ctx.params["id"]);
+  if (row.system_name === "cron") {
+    throw new FbError("The cron administrator account cannot be removed");
+  }
+  deleteAdminRow(row.id);
+  return true;
+});
+
+register("admin", "staff", "change_password", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  if (!ctx.params["id"]) throw new FbError("ID was not passed");
+  const password = ctx.params["password"];
+  if (!password) throw new FbError("Password required");
+  const confirm = ctx.params["password_confirm"];
+  if (!confirm) throw new FbError("Password confirmation required");
+  if (password !== confirm) throw new FbError("Passwords do not match.");
+  assertStrongPassword(password);
+  const row = getStaffOrThrow(ctx.params["id"]);
+  updateAdminRow(row.id, { pass: bcrypt.hashSync(password, 12) });
+  return true;
+});
+
+register("admin", "staff", "group_create", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  requireSuperAdminGroups(ctx);
+  const name = ctx.params["name"];
+  if (!name) throw new FbError("Group name was not passed");
+  let parentId: number;
+  if (ctx.params["parent_id"]) {
+    parentId = getGroupOrThrow(ctx.params["parent_id"]).id;
+  } else {
+    const root = listAdminGroups().find((g) => g.system_name === "super_admin");
+    parentId = root ? root.id : 0;
+  }
+  return insertAdminGroup(name, parentId);
+});
+
+register("admin", "staff", "group_get", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const group = getGroupOrThrow(ctx.params["id"]);
+  return groupArray(group, listAdminGroups());
+});
+
+register("admin", "staff", "group_get_list", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const all = listAdminGroups();
+  return { list: all.map((g) => groupArray(g, all)) };
+});
+
+register("admin", "staff", "group_update", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  requireSuperAdminGroups(ctx);
+  const group = getGroupOrThrow(ctx.params["id"]);
+  if (group.protected) throw new FbError("Protected staff groups cannot be modified");
+  const fields: Parameters<typeof updateAdminGroupRow>[1] = {};
+  if (ctx.params["name"] !== undefined) fields.name = ctx.params["name"];
+  if (ctx.params["parent_id"] !== undefined) {
+    fields.parent_id = ctx.params["parent_id"] ? Number(ctx.params["parent_id"]) : null;
+  }
+  if (ctx.params["permissions"] !== undefined) {
+    // The PHP admin UI submits permissions as nested form fields, which
+    // the flat param map cannot represent; a JSON string is accepted.
+    fields.permissions = ctx.params["permissions"] || null;
+  }
+  updateAdminGroupRow(group.id, fields);
+  return true;
+});
+
+register("admin", "staff", "group_delete", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  requireSuperAdminGroups(ctx);
+  const group = getGroupOrThrow(ctx.params["id"]);
+  if (group.protected) throw new FbError("Protected staff groups cannot be removed");
+  if (countAdminGroupMembers(group.id) > 0) {
+    throw new FbError("Cannot remove group which has staff members");
+  }
+  if (listAdminGroups().some((g) => g.parent_id === group.id)) {
+    throw new FbError("Cannot remove group which has child groups");
+  }
+  deleteAdminGroupRow(group.id);
+  return true;
+});
+
+register("admin", "staff", "group_member_add", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const adminId = ctx.params["admin_id"];
+  if (!adminId) throw new FbError("Staff member ID was not passed");
+  const group = getGroupOrThrow(ctx.params["group_id"]);
+  const staff = getStaffOrThrow(adminId);
+  if (!adminGroupIdsFor(staff.id).includes(group.id)) addAdminToGroup(staff.id, group.id);
+  return true;
+});
+
+register("admin", "staff", "group_member_remove", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const adminId = ctx.params["admin_id"];
+  if (!adminId) throw new FbError("Staff member ID was not passed");
+  const group = getGroupOrThrow(ctx.params["group_id"]);
+  const staff = getStaffOrThrow(adminId);
+  removeAdminFromGroup(staff.id, group.id);
+  return true;
+});
+
+register("admin", "staff", "group_member_get_list", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const group = getGroupOrThrow(ctx.params["group_id"]);
+  return listAdmins()
+    .filter((a) => adminGroupIdsFor(a.id).includes(group.id))
+    .map(staffArray);
+});
+
+register("admin", "staff", "admin_group_get_list", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const adminId = ctx.params["admin_id"];
+  if (!adminId) throw new FbError("Staff member ID was not passed");
+  const all = listAdminGroups();
+  return adminGroupIdsFor(Number(adminId))
+    .map((id) => all.find((g) => g.id === id))
+    .filter((g): g is AdminGroupRow => !!g)
+    .map((g) => groupArray(g, all));
+});
+
+register("admin", "staff", "login_history_get_list", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const items = listAdminLoginHistory().map((h) => {
+    const item: Record<string, unknown> = { id: h.id, ip: h.ip, created_at: h.created_at };
+    if (h.staff_id !== null && h.staff_id !== undefined) {
+      item["staff"] = { id: h.staff_id, name: h.staff_name, email: h.staff_email };
+    }
+    return item;
+  });
+  return paginate(items, ctx.params);
 });

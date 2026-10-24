@@ -114,6 +114,17 @@ register("admin", "news", "update", (ctx: CallContext) => {
   return true;
 });
 
+register("admin", "news", "batch_delete", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const ids = ctx.params["ids"];
+  if (!ids) throw new FbError("IDs were not passed");
+  for (const part of ids.split(",")) {
+    const id = Number(part.trim());
+    if (id) deletePostRow(id);
+  }
+  return true;
+});
+
 register("admin", "news", "delete", (ctx: CallContext) => {
   requireAdmin(ctx);
   const id = Number(ctx.params["id"] ?? 0);
