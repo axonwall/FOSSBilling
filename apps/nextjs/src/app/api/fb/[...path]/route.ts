@@ -82,12 +82,14 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
     if (handler) {
       try {
         const params: Record<string, string> = {};
+        let rawParams: Record<string, unknown> = {};
         for (const [k, v] of req.nextUrl.searchParams) params[k] = v;
         if (bodyText) {
           const ct = req.headers.get("content-type") ?? "";
           if (ct.includes("json")) {
-            for (const [k, v] of Object.entries(JSON.parse(bodyText) as Record<string, unknown>)) {
-              params[k] = String(v);
+            rawParams = JSON.parse(bodyText) as Record<string, unknown>;
+            for (const [k, v] of Object.entries(rawParams)) {
+              params[k] = typeof v === "object" ? JSON.stringify(v) : String(v);
             }
           } else {
             for (const [k, v] of new URLSearchParams(bodyText)) params[k] = v;
@@ -97,6 +99,7 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
         const session = readSession(cookieHeader);
         const callCtx = {
           params,
+          rawParams,
           session,
           hasSessionCookie: !!cookieHeader?.includes("fossbilling_session="),
           setCookies: [] as string[],

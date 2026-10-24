@@ -1,0 +1,245 @@
+{
+  "result": {
+    "pages": 1,
+    "page": 1,
+    "per_page": 100,
+    "total": 9,
+    "list": [
+      {
+        "id": 10,
+        "serie": "FOSS",
+        "nr": "8",
+        "serie_nr": "FOSS00008",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 85,
+        "total": 85,
+        "status": "unpaid",
+        "due_at": "2026-10-29 03:53:04",
+        "paid_at": null,
+        "created_at": "2026-10-24 03:53:04",
+        "updated_at": "2026-10-24 03:53:06",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 9,
+        "serie": null,
+        "nr": null,
+        "serie_nr": "00009",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 0,
+        "total": 0,
+        "status": "unpaid",
+        "due_at": null,
+        "paid_at": null,
+        "created_at": "2026-10-24 03:52:50",
+        "updated_at": "2026-10-24 03:53:03",
+        "buyer": {
+          "first_name": null,
+          "last_name": null,
+          "email": null
+        },
+        "issued": false,
+        "cancellable": false
+      },
+      {
+        "id": 7,
+        "serie": "FOSS",
+        "nr": "7",
+        "serie_nr": "FOSS00007",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 85,
+        "total": 85,
+        "status": "paid",
+        "due_at": "2026-10-29 03:50:39",
+        "paid_at": "2026-10-24 03:50:42",
+        "created_at": "2026-10-24 03:50:39",
+        "updated_at": "2026-10-24 03:50:42",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 6,
+        "serie": "FOSS",
+        "nr": "6",
+        "serie_nr": "FOSS00006",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 10,
+        "total": 10,
+        "status": "unpaid",
+        "due_at": "2026-10-29 02:10:27",
+        "paid_at": null,
+        "created_at": "2026-10-24 02:10:27",
+        "updated_at": "2026-10-24 02:10:27",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 5,
+        "serie": "FOSS",
+        "nr": "5",
+        "serie_nr": "FOSS00005",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 100,
+        "total": 100,
+        "status": "unpaid",
+        "due_at": "2026-10-29 02:10:04",
+        "paid_at": null,
+        "created_at": "2026-10-24 02:10:04",
+        "updated_at": "2026-10-24 02:10:06",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 4,
+        "serie": "FOSS",
+        "nr": "4",
+        "serie_nr": "FOSS00004",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 0,
+        "total": 0,
+        "status": "unpaid",
+        "due_at": "2026-10-29 02:09:48",
+        "paid_at": null,
+        "created_at": "2026-10-24 02:09:48",
+        "updated_at": "2026-10-24 02:09:49",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 3,
+        "serie": "FOSS",
+        "nr": "3",
+        "serie_nr": "FOSS00003",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 0,
+        "total": 0,
+        "status": "unpaid",
+        "due_at": "2026-10-29 02:09:35",
+        "paid_at": null,
+        "created_at": "2026-10-24 02:09:35",
+        "updated_at": "2026-10-24 02:09:36",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 2,
+        "serie": "FOSS",
+        "nr": "2",
+        "serie_nr": "FOSS00002",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 0,
+        "total": 0,
+        "status": "unpaid",
+        "due_at": "2026-10-29 02:09:17",
+        "paid_at": null,
+        "created_at": "2026-10-24 02:09:17",
+        "updated_at": "2026-10-24 02:09:18",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 1,
+        "serie": "FOSS",
+        "nr": "1",
+        "serie_nr": "FOSS00001",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 100,
+        "total": 100,
+        "status": "paid",
+        "due_at": "2026-10-28 20:41:12",
+        "paid_at": "2026-10-23 20:41:23",
+        "created_at": "2026-10-23 20:41:12",
+        "updated_at": "2026-10-23 20:41:23",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      }
+    ]
+  },
+  "error": null
+}

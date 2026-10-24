@@ -20,6 +20,10 @@ export class FbError extends Error {
 
 export interface CallContext {
   params: Record<string, string>;
+  /** The parsed JSON body when the call was JSON-encoded — nested
+   * structures (invoice new_item, items maps) survive here; `params`
+   * only carries their stringified form. */
+  rawParams: Record<string, unknown>;
   session: SessionInfo | null;
   /** Whether any session cookie was presented (drives CSRF enforcement). */
   hasSessionCookie: boolean;

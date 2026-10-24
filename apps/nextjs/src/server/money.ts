@@ -12,7 +12,6 @@ import {
   insertInvoiceItem,
   invoiceNrExists,
   listInvoiceItems,
-  markInvoiceItemsCharged,
   maxInvoiceNr,
   nowTimestamp,
   setSettingValue,
@@ -108,7 +107,8 @@ export function nextInvoiceNumber(serie: string | null): string {
 /**
  * Invoice\Service::prepareInvoice — creates the DRAFT (status unpaid,
  * issued = 0, nr claimed later at issuance), freezing currency, tax
- * rate/name, serie and hash. Items are inserted as pending_payment.
+ * rate/name, serie and hash. Items start pending_payment and move
+ * to pending_setup when the invoice is paid.
  */
 export function prepareInvoice(
   client: ClientRow,
@@ -177,7 +177,9 @@ function snapshotParties(invoiceId: number, client: ClientRow): void {
     buyer_state: client.state,
     buyer_country: client.country,
     buyer_zip: client.postcode,
-    buyer_phone: client.phone ? `${client.phone_cc ?? ""}${client.phone}` : null,
+    buyer_phone: client.phone
+      ? [client.phone_cc, client.phone].filter(Boolean).join(" ")
+      : null,
     buyer_email: client.email,
     seller_company: company.name,
     seller_company_vat: company.vat_number,
@@ -236,8 +238,21 @@ export function tryPayWithCredits(invoiceId: number): boolean {
 }
 
 export function markInvoicePaid(invoiceId: number): void {
-  markInvoiceItemsCharged(invoiceId);
+  // PHP records base_income (total converted at the invoice's frozen
+  // rate) when an invoice is paid, and moves items from
+  // pending_payment to pending_setup (awaiting execution). The
+  // charged amounts stay untouched on the admin/Custom path — they
+  // are written when item tasks actually execute.
+  const row = findInvoiceRow(invoiceId);
+  const rate = Number(row?.["currency_rate"] ?? 1) || 1;
+  const { total } = invoiceTotals(listInvoiceItems(invoiceId), currentTaxrate(invoiceId));
   updateInvoiceRow(invoiceId, { status: "paid", paid_at: nowTimestamp() });
+  const w = getDbWrite();
+  w.prepare("UPDATE invoice SET base_income = ? WHERE id = ?")
+    .run(round2(total * rate), invoiceId);
+  w.prepare(
+    "UPDATE invoice_item SET status = 'pending_setup', updated_at = ? WHERE invoice_id = ? AND status = 'pending_payment'",
+  ).run(nowTimestamp(), invoiceId);
   insertInvoiceEvent(invoiceId, "paid", { status: "paid" });
 }
 

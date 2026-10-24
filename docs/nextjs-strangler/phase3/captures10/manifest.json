@@ -1,0 +1,176 @@
+[
+  {
+    "name": "guest_staff_login",
+    "route": "/api/guest/staff/login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_get_list",
+    "route": "/api/admin/invoice/get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_get_list_summary",
+    "route": "/api/admin/invoice/get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_get",
+    "route": "/api/admin/invoice/get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_get_missing",
+    "route": "/api/admin/invoice/get",
+    "ok": false,
+    "error": "Invoice was not found"
+  },
+  {
+    "name": "admin_invoice_prepare",
+    "route": "/api/admin/invoice/prepare",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_update_new_item",
+    "route": "/api/admin/invoice/update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_get_draft",
+    "route": "/api/admin/invoice/get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_issue",
+    "route": "/api/admin/invoice/issue",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_get_issued",
+    "route": "/api/admin/invoice/get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_mark_as_paid",
+    "route": "/api/admin/invoice/mark_as_paid",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_get_paid",
+    "route": "/api/admin/invoice/get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_prepare_throwaway",
+    "route": "/api/admin/invoice/prepare",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_delete",
+    "route": "/api/admin/invoice/delete",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_get_deleted",
+    "route": "/api/admin/invoice/get",
+    "ok": false,
+    "error": "Invoice was not found"
+  },
+  {
+    "name": "admin_tax_create",
+    "route": "/api/admin/invoice/tax_create",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_tax_get_list",
+    "route": "/api/admin/invoice/tax_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_tax_get",
+    "route": "/api/admin/invoice/tax_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_tax_update_partial",
+    "route": "/api/admin/invoice/tax_update",
+    "ok": false,
+    "error": "Tax name is missing"
+  },
+  {
+    "name": "admin_tax_update",
+    "route": "/api/admin/invoice/tax_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_tax_get_after_update",
+    "route": "/api/admin/invoice/tax_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_tax_delete",
+    "route": "/api/admin/invoice/tax_delete",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_tax_get_deleted",
+    "route": "/api/admin/invoice/tax_get",
+    "ok": false,
+    "error": "Tax rule not found"
+  },
+  {
+    "name": "guest_client_login",
+    "route": "/api/guest/client/login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_invoice_get_list",
+    "route": "/api/client/invoice/get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_invoice_get",
+    "route": "/api/client/invoice/get",
+    "ok": false,
+    "error": "Invoice hash was not passed"
+  },
+  {
+    "name": "client_invoice_get_hash",
+    "route": "/api/client/invoice/get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_invoice_get_missing",
+    "route": "/api/client/invoice/get",
+    "ok": false,
+    "error": "Invoice was not found"
+  },
+  {
+    "name": "guest_invoice_get",
+    "route": "/api/guest/invoice/get",
+    "ok": true,
+    "error": null
+  }
+]

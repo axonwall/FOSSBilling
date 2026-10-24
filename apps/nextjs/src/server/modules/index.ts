@@ -12,5 +12,6 @@ import "./news";
 import "./custompages";
 import "./product";
 import "./cart";
+import "./invoice";
 
 export { findHandler, tsModulesEnabled } from "../dispatch";

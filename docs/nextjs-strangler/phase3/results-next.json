@@ -3,11 +3,11 @@
     "status": "PASS",
     "failures": [],
     "saved": {
-      "inv": 7
+      "inv": 59
     },
     "steps": [
       {
-        "result": 7,
+        "result": 59,
         "error": null
       },
       {
@@ -20,18 +20,18 @@
       },
       {
         "result": {
-          "id": 7,
+          "id": 59,
           "serie": "FOSS",
-          "nr": "7",
+          "nr": "44",
           "client_id": 1,
-          "serie_nr": "FOSS00007",
+          "serie_nr": "FOSS00044",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": null,
           "taxname": "TX Tax",
           "taxrate": "10",
           "currency": "USD",
-          "currency_rate": 1,
+          "currency_rate": "1",
           "tax": 10,
           "subtotal": 100,
           "total": 110,
@@ -45,7 +45,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 5,
+              "id": 46,
               "title": "Taxed line",
               "period": null,
               "quantity": 1,
@@ -144,11 +144,11 @@
     "failures": [],
     "saved": {
       "de_client": 4,
-      "inv": 7
+      "inv": 59
     },
     "steps": [
       {
-        "result": 7,
+        "result": 59,
         "error": null
       },
       {
@@ -161,18 +161,18 @@
       },
       {
         "result": {
-          "id": 7,
+          "id": 59,
           "serie": "FOSS",
-          "nr": "7",
+          "nr": "44",
           "client_id": 4,
-          "serie_nr": "FOSS00007",
+          "serie_nr": "FOSS00044",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": null,
           "taxname": "DE VAT",
           "taxrate": "19",
           "currency": "USD",
-          "currency_rate": 1,
+          "currency_rate": "1",
           "tax": 19,
           "subtotal": 100,
           "total": 119,
@@ -186,7 +186,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 5,
+              "id": 46,
               "title": "Taxed line",
               "period": null,
               "quantity": 1,
@@ -285,11 +285,11 @@
     "failures": [],
     "saved": {
       "fr_client": 4,
-      "inv": 7
+      "inv": 59
     },
     "steps": [
       {
-        "result": 7,
+        "result": 59,
         "error": null
       },
       {
@@ -302,18 +302,18 @@
       },
       {
         "result": {
-          "id": 7,
+          "id": 59,
           "serie": "FOSS",
-          "nr": "7",
+          "nr": "44",
           "client_id": 4,
-          "serie_nr": "FOSS00007",
+          "serie_nr": "FOSS00044",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": null,
           "taxname": "Global Tax",
           "taxrate": "5",
           "currency": "USD",
-          "currency_rate": 1,
+          "currency_rate": "1",
           "tax": 5,
           "subtotal": 100,
           "total": 105,
@@ -327,7 +327,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 5,
+              "id": 46,
               "title": "Taxed line",
               "period": null,
               "quantity": 1,
@@ -425,11 +425,11 @@
     "status": "PASS",
     "failures": [],
     "saved": {
-      "inv": 7
+      "inv": 59
     },
     "steps": [
       {
-        "result": 7,
+        "result": 59,
         "error": null
       },
       {
@@ -442,18 +442,18 @@
       },
       {
         "result": {
-          "id": 7,
+          "id": 59,
           "serie": "FOSS",
-          "nr": "7",
+          "nr": "44",
           "client_id": 1,
-          "serie_nr": "FOSS00007",
+          "serie_nr": "FOSS00044",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": null,
           "taxname": "",
           "taxrate": "0",
           "currency": "USD",
-          "currency_rate": 1,
+          "currency_rate": "1",
           "tax": 0,
           "subtotal": 100,
           "total": 100,
@@ -467,7 +467,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 5,
+              "id": 46,
               "title": "Taxed line",
               "period": null,
               "quantity": 1,
@@ -566,11 +566,11 @@
     "failures": [],
     "saved": {
       "ex_client": 4,
-      "inv": 7
+      "inv": 59
     },
     "steps": [
       {
-        "result": 7,
+        "result": 59,
         "error": null
       },
       {
@@ -583,18 +583,18 @@
       },
       {
         "result": {
-          "id": 7,
+          "id": 59,
           "serie": "FOSS",
-          "nr": "7",
+          "nr": "44",
           "client_id": 4,
-          "serie_nr": "FOSS00007",
+          "serie_nr": "FOSS00044",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": null,
           "taxname": "",
           "taxrate": "0",
           "currency": "USD",
-          "currency_rate": 1,
+          "currency_rate": "1",
           "tax": 0,
           "subtotal": 100,
           "total": 100,
@@ -608,7 +608,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 5,
+              "id": 46,
               "title": "Taxed line",
               "period": null,
               "quantity": 1,
@@ -706,11 +706,11 @@
     "status": "PASS",
     "failures": [],
     "saved": {
-      "inv": 7
+      "inv": 59
     },
     "steps": [
       {
-        "result": 7,
+        "result": 59,
         "error": null
       },
       {
@@ -723,18 +723,18 @@
       },
       {
         "result": {
-          "id": 7,
+          "id": 59,
           "serie": "FOSS",
-          "nr": "7",
+          "nr": "44",
           "client_id": 1,
-          "serie_nr": "FOSS00007",
+          "serie_nr": "FOSS00044",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": null,
           "taxname": "",
           "taxrate": "0",
           "currency": "USD",
-          "currency_rate": 1,
+          "currency_rate": "1",
           "tax": 0,
           "subtotal": 100,
           "total": 100,
@@ -748,7 +748,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 5,
+              "id": 46,
               "title": "Taxed line",
               "period": null,
               "quantity": 1,
@@ -846,11 +846,11 @@
     "status": "PASS",
     "failures": [],
     "saved": {
-      "inv": 7
+      "inv": 59
     },
     "steps": [
       {
-        "result": 7,
+        "result": 59,
         "error": null
       },
       {
@@ -867,18 +867,18 @@
       },
       {
         "result": {
-          "id": 7,
+          "id": 59,
           "serie": "FOSS",
-          "nr": "7",
+          "nr": "44",
           "client_id": 1,
-          "serie_nr": "FOSS00007",
+          "serie_nr": "FOSS00044",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": null,
           "taxname": "TX Tax",
           "taxrate": "10",
           "currency": "USD",
-          "currency_rate": 1,
+          "currency_rate": "1",
           "tax": 10,
           "subtotal": 150,
           "total": 160,
@@ -892,7 +892,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 5,
+              "id": 46,
               "title": "Taxed line",
               "period": null,
               "quantity": 1,
@@ -910,7 +910,7 @@
               "remaining_quantity": 1
             },
             {
-              "id": 6,
+              "id": 47,
               "title": "Untaxed line",
               "period": null,
               "quantity": 1,
@@ -1008,11 +1008,11 @@
     "status": "PASS",
     "failures": [],
     "saved": {
-      "inv": 7
+      "inv": 59
     },
     "steps": [
       {
-        "result": 7,
+        "result": 59,
         "error": null
       },
       {
@@ -1025,18 +1025,18 @@
       },
       {
         "result": {
-          "id": 7,
+          "id": 59,
           "serie": "FOSS",
-          "nr": "7",
+          "nr": "44",
           "client_id": 1,
-          "serie_nr": "FOSS00007",
+          "serie_nr": "FOSS00044",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": null,
           "taxname": "TX Tax",
           "taxrate": "7",
           "currency": "USD",
-          "currency_rate": 1,
+          "currency_rate": "1",
           "tax": 7,
           "subtotal": 99.99,
           "total": 106.99,
@@ -1050,7 +1050,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 5,
+              "id": 46,
               "title": "Bulk line",
               "period": null,
               "quantity": 3,
@@ -1148,8 +1148,8 @@
     "status": "PASS",
     "failures": [],
     "saved": {
-      "ord": 5,
-      "invhash": "a7a48bb5e0cb86ca3af1ac78236b7da290cdeb86f67b24f2"
+      "ord": 11,
+      "invhash": "384c15deb6d9d0ce2d745c1a3018f17e83f539c98b088799"
     },
     "steps": [
       {
@@ -1171,7 +1171,7 @@
           "items": [
             {
               "__cart_family": "*",
-              "id": 11,
+              "id": 37,
               "product_id": 3,
               "form_id": null,
               "title": "Phase0 Widget Hosting",
@@ -1188,8 +1188,8 @@
           ],
           "currency": {
             "code": "USD",
-            "name": "USD",
-            "symbol": "USD",
+            "name": "US Dollar",
+            "symbol": "$",
             "conversion_rate": 1,
             "is_rate_manual": false,
             "format_pattern": null,
@@ -1203,29 +1203,29 @@
       {
         "result": {
           "gateway_id": "1",
-          "invoice_hash": "a7a48bb5e0cb86ca3af1ac78236b7da290cdeb86f67b24f2",
-          "order_id": 5,
+          "invoice_hash": "384c15deb6d9d0ce2d745c1a3018f17e83f539c98b088799",
+          "order_id": 11,
           "orders": [
-            5
+            11
           ]
         },
         "error": null
       },
       {
         "result": {
-          "id": 5,
+          "id": 11,
           "client_id": 1,
           "product_id": 3,
           "form_id": null,
           "promo_id": null,
           "promo_recurring": null,
           "promo_used": null,
-          "group_id": "19_1",
+          "group_id": "60_1",
           "group_master": true,
           "invoice_option": "issue-invoice",
           "title": "Phase0 Widget Hosting",
           "currency": "USD",
-          "unpaid_invoice_id": 7,
+          "unpaid_invoice_id": 59,
           "service_id": null,
           "service_type": "custom",
           "period": null,
@@ -1246,7 +1246,7 @@
           "created_at": "*",
           "updated_at": "*",
           "config": {
-            "id": 11,
+            "id": 37,
             "product_id": 3,
             "form_id": null,
             "title": "Phase0 Widget Hosting",
@@ -1292,11 +1292,11 @@
       },
       {
         "result": {
-          "id": 7,
+          "id": 59,
           "serie": "FOSS",
-          "nr": "7",
+          "nr": "44",
           "client_id": 1,
-          "serie_nr": "FOSS00007",
+          "serie_nr": "FOSS00044",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": 1,
@@ -1317,7 +1317,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 5,
+              "id": 46,
               "title": "Phase0 Widget Hosting",
               "period": null,
               "quantity": 1,
@@ -1327,9 +1327,9 @@
               "taxed": 0,
               "charged": 0,
               "total": 10,
-              "order_id": "5.0",
+              "order_id": "11.0",
               "type": "order",
-              "rel_id": "5.0",
+              "rel_id": "11.0",
               "task": "activate",
               "status": "pending_payment"
             }
@@ -1344,7 +1344,7 @@
             "city": "Austin",
             "state": "Texas",
             "country": "US",
-            "phone": "15125550100",
+            "phone": "1 5125550100",
             "email": "phase0.client@example.com",
             "zip": "78701"
           },
@@ -1399,12 +1399,12 @@
           "refunded_total": 0,
           "remaining_refundable": 10,
           "income": 0,
-          "refund": "0",
-          "credit": "0",
+          "refund": 0,
+          "credit": 0,
           "subscribable": false,
           "orders": [
             {
-              "id": 5,
+              "id": 11,
               "title": "Phase0 Widget Hosting",
               "expires_at": null,
               "product_name": "Phase0 Widget Hosting",
@@ -1422,8 +1422,8 @@
     "status": "PASS",
     "failures": [],
     "saved": {
-      "ord": 5,
-      "invhash": "c74d9f235915e237be4fbfa700c309e3d80928c1515ee581"
+      "ord": 11,
+      "invhash": "8f174c3e4587d6b0d73c31922986838a8fc10ececc1d2de2"
     },
     "steps": [
       {
@@ -1449,7 +1449,7 @@
           "items": [
             {
               "__cart_family": "*",
-              "id": 11,
+              "id": 37,
               "product_id": 3,
               "form_id": null,
               "title": "Phase0 Widget Hosting",
@@ -1466,8 +1466,8 @@
           ],
           "currency": {
             "code": "USD",
-            "name": "USD",
-            "symbol": "USD",
+            "name": "US Dollar",
+            "symbol": "$",
             "conversion_rate": 1,
             "is_rate_manual": false,
             "format_pattern": null,
@@ -1481,21 +1481,21 @@
       {
         "result": {
           "gateway_id": "1",
-          "invoice_hash": "c74d9f235915e237be4fbfa700c309e3d80928c1515ee581",
-          "order_id": 5,
+          "invoice_hash": "8f174c3e4587d6b0d73c31922986838a8fc10ececc1d2de2",
+          "order_id": 11,
           "orders": [
-            5
+            11
           ]
         },
         "error": null
       },
       {
         "result": {
-          "id": 7,
+          "id": 59,
           "serie": "FOSS",
-          "nr": "7",
+          "nr": "44",
           "client_id": 1,
-          "serie_nr": "FOSS00007",
+          "serie_nr": "FOSS00044",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": 1,
@@ -1516,7 +1516,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 5,
+              "id": 46,
               "title": "Phase0 Widget Hosting",
               "period": null,
               "quantity": 1,
@@ -1526,14 +1526,14 @@
               "taxed": 0,
               "charged": 0,
               "total": 10,
-              "order_id": "5.0",
+              "order_id": "11.0",
               "type": "order",
-              "rel_id": "5.0",
+              "rel_id": "11.0",
               "task": "activate",
               "status": "pending_payment"
             },
             {
-              "id": 6,
+              "id": 47,
               "title": "Discount: Phase0 Widget Hosting",
               "period": null,
               "quantity": 1,
@@ -1545,7 +1545,7 @@
               "total": -1,
               "order_id": null,
               "type": "custom",
-              "rel_id": "5.0",
+              "rel_id": "11.0",
               "task": "void",
               "status": "pending_payment"
             }
@@ -1560,7 +1560,7 @@
             "city": "Austin",
             "state": "Texas",
             "country": "US",
-            "phone": "15125550100",
+            "phone": "1 5125550100",
             "email": "phase0.client@example.com",
             "zip": "78701"
           },
@@ -1615,12 +1615,12 @@
           "refunded_total": 0,
           "remaining_refundable": 9,
           "income": 0,
-          "refund": "0",
-          "credit": "0",
+          "refund": 0,
+          "credit": 0,
           "subscribable": false,
           "orders": [
             {
-              "id": 5,
+              "id": 11,
               "title": "Phase0 Widget Hosting",
               "expires_at": null,
               "product_name": "Phase0 Widget Hosting",
@@ -1638,11 +1638,11 @@
     "status": "PASS",
     "failures": [],
     "saved": {
-      "inv": 7
+      "inv": 59
     },
     "steps": [
       {
-        "result": 7,
+        "result": 59,
         "error": null
       },
       {
@@ -1659,11 +1659,11 @@
       },
       {
         "result": {
-          "id": 7,
+          "id": 59,
           "serie": "FOSS",
-          "nr": "7",
+          "nr": "44",
           "client_id": 1,
-          "serie_nr": "FOSS00007",
+          "serie_nr": "FOSS00044",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": null,
@@ -1684,7 +1684,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 5,
+              "id": 46,
               "title": "Credit-paid line",
               "period": null,
               "quantity": 1,
@@ -1698,7 +1698,7 @@
               "type": "custom",
               "rel_id": null,
               "task": "void",
-              "status": "executed",
+              "status": "pending_setup",
               "remaining_quantity": 1
             }
           ],
@@ -1782,11 +1782,11 @@
     "status": "PASS",
     "failures": [],
     "saved": {
-      "inv": 7
+      "inv": 59
     },
     "steps": [
       {
-        "result": 7,
+        "result": 59,
         "error": null
       },
       {
@@ -1803,11 +1803,11 @@
       },
       {
         "result": {
-          "id": 7,
+          "id": 59,
           "serie": "FOSS",
-          "nr": "7",
+          "nr": "44",
           "client_id": 1,
-          "serie_nr": "FOSS00007",
+          "serie_nr": "FOSS00044",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": 1,
@@ -1828,7 +1828,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 5,
+              "id": 46,
               "title": "Gateway-paid line",
               "period": null,
               "quantity": 1,
@@ -1926,7 +1926,7 @@
     "status": "PASS",
     "failures": [],
     "saved": {
-      "invhash": "16d25487eb8faec032dcb160a2fabbc7184cc3bff8d826f1"
+      "invhash": "23126b560ea630386fec24c069c5526df721a20cd4c21b56"
     },
     "steps": [
       {
@@ -1949,7 +1949,7 @@
             {
               "period": "1M",
               "__cart_family": "*",
-              "id": 11,
+              "id": 37,
               "product_id": 9,
               "form_id": null,
               "title": "Phase3 Recurring Widget",
@@ -1966,8 +1966,8 @@
           ],
           "currency": {
             "code": "USD",
-            "name": "USD",
-            "symbol": "USD",
+            "name": "US Dollar",
+            "symbol": "$",
             "conversion_rate": 1,
             "is_rate_manual": false,
             "format_pattern": null,
@@ -1981,21 +1981,21 @@
       {
         "result": {
           "gateway_id": "1",
-          "invoice_hash": "16d25487eb8faec032dcb160a2fabbc7184cc3bff8d826f1",
-          "order_id": 5,
+          "invoice_hash": "23126b560ea630386fec24c069c5526df721a20cd4c21b56",
+          "order_id": 11,
           "orders": [
-            5
+            11
           ]
         },
         "error": null
       },
       {
         "result": {
-          "id": 7,
+          "id": 59,
           "serie": "FOSS",
-          "nr": "7",
+          "nr": "44",
           "client_id": 1,
-          "serie_nr": "FOSS00007",
+          "serie_nr": "FOSS00044",
           "hash": "*",
           "hash_expires_at": "*",
           "gateway_id": 1,
@@ -2016,7 +2016,7 @@
           "updated_at": "*",
           "lines": [
             {
-              "id": 5,
+              "id": 46,
               "title": "Phase3 Recurring Widget",
               "period": "1M",
               "quantity": 1,
@@ -2026,14 +2026,14 @@
               "taxed": 0,
               "charged": 0,
               "total": 15,
-              "order_id": "5.0",
+              "order_id": "11.0",
               "type": "order",
-              "rel_id": "5.0",
+              "rel_id": "11.0",
               "task": "activate",
               "status": "pending_payment"
             },
             {
-              "id": 6,
+              "id": 47,
               "title": "Phase3 Recurring Widget setup",
               "period": null,
               "quantity": 1,
@@ -2060,7 +2060,7 @@
             "city": "Austin",
             "state": "Texas",
             "country": "US",
-            "phone": "15125550100",
+            "phone": "1 5125550100",
             "email": "phase0.client@example.com",
             "zip": "78701"
           },
@@ -2115,12 +2115,12 @@
           "refunded_total": 0,
           "remaining_refundable": 20,
           "income": 0,
-          "refund": "0",
-          "credit": "0",
+          "refund": 0,
+          "credit": 0,
           "subscribable": false,
           "orders": [
             {
-              "id": 5,
+              "id": 11,
               "title": "Phase3 Recurring Widget",
               "expires_at": null,
               "product_name": "Phase3 Recurring Widget",
