@@ -14,5 +14,6 @@ import "./product";
 import "./cart";
 import "./invoice";
 import "./order";
+import "./cron";
 
 export { findHandler, tsModulesEnabled } from "../dispatch";

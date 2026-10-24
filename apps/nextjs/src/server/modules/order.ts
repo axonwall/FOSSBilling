@@ -303,9 +303,8 @@ register("admin", "order", "update", (ctx: CallContext) => {
 
 // --- State machine --------------------------------------------------------------
 
-register("admin", "order", "activate", (ctx: CallContext) => {
-  requireAdmin(ctx);
-  const order = getOrderOrThrow(ctx);
+/** Shared activation path (single activate + invoice batch job). */
+export function activateOrderRow(order: OrderRowFull): void {
   const now = new Date();
   const config = parseConfig(order.config) as Record<string, unknown>;
   const period = order.period ?? (typeof config["period"] === "string" ? config["period"] : null);
@@ -320,6 +319,73 @@ register("admin", "order", "activate", (ctx: CallContext) => {
     service_id: serviceId,
   });
   insertOrderStatus(order.id, "active", "Order activated");
+}
+
+register("admin", "order", "activate", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  activateOrderRow(getOrderOrThrow(ctx));
+  return true;
+});
+
+// --- Batch jobs (cron) ---------------------------------------------------------
+
+export function runBatchSuspendExpired(): void {
+  const now = fmtTs(new Date());
+  for (const order of listOrders({ status: "active" })) {
+    if (order.expires_at && order.expires_at < now) {
+      updateOrderRow(order.id, {
+        status: "suspended",
+        suspended_at: now,
+        reason: "Expired",
+      });
+      insertOrderStatus(order.id, "suspended", "Order suspended (expired)");
+    }
+  }
+}
+
+export function runBatchCancelSuspended(): boolean {
+  const cutoff = fmtTs(new Date(Date.now() - 30 * 24 * 3600 * 1000));
+  let any = false;
+  for (const order of listOrders({ status: "suspended" })) {
+    if (order.suspended_at && order.suspended_at < cutoff) {
+      updateOrderRow(order.id, { status: "canceled", canceled_at: fmtTs(new Date()) });
+      insertOrderStatus(order.id, "canceled", "Order canceled (suspended too long)");
+      any = true;
+    }
+  }
+  return any;
+}
+
+export function runBatchCancelUnpaid(): boolean {
+  const cutoff = fmtTs(new Date(Date.now() - 7 * 24 * 3600 * 1000));
+  let any = false;
+  for (const order of listOrders({ status: "pending_setup" })) {
+    if (!order.created_at || order.created_at >= cutoff) continue;
+    updateOrderRow(order.id, { status: "canceled", canceled_at: fmtTs(new Date()) });
+    insertOrderStatus(order.id, "canceled", "Order canceled (unpaid)");
+    any = true;
+  }
+  return any;
+}
+
+register("admin", "order", "batch_suspend_expired", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  runBatchSuspendExpired();
+  return true;
+});
+
+register("admin", "order", "batch_cancel_suspended", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  return runBatchCancelSuspended();
+});
+
+register("admin", "order", "batch_cancel_unpaid", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  return runBatchCancelUnpaid();
+});
+
+register("admin", "order", "batch_send_suspension_warnings", (ctx: CallContext) => {
+  requireAdmin(ctx);
   return true;
 });
 

@@ -1183,10 +1183,10 @@ export function insertInvoice(row: {
   const info = getDbWrite()
     .prepare(
       `INSERT INTO invoice (client_id, serie, nr, hash, currency, currency_rate, credit, base_income, base_refund, refund, notes, text_1, text_2, status, credit_note_for_invoice_id, debit_note_for_invoice_id, replaces_invoice_id, replaced_by_invoice_id, seller_company, seller_company_vat, seller_company_number, seller_address, seller_phone, seller_email, buyer_first_name, buyer_last_name, buyer_company, buyer_company_vat, buyer_company_number, buyer_address, buyer_city, buyer_state, buyer_country, buyer_zip, buyer_phone, buyer_email, issued, taxname, taxrate, due_at, reminded_at, paid_at, hash_expires_at, created_at, updated_at, gateway_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, NULL, NULL, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, ?, ?, ?, NULL, NULL, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, NULL, 0, 0, NULL, ?, NULL, NULL, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, ?, ?, ?, NULL, NULL, ?, ?, ?, ?)`,
     )
     .run(
-      row.client_id, row.serie, row.nr, row.hash, row.currency, row.currency_rate, row.credit,
+      row.client_id, row.serie, row.nr, row.hash, row.currency, row.currency_rate,
       row.notes, row.status, row.taxname, row.taxrate, row.due_at, row.hash_expires_at, now, now,
       row.gateway_id,
     );
@@ -1205,14 +1205,15 @@ export function insertInvoiceItem(row: {
   unit: string | null;
   price: number;
   taxed: number;
+  refunded_item_id?: number | null;
 }): number {
   const now = nowTimestamp();
   const info = getDbWrite()
     .prepare(
       `INSERT INTO invoice_item (type, rel_id, refunded_item_id, task, status, title, period, quantity, unit, price, charged, taxed, attempts, created_at, updated_at, invoice_id)
-       VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, 0, ?, 0, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 0, ?, ?, ?)`,
     )
-    .run(row.type, row.rel_id, row.task, row.status, row.title, row.period, row.quantity, row.unit, String(row.price), row.taxed, now, now, row.invoice_id);
+    .run(row.type, row.rel_id, row.refunded_item_id ?? null, row.task, row.status, row.title, row.period, row.quantity, row.unit, String(row.price), row.taxed, now, now, row.invoice_id);
   return Number(info.lastInsertRowid);
 }
 
@@ -1277,10 +1278,11 @@ export function listInvoiceItems(invoiceId: number): {
   id: number; type: string | null; rel_id: number | null; task: string | null;
   status: string | null; title: string | null; period: string | null;
   quantity: number; unit: string | null; price: number; charged: number; taxed: number;
+  refunded_item_id: number | null;
 }[] {
   return getDb()
     .prepare(
-      "SELECT id, type, rel_id, task, status, title, period, quantity, unit, price, charged, taxed FROM invoice_item WHERE invoice_id = ? ORDER BY id ASC",
+      "SELECT id, type, rel_id, refunded_item_id, task, status, title, period, quantity, unit, price, charged, taxed FROM invoice_item WHERE invoice_id = ? ORDER BY id ASC",
     )
     .all(invoiceId) as never[];
 }
@@ -1408,6 +1410,8 @@ export function updateInvoiceFields(
     status: string; notes: string | null; text_1: string | null; text_2: string | null;
     due_at: string | null; gateway_id: number | null; taxname: string | null;
     taxrate: string | null; paid_at: string | null;
+    serie: string; nr: string; issued: number; refund: number; credit: number;
+    base_refund: number; replaced_by_invoice_id: number | null; reminded_at: string | null;
   }>,
 ): void {
   const entries = Object.entries(fields);
@@ -1875,5 +1879,99 @@ export function insertCustomService(clientId: number, config: string | null): nu
   const info = getDbWrite()
     .prepare("INSERT INTO service_custom (client_id, plugin, plugin_config, config, created_at, updated_at) VALUES (?, NULL, NULL, ?, ?, ?)")
     .run(clientId, config, now, now);
+  return Number(info.lastInsertRowid);
+}
+
+export function creditNoteIdsFor(invoiceId: number): number[] {
+  const rows = getDb()
+    .prepare("SELECT id FROM invoice WHERE credit_note_for_invoice_id = ? ORDER BY id ASC")
+    .all(invoiceId) as unknown as { id: number }[];
+  return rows.map((r) => r.id);
+}
+
+export function nextNrForSerie(serie: string): number {
+  const row = getDb()
+    .prepare("SELECT MAX(CAST(nr AS INTEGER)) AS m FROM invoice WHERE serie = ?")
+    .get(serie) as { m: number | null };
+  return (row.m ?? 0) + 1;
+}
+
+export interface InvoiceEventRow {
+  id: number;
+  type: string;
+  admin_id: number | null;
+  client_id: number | null;
+  snapshot: string | null;
+  created_at: string | null;
+}
+
+export function listInvoiceEvents(invoiceId: number): InvoiceEventRow[] {
+  return getDb()
+    .prepare(
+      "SELECT id, type, admin_id, client_id, snapshot, created_at FROM invoice_event WHERE invoice_id = ? ORDER BY id ASC",
+    )
+    .all(invoiceId) as unknown as InvoiceEventRow[];
+}
+
+
+/** Full-control invoice insert for credit/debit notes (batch 4):
+ * snapshots and link fields are copied from the original invoice. */
+export function insertInvoiceNote(row: {
+  client_id: number;
+  serie: string;
+  nr: string;
+  hash: string;
+  currency: string;
+  currency_rate: number;
+  status: string;
+  credit_note_for_invoice_id: number | null;
+  debit_note_for_invoice_id: number | null;
+  replaces_invoice_id: number | null;
+  seller_company: string | null;
+  seller_company_vat: string | null;
+  seller_company_number: string | null;
+  seller_address: string | null;
+  seller_phone: string | null;
+  seller_email: string | null;
+  buyer_first_name: string | null;
+  buyer_last_name: string | null;
+  buyer_company: string | null;
+  buyer_company_vat: string | null;
+  buyer_company_number: string | null;
+  buyer_address: string | null;
+  buyer_city: string | null;
+  buyer_state: string | null;
+  buyer_country: string | null;
+  buyer_zip: string | null;
+  buyer_phone: string | null;
+  buyer_email: string | null;
+  issued: number;
+  taxname: string;
+  taxrate: string;
+  due_at: string | null;
+  paid_at: string | null;
+  notes: string | null;
+  gateway_id: number | null;
+  hash_expires_at?: string | null;
+  base_income?: number;
+}): number {
+  const now = nowTimestamp();
+  const info = getDbWrite()
+    .prepare(
+      `INSERT INTO invoice (client_id, serie, nr, hash, currency, currency_rate, credit, base_income, base_refund, refund, notes, text_1, text_2, status, credit_note_for_invoice_id, debit_note_for_invoice_id, replaces_invoice_id, replaced_by_invoice_id, seller_company, seller_company_vat, seller_company_number, seller_address, seller_phone, seller_email, buyer_first_name, buyer_last_name, buyer_company, buyer_company_vat, buyer_company_number, buyer_address, buyer_city, buyer_state, buyer_country, buyer_zip, buyer_phone, buyer_email, issued, taxname, taxrate, due_at, reminded_at, paid_at, hash_expires_at, created_at, updated_at, gateway_id)
+       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, 0, NULL, ?, NULL, NULL, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      row.client_id, row.serie, row.nr, row.hash, row.currency, row.currency_rate,
+      row.base_income ?? 0,
+      row.notes, row.status, row.credit_note_for_invoice_id, row.debit_note_for_invoice_id,
+      row.replaces_invoice_id,
+      row.seller_company, row.seller_company_vat, row.seller_company_number, row.seller_address,
+      row.seller_phone, row.seller_email,
+      row.buyer_first_name, row.buyer_last_name, row.buyer_company, row.buyer_company_vat,
+      row.buyer_company_number, row.buyer_address, row.buyer_city, row.buyer_state,
+      row.buyer_country, row.buyer_zip, row.buyer_phone, row.buyer_email,
+      row.issued, row.taxname, row.taxrate, row.due_at, row.paid_at, row.hash_expires_at ?? null, now, now, row.gateway_id,
+    );
   return Number(info.lastInsertRowid);
 }

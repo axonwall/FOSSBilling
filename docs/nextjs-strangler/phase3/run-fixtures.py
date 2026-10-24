@@ -260,7 +260,7 @@ def start_next():
     repo_next = SCRATCH / "repo" / "apps" / "nextjs"
     env = dict(os.environ)
     env.update({
-        "FB_TS_MODULES": "system,currency,profile,client,staff,activity,news,custompages,product,cart,invoice,order",
+        "FB_TS_MODULES": "system,currency,profile,client,staff,activity,news,custompages,product,cart,invoice,order,cron",
         "FB_DATABASE_PATH": str(DISPO / "src" / "data" / "fossbilling.sqlite"),
         "FOSSBILLING_URL": BASE,
     })

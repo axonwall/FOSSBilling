@@ -1,0 +1,112 @@
+[
+  {
+    "name": "guest_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_refund",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_get_after_refund",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_get_credit_note",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_refund_unpaid",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_debit",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_get_after_debit",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_get_debit_note",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_cancel",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_get_after_cancel",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_reissue",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_get_after_reissue_old",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_get_reissued_new",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_journal",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_renewal",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_batch_generate",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_batch_activate_paid",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_invoice_batch_send_reminders",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_batch_suspend_expired",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_batch_cancel_unpaid",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_batch_cancel_suspended",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_cron_info",
+    "ok": true,
+    "error": null
+  }
+]

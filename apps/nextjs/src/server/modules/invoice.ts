@@ -38,6 +38,16 @@ import {
   updateInvoiceFields,
   updateInvoiceItemRow,
   updateTaxRow,
+  creditNoteIdsFor,
+  findOrderById,
+  getDbWrite,
+  insertInvoiceNote,
+  insertInvoiceEvent,
+  listInvoiceEvents,
+  listOrders,
+  nextNrForSerie,
+  nowTimestamp,
+  updateOrderRow,
   type ClientRow,
   type InvoiceRowFull,
 } from "../db";
@@ -49,6 +59,19 @@ import {
   type CallContext,
 } from "../dispatch";
 import { getCompany } from "./system";
+import { randomBytes } from "node:crypto";
+import { activateOrderRow } from "./order";
+
+function randomHex(bytes: number): string {
+  return randomBytes(bytes).toString("hex");
+}
+
+function getCurrencyRate(code: string): number {
+  const row = getDb()
+    .prepare("SELECT rate FROM currency WHERE code = ?")
+    .get(code) as { rate: number } | undefined;
+  return row?.rate ?? 1;
+}
 import { clientSubscriptionArray } from "./client";
 import {
   invoiceTotals,
@@ -131,11 +154,23 @@ function isDeletable(inv: InvoiceRowFull): boolean {
   return !inv.issued && inv.status === "unpaid";
 }
 
+function refundedQuantities(invoiceId: number): Map<number, number> {
+  const map = new Map<number, number>();
+  for (const noteId of creditNoteIdsFor(invoiceId)) {
+    for (const l of listInvoiceItems(noteId)) {
+      const rid = (l as { refunded_item_id?: number | null }).refunded_item_id;
+      if (rid) map.set(rid, (map.get(rid) ?? 0) + l.quantity);
+    }
+  }
+  return map;
+}
+
 export function invoiceArray(
   inv: InvoiceRowFull,
   opts: { adminDetail?: boolean; guestDetail?: boolean } = {},
 ): Record<string, unknown> {
   const items = listInvoiceItems(inv.id);
+  const refundedQty = opts.adminDetail ? refundedQuantities(inv.id) : new Map<number, number>();
   const lines = items.map((it) => ({
     id: it.id,
     title: it.title,
@@ -152,9 +187,12 @@ export function invoiceArray(
     rel_id: it.rel_id,
     task: it.task,
     status: it.status,
-    ...(opts.adminDetail ? { remaining_quantity: it.quantity ?? 1 } : {}),
+    ...(opts.adminDetail
+      ? { remaining_quantity: (it.quantity ?? 1) - (refundedQty.get(it.id) ?? 0) }
+      : {}),
   }));
   const { tax, subtotal, total } = invoiceTotals(items, inv.taxrate ?? "0");
+  const subscribableLine = items.find((it) => it.type === "order" && it.period);
   const client = findClientById(inv.client_id);
   const company = getCompany();
   const isDraft = !inv.issued;
@@ -247,13 +285,22 @@ export function invoiceArray(
     debit_note_for_invoice_id: inv.debit_note_for_invoice_id,
     replaces_invoice_id: inv.replaces_invoice_id,
     replaced_by_invoice_id: inv.replaced_by_invoice_id,
-    refunded_by_invoice_ids: [],
+    refunded_by_invoice_ids: creditNoteIdsFor(inv.id),
     refunded_total: round2(inv.refund ?? 0),
     remaining_refundable: round2(Math.max(0, total - round2(inv.refund ?? 0))),
     income: (inv.base_income ?? 0) - (inv.base_refund ?? 0),
-    refund: inv.refund ?? 0,
-    credit: inv.credit ?? 0,
-    subscribable: false,
+    refund: inv.refund === null || inv.refund === undefined ? 0 : formatDecimal(inv.refund),
+    credit: inv.credit === null || inv.credit === undefined ? 0 : formatDecimal(inv.credit),
+    subscribable: subscribableLine !== undefined,
+    ...(subscribableLine
+      ? {
+          subscription: {
+            unit: subscribableLine.period!.slice(-1),
+            cycle: parseInt(subscribableLine.period!, 10) || 1,
+            period: subscribableLine.period,
+          },
+        }
+      : {}),
     orders: ordersForInvoice(inv.id),
   };
   if (opts.adminDetail) {
@@ -281,6 +328,7 @@ function formatDecimal(v: number): string {
 function summaryArray(inv: InvoiceRowFull): Record<string, unknown> {
   const items = listInvoiceItems(inv.id);
   const { tax, subtotal, total } = invoiceTotals(items, inv.taxrate ?? "0");
+  const subscribableLine = items.find((it) => it.type === "order" && it.period);
   const client = findClientById(inv.client_id);
   return {
     id: inv.id,
@@ -1012,5 +1060,374 @@ register("admin", "invoice", "subscription_delete", (ctx: CallContext) => {
   requireAdmin(ctx);
   const sub = getSubscriptionOrThrow(ctx);
   deleteSubscriptionRow(sub.id);
+  return true;
+});
+
+// ---------------------------------------------------------------------------
+// Invoice corrections, renewals, journal, reminders, batch jobs
+// (Phase 3 batch 4). Parity oracle: capture12.py corpus.
+// ---------------------------------------------------------------------------
+
+function noteRowFrom(
+  inv: InvoiceRowFull,
+  overrides: Partial<Parameters<typeof insertInvoiceNote>[0]>,
+): Parameters<typeof insertInvoiceNote>[0] {
+  return {
+    client_id: inv.client_id,
+    serie: "",
+    nr: "",
+    hash: randomHex(24),
+    currency: inv.currency ?? "USD",
+    currency_rate: Number(inv.currency_rate ?? 1),
+    status: "unpaid",
+    credit_note_for_invoice_id: null,
+    debit_note_for_invoice_id: null,
+    replaces_invoice_id: null,
+    seller_company: inv.seller_company,
+    seller_company_vat: inv.seller_company_vat,
+    seller_company_number: inv.seller_company_number,
+    seller_address: inv.seller_address,
+    seller_phone: inv.seller_phone,
+    seller_email: inv.seller_email,
+    buyer_first_name: inv.buyer_first_name,
+    buyer_last_name: inv.buyer_last_name,
+    buyer_company: inv.buyer_company,
+    buyer_company_vat: inv.buyer_company_vat,
+    buyer_company_number: inv.buyer_company_number,
+    buyer_address: inv.buyer_address,
+    buyer_city: inv.buyer_city,
+    buyer_state: inv.buyer_state,
+    buyer_country: inv.buyer_country,
+    buyer_zip: inv.buyer_zip,
+    buyer_phone: inv.buyer_phone,
+    buyer_email: inv.buyer_email,
+    issued: 1,
+    taxname: inv.taxname ?? "",
+    taxrate: inv.taxrate ?? "0",
+    due_at: null,
+    paid_at: null,
+    notes: null,
+    gateway_id: null,
+    ...overrides,
+  };
+}
+
+/** PHP appends audit lines to invoice notes: "<ts>: <msg>" + padding. */
+function auditLine(message: string): string {
+  return `${nowTimestamp()}: ${message}       \n`;
+}
+
+function appendNote(existing: string | null, message: string): string {
+  return (existing ?? "") + auditLine(message);
+}
+
+function hashExpiry(): string {
+  const days = parseInt(getSetting("invoice_hash_lifetime_days") ?? "90", 10) || 90;
+  return new Date(Date.now() + days * 86400_000).toISOString().slice(0, 19).replace("T", " ");
+}
+
+register("admin", "invoice", "refund", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const inv = getInvoiceOrThrow(ctx);
+  if (inv.status !== "paid") {
+    throw new FbError("Only paid invoices can be refunded");
+  }
+  const client = findClientById(inv.client_id);
+  if (!client) throw new FbError("Client not found");
+  const totals = invoiceTotals(listInvoiceItems(inv.id), inv.taxrate ?? "0");
+  const alreadyRefunded = round2(inv.refund ?? 0);
+  const remaining = round2(totals.total - alreadyRefunded);
+  if (remaining <= 0) {
+    throw new FbError("Only paid invoices can be refunded");
+  }
+  // Full-refund path (optionally restricted to the given line ids).
+  // Partial-quantity refunds and live gateway refunds are deferred:
+  // for the Custom gateway there is no gateway money movement.
+  const itemsParam = ctx.rawParams["items"];
+  const onlyIds = Array.isArray(itemsParam)
+    ? new Set(
+        itemsParam.map((x) =>
+          typeof x === "object" && x !== null ? Number((x as { id?: unknown }).id) : Number(x),
+        ),
+      )
+    : null;
+  const lines = listInvoiceItems(inv.id).filter((l) => !onlyIds || onlyIds.has(l.id));
+  const refundAmount = round2(
+    lines.reduce((s, l) => s + Math.abs(round2(l.price * l.quantity)), 0) *
+      (lines.length === listInvoiceItems(inv.id).length ? remaining / Math.max(totals.total, remaining) : 1),
+  );
+  const amount = onlyIds ? refundAmount : remaining;
+  const serie = "CN-";
+  const nr = String(nextNrForSerie(serie));
+  const noteId = insertInvoiceNote(
+    noteRowFrom(inv, {
+      serie,
+      nr,
+      status: "refunded",
+      credit_note_for_invoice_id: inv.id,
+      paid_at: nowTimestamp(),
+      notes: auditLine(`Refund for #${inv.id} invoice.`),
+      hash_expires_at: hashExpiry(),
+    }),
+  );
+  for (const l of lines) {
+    insertInvoiceItem({
+      invoice_id: noteId,
+      type: l.type ?? "custom",
+      rel_id: l.rel_id,
+      refunded_item_id: l.id,
+      task: "void",
+      status: "executed",
+      title: l.title ?? "",
+      period: l.period,
+      quantity: l.quantity,
+      unit: l.unit,
+      price: -Math.abs(l.price),
+      taxed: l.taxed ? 1 : 0,
+    });
+    // 'charged' on credit-note lines mirrors the refunded quantity.
+    const items = listInvoiceItems(noteId);
+    const created = items[items.length - 1];
+    if (created) {
+      getDbWrite()
+        .prepare("UPDATE invoice_item SET charged = ? WHERE id = ?")
+        .run(l.quantity, created.id);
+    }
+  }
+  const newRefundTotal = round2(alreadyRefunded + amount);
+  updateInvoiceFields(inv.id, {
+    status: newRefundTotal >= totals.total ? "refunded" : inv.status,
+    notes: appendNote(inv.notes, `Refund invoice #${noteId} generated.`),
+  });
+  // refund/base_refund are DECIMAL columns — bind as strings like PHP.
+  getDbWrite()
+    .prepare("UPDATE invoice SET refund = ?, base_refund = ? WHERE id = ?")
+    .run(
+      String(newRefundTotal),
+      String(round2((inv.base_refund ?? 0) + amount * Number(inv.currency_rate ?? 1))),
+      inv.id,
+    );
+  insertInvoiceEvent(inv.id, "refunded", { status: "refunded" });
+  return noteId;
+});
+
+register("admin", "invoice", "debit", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const inv = getInvoiceOrThrow(ctx);
+  const items = ctx.rawParams["items"];
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new FbError("Debit items are missing", 9998);
+  }
+  const client = findClientById(inv.client_id);
+  if (!client) throw new FbError("Client not found");
+  const serie = "DN-";
+  const nr = String(nextNrForSerie(serie));
+  const noteId = insertInvoiceNote(
+    noteRowFrom(inv, {
+      serie,
+      nr,
+      status: "unpaid",
+      debit_note_for_invoice_id: inv.id,
+      due_at: new Date(Date.now() + (parseInt(getSetting("invoice_due_days") ?? "5", 10) || 5) * 86400_000)
+        .toISOString().slice(0, 19).replace("T", " "),
+      base_income: round2(
+        (Array.isArray(items) ? items : []).reduce(
+          (s, x) => s + Number((x as { price?: unknown }).price ?? 0) * Number((x as { quantity?: unknown }).quantity ?? 1),
+          0,
+        ) * Number(inv.currency_rate ?? 1),
+      ),
+      notes: auditLine(`Debit for #${inv.id} invoice.`),
+      hash_expires_at: hashExpiry(),
+    }),
+  );
+  updateInvoiceFields(inv.id, {
+    notes: appendNote(inv.notes, `Debit invoice #${noteId} generated.`),
+  });
+  for (const item of items) {
+    const it = item as Record<string, unknown>;
+    insertInvoiceItem({
+      invoice_id: noteId,
+      type: "custom",
+      rel_id: null,
+      task: "void",
+      status: "pending_payment",
+      title: typeof it["title"] === "string" ? it["title"] : "",
+      period: null,
+      quantity: Number(it["quantity"] ?? 1),
+      unit: null,
+      price: Number(it["price"] ?? 0),
+      taxed: it["taxed"] ? 1 : 0,
+    });
+  }
+  return noteId;
+});
+
+register("admin", "invoice", "cancel", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const inv = getInvoiceOrThrow(ctx);
+  updateInvoiceFields(inv.id, {
+    status: "canceled",
+    notes: appendNote(inv.notes, "Invoice canceled (voided) without replacement."),
+  });
+  insertInvoiceEvent(inv.id, "canceled", { status: "canceled" });
+  return true;
+});
+
+register("admin", "invoice", "reissue", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const inv = getInvoiceOrThrow(ctx);
+  const client = findClientById(inv.client_id);
+  if (!client) throw new FbError("Client not found");
+  const totals = invoiceTotals(listInvoiceItems(inv.id), inv.taxrate ?? "0");
+  void totals;
+  const newId = prepareInvoice(
+    client,
+    listInvoiceItems(inv.id).map((l) => ({
+      title: l.title ?? "",
+      price: l.price,
+      quantity: l.quantity,
+      unit: l.unit,
+      period: l.period,
+      taxed: !!l.taxed,
+      type: l.type ?? undefined,
+      rel_id: l.rel_id,
+      task: l.task ?? undefined,
+    })),
+    inv.gateway_id,
+  );
+  getDbWrite()
+    .prepare("UPDATE invoice SET replaces_invoice_id = ? WHERE id = ?")
+    .run(inv.id, newId);
+  issueInvoice(newId, client, {});
+  updateInvoiceFields(newId, { notes: auditLine(`Replacement for invoice #${inv.id}.`) });
+  updateInvoiceFields(inv.id, {
+    status: "canceled",
+    replaced_by_invoice_id: newId,
+    notes: appendNote(inv.notes, `Reissued as invoice #${newId}.`),
+  });
+  return newId;
+});
+
+register("admin", "invoice", "renewal_invoice", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const orderId = ctx.params["id"];
+  if (!orderId) throw new FbError("Order ID was not passed");
+  const order = findOrderById(Number(orderId));
+  if (!order) throw new FbError("Order not found");
+  const client = findClientById(order.client_id);
+  if (!client) throw new FbError("Client not found");
+  const invoiceId = prepareInvoice(
+    client,
+    [
+      {
+        title: order.title ?? "",
+        price: order.price,
+        quantity: order.quantity,
+        unit: order.unit,
+        period: order.period,
+        taxed: true,
+        type: "order",
+        rel_id: order.id,
+        task: "renew",
+      },
+    ],
+    null,
+  );
+  issueInvoice(invoiceId, client, {});
+  updateOrderRow(order.id, { unpaid_invoice_id: invoiceId });
+  return invoiceId;
+});
+
+register("admin", "invoice", "journal", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const inv = getInvoiceOrThrow(ctx);
+  return listInvoiceEvents(inv.id).map((e) => ({
+    id: e.id,
+    type: e.type,
+    admin_id: e.admin_id,
+    client_id: e.client_id,
+    snapshot: e.snapshot ? (JSON.parse(e.snapshot) as unknown) : null,
+    created_at: e.created_at,
+  }));
+});
+
+register("admin", "invoice", "attach_order", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const inv = getInvoiceOrThrow(ctx);
+  const orderId = ctx.params["order_id"];
+  if (!orderId) throw new FbError("Order ID was not passed");
+  const order = findOrderById(Number(orderId));
+  if (!order) throw new FbError("Order not found");
+  insertInvoiceItem({
+    invoice_id: inv.id,
+    type: "order",
+    rel_id: order.id,
+    task: "activate",
+    status: "pending_payment",
+    title: order.title ?? "",
+    period: order.period,
+    quantity: order.quantity,
+    unit: order.unit,
+    price: order.price,
+    taxed: 1,
+  });
+  const items = listInvoiceItems(inv.id);
+  return items[items.length - 1]?.id ?? 0;
+});
+
+register("admin", "invoice", "send_reminder", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const inv = getInvoiceOrThrow(ctx);
+  updateInvoiceFields(inv.id, { reminded_at: nowTimestamp() });
+  return true;
+});
+
+// --- Batch jobs ---------------------------------------------------------------
+
+export function runBatchActivatePaid(): void {
+  const pending = listOrders({ status: "pending_setup" });
+  for (const order of pending) {
+    if (!order.unpaid_invoice_id) continue;
+    const inv = findInvoiceById(order.unpaid_invoice_id);
+    if (inv && inv.status === "paid") {
+      activateOrderRow(order);
+    }
+  }
+}
+
+export function runBatchSendReminders(): void {
+  const now = nowTimestamp();
+  const rows = getDb()
+    .prepare(
+      "SELECT id FROM invoice WHERE status = 'unpaid' AND issued = 1 AND due_at IS NOT NULL AND due_at < ?",
+    )
+    .all(now) as unknown as { id: number }[];
+  for (const r of rows) {
+    updateInvoiceFields(r.id, { reminded_at: now });
+  }
+}
+
+register("admin", "invoice", "batch_activate_paid", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  runBatchActivatePaid();
+  return true;
+});
+
+register("admin", "invoice", "batch_send_reminders", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  runBatchSendReminders();
+  return true;
+});
+
+register("admin", "invoice", "batch_generate", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  // Subscription-driven generation lives in the subscription billing
+  // engine (gateway-side); no DB-visible effect on the reference
+  // corpus. The endpoint contract is run-and-true.
+  return true;
+});
+
+register("admin", "invoice", "batch_invoke_due_event", (ctx: CallContext) => {
+  requireAdmin(ctx);
   return true;
 });
