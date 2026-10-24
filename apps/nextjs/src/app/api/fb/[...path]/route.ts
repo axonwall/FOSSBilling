@@ -99,10 +99,12 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
           params,
           session,
           hasSessionCookie: !!cookieHeader?.includes("fossbilling_session="),
+          setCookies: [] as string[],
         };
         enforceCsrf(callCtx, params["CSRFToken"] ?? req.headers.get("x-csrf-token") ?? undefined);
         const result = await handler(callCtx);
         const tsResponse = envelope(result);
+        for (const c of callCtx.setCookies) tsResponse.headers.append("set-cookie", c);
 
         if (process.env.FB_PARITY === "1") {
           try {

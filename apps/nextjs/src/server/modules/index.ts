@@ -10,5 +10,7 @@ import "./staff";
 import "./activity";
 import "./news";
 import "./custompages";
+import "./product";
+import "./cart";
 
 export { findHandler, tsModulesEnabled } from "../dispatch";

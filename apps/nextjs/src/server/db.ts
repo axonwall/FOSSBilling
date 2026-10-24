@@ -1,4 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
+import { statSync } from "node:fs";
 
 /**
  * Data layer for the TS-ported modules. Phase 2 shares the existing
@@ -11,18 +12,44 @@ import { DatabaseSync } from "node:sqlite";
  */
 
 let db: DatabaseSync | null = null;
+let dbIno: bigint | null = null;
 
-export function getDb(): DatabaseSync {
-  if (db) return db;
+function dbPath(): string {
   const path = process.env.FB_DATABASE_PATH;
   if (!path) {
     throw new Error(
       "FB_DATABASE_PATH is not set: TS-ported modules need the FOSSBilling database file (SQLite in the reference setup).",
     );
   }
+  return path;
+}
+
+/** The fixture harness restores the DB by replacing the file; a cached
+ * connection would keep reading the unlinked inode. Reopen on change. */
+function fileIno(path: string): bigint | null {
+  try {
+    return statSync(path, { bigint: true }).ino;
+  } catch {
+    return null;
+  }
+}
+
+export function getDb(): DatabaseSync {
+  const path = dbPath();
+  const ino = fileIno(path);
+  if (db && ino !== null && dbIno !== null && ino !== dbIno) {
+    try { db.close(); } catch { /* already closed */ }
+    db = null;
+    if (dbWrite) {
+      try { dbWrite.close(); } catch { /* already closed */ }
+      dbWrite = null;
+    }
+  }
+  if (db) return db;
   // timeout = SQLite busy timeout: PHP writes session rows concurrently,
   // so a TS read must wait out brief locks instead of failing the call.
   db = new DatabaseSync(path, { readOnly: true, timeout: 5000 });
+  dbIno = ino;
   return db;
 }
 
@@ -87,14 +114,9 @@ let dbWrite: DatabaseSync | null = null;
 
 /** Write connection (mutations). Opened lazily — reads never touch it. */
 export function getDbWrite(): DatabaseSync {
+  getDb(); // keeps both connections on the same file generation
   if (dbWrite) return dbWrite;
-  const path = process.env.FB_DATABASE_PATH;
-  if (!path) {
-    throw new Error(
-      "FB_DATABASE_PATH is not set: TS-ported modules need the FOSSBilling database file (SQLite in the reference setup).",
-    );
-  }
-  dbWrite = new DatabaseSync(path, { timeout: 5000 });
+  dbWrite = new DatabaseSync(dbPath(), { timeout: 5000 });
   return dbWrite;
 }
 
@@ -772,6 +794,15 @@ export interface SessionRow {
   lifetime: number;
 }
 
+export function insertSession(id: string, content: string, lifetime: number): void {
+  const now = Math.floor(Date.now() / 1000);
+  getDbWrite()
+    .prepare(
+      "INSERT INTO session (id, modified_at, created_at, content, lifetime, fingerprint) VALUES (?, ?, ?, ?, ?, NULL)",
+    )
+    .run(id, now, now, content, lifetime);
+}
+
 export function findSession(id: string): SessionRow | undefined {
   const row = getDb()
     .prepare("SELECT id, content, lifetime FROM session WHERE id = ?")
@@ -783,4 +814,505 @@ export function findSession(id: string): SessionRow | undefined {
   const content =
     typeof row.content === "string" ? row.content : new TextDecoder().decode(row.content);
   return { id: row.id, content, lifetime: row.lifetime };
+}
+
+// ---------------------------------------------------------------------------
+// Money path (Phase 3): products, carts, promos, orders, invoices.
+// ---------------------------------------------------------------------------
+
+export interface ProductRow {
+  id: number;
+  form_id: number | null;
+  title: string;
+  slug: string | null;
+  description: string | null;
+  unit: string | null;
+  active: number;
+  status: string | null;
+  hidden: number;
+  is_addon: number;
+  setup: string | null;
+  addons: string | null;
+  icon_url: string | null;
+  allow_quantity_select: number;
+  stock_control: number;
+  quantity_in_stock: number;
+  suspension_grace_days: number | null;
+  plugin: string | null;
+  plugin_config: string | null;
+  upgrades: string | null;
+  priority: number | null;
+  config: string | null;
+  type: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  product_category_id: number | null;
+  product_payment_id: number | null;
+}
+
+const PRODUCT_COLS =
+  "id, form_id, title, slug, description, unit, active, status, hidden, is_addon, setup, addons, icon_url, allow_quantity_select, stock_control, quantity_in_stock, suspension_grace_days, plugin, plugin_config, upgrades, priority, config, type, created_at, updated_at, product_category_id, product_payment_id";
+
+export function findProductById(id: number): ProductRow | undefined {
+  return getDb().prepare(`SELECT ${PRODUCT_COLS} FROM product WHERE id = ?`).get(id) as
+    | ProductRow
+    | undefined;
+}
+
+export function listAllProducts(): ProductRow[] {
+  return getDb().prepare(`SELECT ${PRODUCT_COLS} FROM product ORDER BY priority ASC, id ASC`).all() as unknown as ProductRow[];
+}
+
+export interface ProductPaymentRow {
+  id: number;
+  type: string;
+  once_price: number | null;
+  once_setup_price: number | null;
+}
+
+export function findProductPayment(id: number): ProductPaymentRow | undefined {
+  return getDb()
+    .prepare("SELECT id, type, once_price, once_setup_price FROM product_payment WHERE id = ?")
+    .get(id) as ProductPaymentRow | undefined;
+}
+
+export interface ProductPeriodRow {
+  id: number;
+  code: string;
+  price: number;
+  setup_price: number;
+  enabled: number;
+  sort_order: number | null;
+  product_payment_id: number;
+}
+
+export function listProductPeriods(paymentId: number): ProductPeriodRow[] {
+  return getDb()
+    .prepare(
+      "SELECT id, code, price, setup_price, enabled, sort_order, product_payment_id FROM product_payment_period WHERE product_payment_id = ? ORDER BY sort_order ASC, id ASC",
+    )
+    .all(paymentId) as unknown as ProductPeriodRow[];
+}
+
+export interface CategoryRow {
+  id: number;
+  title: string;
+  description: string | null;
+  icon_url: string | null;
+  priority: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export function listCategories(): CategoryRow[] {
+  return getDb()
+    .prepare("SELECT id, title, description, icon_url, priority, created_at, updated_at FROM product_category ORDER BY id ASC")
+    .all() as unknown as CategoryRow[];
+}
+
+export function findTldRegistrar(id: number): { id: number; title: string } | undefined {
+  return getDb()
+    .prepare("SELECT id, name AS title FROM tld_registrar WHERE id = ?")
+    .get(id) as { id: number; title: string } | undefined;
+}
+
+export function listTlds(): {
+  tld: string;
+  price_registration: string;
+  price_renew: string;
+  price_transfer: string;
+  allow_register: number;
+  allow_transfer: number;
+  min_years: number;
+  periods: string | null;
+  tld_registrar_id: number | null;
+}[] {
+  // Prices are DECIMAL in PHP (returned as strings); SQLite stores them
+  // as REAL, so format back to the scale-2 string form.
+  return getDb()
+    .prepare(
+      `SELECT tld, printf('%.2f', price_registration) AS price_registration,
+              printf('%.2f', price_renew) AS price_renew,
+              printf('%.2f', price_transfer) AS price_transfer,
+              allow_register, allow_transfer, min_years, periods, tld_registrar_id
+       FROM tld WHERE active = 1 ORDER BY tld ASC`,
+    )
+    .all() as never[];
+}
+
+export interface CartRow {
+  id: number;
+  session_id: string;
+  currency_id: number | null;
+  promo_id: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export function findCartBySession(sessionId: string): CartRow | undefined {
+  return getDb()
+    .prepare("SELECT id, session_id, currency_id, promo_id, created_at, updated_at FROM cart WHERE session_id = ?")
+    .get(sessionId) as CartRow | undefined;
+}
+
+export function insertCart(sessionId: string, currencyId: number): number {
+  const now = nowTimestamp();
+  const info = getDbWrite()
+    .prepare("INSERT INTO cart (session_id, currency_id, promo_id, created_at, updated_at) VALUES (?, ?, NULL, ?, ?)")
+    .run(sessionId, currencyId, now, now);
+  return Number(info.lastInsertRowid);
+}
+
+export function updateCartRow(id: number, fields: { currency_id?: number; promo_id?: number | null }): void {
+  const sets: string[] = [];
+  const vals: unknown[] = [];
+  if (fields.currency_id !== undefined) { sets.push("currency_id = ?"); vals.push(fields.currency_id); }
+  if (fields.promo_id !== undefined) { sets.push("promo_id = ?"); vals.push(fields.promo_id); }
+  if (sets.length === 0) return;
+  sets.push("updated_at = ?");
+  vals.push(nowTimestamp(), id);
+  getDbWrite().prepare(`UPDATE cart SET ${sets.join(", ")} WHERE id = ?`).run(...(vals as never[]));
+}
+
+export function deleteCartRow(id: number): void {
+  const w = getDbWrite();
+  w.prepare("DELETE FROM cart_product WHERE cart_id = ?").run(id);
+  w.prepare("DELETE FROM cart WHERE id = ?").run(id);
+}
+
+export interface CartProductRow {
+  id: number;
+  product_id: number;
+  config: string | null;
+  cart_id: number;
+}
+
+export function listCartProducts(cartId: number): CartProductRow[] {
+  return getDb()
+    .prepare("SELECT id, product_id, config, cart_id FROM cart_product WHERE cart_id = ? ORDER BY id ASC")
+    .all(cartId) as unknown as CartProductRow[];
+}
+
+export function insertCartProduct(cartId: number, productId: number, config: string): number {
+  const info = getDbWrite()
+    .prepare("INSERT INTO cart_product (product_id, config, cart_id) VALUES (?, ?, ?)")
+    .run(productId, config, cartId);
+  return Number(info.lastInsertRowid);
+}
+
+export function deleteCartProductRow(id: number): void {
+  getDbWrite().prepare("DELETE FROM cart_product WHERE id = ?").run(id);
+}
+
+export function clearCartProducts(cartId: number): void {
+  getDbWrite().prepare("DELETE FROM cart_product WHERE cart_id = ?").run(cartId);
+}
+
+export interface PromoRow {
+  id: number;
+  code: string;
+  description: string | null;
+  type: string;
+  value: number;
+  maxuses: number | null;
+  used: number | null;
+  freesetup: number;
+  once_per_client: number;
+  recurring: number;
+  active: number;
+  products: string | null;
+  periods: string | null;
+  client_groups: string | null;
+  requires_products: string | null;
+  start_at: string | null;
+  end_at: string | null;
+  auto_apply: number;
+  priority: number | null;
+  stackable: number;
+}
+
+const PROMO_COLS =
+  "id, code, description, type, value, maxuses, used, freesetup, once_per_client, recurring, active, products, periods, client_groups, requires_products, start_at, end_at, auto_apply, priority, stackable";
+
+export function findPromoByCode(code: string): PromoRow | undefined {
+  return getDb().prepare(`SELECT ${PROMO_COLS} FROM promo WHERE code = ?`).get(code) as
+    | PromoRow
+    | undefined;
+}
+
+export function findPromoById(id: number): PromoRow | undefined {
+  return getDb().prepare(`SELECT ${PROMO_COLS} FROM promo WHERE id = ?`).get(id) as
+    | PromoRow
+    | undefined;
+}
+
+export function incrementPromoUsed(id: number): void {
+  getDbWrite().prepare("UPDATE promo SET used = COALESCE(used, 0) + 1 WHERE id = ?").run(id);
+}
+
+export function insertPromoRedemption(row: {
+  promo_id: number;
+  client_id: number;
+  client_order_id: number | null;
+  invoice_id: number | null;
+  phase: string | null;
+  status: string;
+  discount_amount: number;
+  currency: string;
+}): void {
+  const now = nowTimestamp();
+  getDbWrite()
+    .prepare(
+      "INSERT INTO promo_redemption (promo_id, client_id, client_order_id, invoice_id, phase, status, discount_amount, currency, committed_at, released_at, release_reason, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, ?, ?)",
+    )
+    .run(row.promo_id, row.client_id, row.client_order_id, row.invoice_id, row.phase, row.status, row.discount_amount, row.currency, now, now);
+}
+
+export function countPromoRedemptionsForClient(promoId: number, clientId: number): number {
+  const row = getDb()
+    .prepare("SELECT COUNT(*) AS n FROM promo_redemption WHERE promo_id = ? AND client_id = ? AND status != 'released'")
+    .get(promoId, clientId) as { n: number } | undefined;
+  return row?.n ?? 0;
+}
+
+export interface TaxRuleRow {
+  id: number;
+  name: string | null;
+  country: string | null;
+  state: string | null;
+  taxrate: string;
+}
+
+export function findTaxRule(state: string | null, country: string | null): TaxRuleRow | undefined {
+  return getDb()
+    .prepare("SELECT id, name, country, state, taxrate FROM tax WHERE state IS ? AND country IS ?")
+    .get(state, country) as TaxRuleRow | undefined;
+}
+
+export function findTaxRuleByCountry(country: string): TaxRuleRow | undefined {
+  // Mirrors TaxRepository::findOneByCountry: ANY rule with this country
+  // (a state-specific rule can be the first match — PHP parity quirk).
+  return getDb()
+    .prepare("SELECT id, name, country, state, taxrate FROM tax WHERE country = ? ORDER BY id ASC")
+    .get(country) as TaxRuleRow | undefined;
+}
+
+export function findGlobalTaxRule(): TaxRuleRow | undefined {
+  return getDb()
+    .prepare(
+      "SELECT id, name, country, state, taxrate FROM tax WHERE (country IS NULL OR country = '') AND (state IS NULL OR state = '') ORDER BY id ASC",
+    )
+    .get() as TaxRuleRow | undefined;
+}
+
+export function insertOrder(row: {
+  client_id: number;
+  product_id: number;
+  form_id: number | null;
+  promo_id: number | null;
+  promo_recurring?: number | null;
+  promo_used?: number | null;
+  group_id: string | null;
+  group_master: number;
+  invoice_option: string;
+  title: string;
+  currency: string;
+  unpaid_invoice_id: number | null;
+  service_type: string | null;
+  period: string | null;
+  quantity: number | null;
+  unit: string | null;
+  price: number;
+  discount: number;
+  status: string;
+  notes: string | null;
+  config: string;
+  suspension_grace_days: number | null;
+}): number {
+  const now = nowTimestamp();
+  const info = getDbWrite()
+    .prepare(
+      `INSERT INTO client_order (client_id, product_id, form_id, promo_id, promo_recurring, promo_used, group_id, group_master, invoice_option, title, currency, unpaid_invoice_id, service_id, service_type, period, quantity, unit, price, discount, status, reason, notes, config, suspension_grace_days, referred_by, expires_at, activated_at, suspended_at, unsuspended_at, canceled_at, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, ?, ?)`,
+    )
+    .run(
+      row.client_id, row.product_id, row.form_id, row.promo_id, row.promo_recurring ?? null,
+      row.promo_used ?? null, row.group_id, row.group_master,
+      row.invoice_option, row.title, row.currency, row.unpaid_invoice_id, row.service_type,
+      row.period, row.quantity, row.unit, row.price, row.discount, row.status, row.notes,
+      row.config, row.suspension_grace_days, now, now,
+    );
+  return Number(info.lastInsertRowid);
+}
+
+export function updateOrderUnpaidInvoice(id: number, invoiceId: number): void {
+  getDbWrite()
+    .prepare("UPDATE client_order SET unpaid_invoice_id = ?, updated_at = ? WHERE id = ?")
+    .run(invoiceId, nowTimestamp(), id);
+}
+
+export function insertOrderStatus(orderId: number, status: string, notes: string | null): void {
+  const now = nowTimestamp();
+  getDbWrite()
+    .prepare("INSERT INTO client_order_status (status, notes, created_at, updated_at, client_order_id) VALUES (?, ?, ?, ?, ?)")
+    .run(status, notes, now, now, orderId);
+}
+
+export function insertInvoice(row: {
+  client_id: number;
+  serie: string | null;
+  nr: string;
+  hash: string;
+  hash_expires_at: string;
+  currency: string;
+  currency_rate: number;
+  credit: number;
+  status: string;
+  taxname: string;
+  taxrate: string;
+  gateway_id: number | null;
+  due_at: string;
+  notes: string | null;
+}): number {
+  const now = nowTimestamp();
+  const info = getDbWrite()
+    .prepare(
+      `INSERT INTO invoice (client_id, serie, nr, hash, currency, currency_rate, credit, base_income, base_refund, refund, notes, text_1, text_2, status, credit_note_for_invoice_id, debit_note_for_invoice_id, replaces_invoice_id, replaced_by_invoice_id, seller_company, seller_company_vat, seller_company_number, seller_address, seller_phone, seller_email, buyer_first_name, buyer_last_name, buyer_company, buyer_company_vat, buyer_company_number, buyer_address, buyer_city, buyer_state, buyer_country, buyer_zip, buyer_phone, buyer_email, issued, taxname, taxrate, due_at, reminded_at, paid_at, hash_expires_at, created_at, updated_at, gateway_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, NULL, NULL, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, ?, ?, ?, NULL, NULL, ?, ?, ?, ?)`,
+    )
+    .run(
+      row.client_id, row.serie, row.nr, row.hash, row.currency, row.currency_rate, row.credit,
+      row.notes, row.status, row.taxname, row.taxrate, row.due_at, row.hash_expires_at, now, now,
+      row.gateway_id,
+    );
+  return Number(info.lastInsertRowid);
+}
+
+export function insertInvoiceItem(row: {
+  invoice_id: number;
+  type: string;
+  rel_id: number | null;
+  task: string;
+  status: string;
+  title: string;
+  period: string | null;
+  quantity: number;
+  unit: string | null;
+  price: number;
+  taxed: number;
+}): number {
+  const now = nowTimestamp();
+  const info = getDbWrite()
+    .prepare(
+      `INSERT INTO invoice_item (type, rel_id, refunded_item_id, task, status, title, period, quantity, unit, price, charged, taxed, attempts, created_at, updated_at, invoice_id)
+       VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, 0, ?, 0, ?, ?, ?)`,
+    )
+    .run(row.type, row.rel_id, row.task, row.status, row.title, row.period, row.quantity, row.unit, row.price, row.taxed, now, now, row.invoice_id);
+  return Number(info.lastInsertRowid);
+}
+
+export function updateInvoiceRow(
+  id: number,
+  fields: Partial<{
+    status: string;
+    issued: number;
+    paid_at: string | null;
+    buyer_first_name: string | null;
+    buyer_last_name: string | null;
+    buyer_company: string | null;
+    buyer_company_vat: string | null;
+    buyer_company_number: string | null;
+    buyer_address: string | null;
+    buyer_city: string | null;
+    buyer_state: string | null;
+    buyer_country: string | null;
+    buyer_zip: string | null;
+    buyer_phone: string | null;
+    buyer_email: string | null;
+    seller_company: string | null;
+    seller_company_vat: string | null;
+    seller_company_number: string | null;
+    seller_address: string | null;
+    seller_phone: string | null;
+    seller_email: string | null;
+  }>,
+): void {
+  const entries = Object.entries(fields);
+  if (entries.length === 0) return;
+  const sets = entries.map(([k]) => `${k} = ?`).join(", ");
+  const vals = entries.map(([, v]) => v);
+  getDbWrite()
+    .prepare(`UPDATE invoice SET ${sets}, updated_at = ? WHERE id = ?`)
+    .run(...(vals as never[]), nowTimestamp(), id);
+}
+
+export function maxInvoiceNr(serie: string | null): number {
+  const row = getDb()
+    .prepare("SELECT MAX(CAST(nr AS INTEGER)) AS m FROM invoice WHERE serie IS ?")
+    .get(serie) as { m: number | null } | undefined;
+  return row?.m ?? 0;
+}
+
+export function invoiceNrExists(serie: string | null, nr: string): boolean {
+  const row = getDb()
+    .prepare("SELECT COUNT(*) AS n FROM invoice WHERE serie IS ? AND nr = ?")
+    .get(serie, nr) as { n: number } | undefined;
+  return (row?.n ?? 0) > 0;
+}
+
+export function insertInvoiceEvent(invoiceId: number, type: string, snapshot: unknown): void {
+  getDbWrite()
+    .prepare(
+      "INSERT INTO invoice_event (invoice_id, type, admin_id, client_id, snapshot, created_at) VALUES (?, ?, NULL, NULL, ?, ?)",
+    )
+    .run(invoiceId, type, JSON.stringify(snapshot), nowTimestamp());
+}
+
+export function listInvoiceItems(invoiceId: number): {
+  id: number; type: string | null; rel_id: number | null; task: string | null;
+  status: string | null; title: string | null; period: string | null;
+  quantity: number; unit: string | null; price: number; charged: number; taxed: number;
+}[] {
+  return getDb()
+    .prepare(
+      "SELECT id, type, rel_id, task, status, title, period, quantity, unit, price, charged, taxed FROM invoice_item WHERE invoice_id = ? ORDER BY id ASC",
+    )
+    .all(invoiceId) as never[];
+}
+
+export function findInvoiceRow(id: number): Record<string, unknown> | undefined {
+  return getDb().prepare("SELECT * FROM invoice WHERE id = ?").get(id) as
+    | Record<string, unknown>
+    | undefined;
+}
+
+export function markInvoiceItemsCharged(invoiceId: number): void {
+  getDbWrite()
+    .prepare("UPDATE invoice_item SET charged = price * quantity, updated_at = ? WHERE invoice_id = ?")
+    .run(nowTimestamp(), invoiceId);
+}
+
+export function setSettingValue(param: string, value: string): void {
+  upsertSetting(param, value);
+}
+
+export function setClientCurrency(clientId: number, currency: string): void {
+  getDbWrite()
+    .prepare("UPDATE client SET currency = ?, updated_at = ? WHERE id = ?")
+    .run(currency, nowTimestamp(), clientId);
+}
+
+export function insertBalanceRow(row: {
+  client_id: number;
+  type: string;
+  rel_id: number | null;
+  amount: number;
+  description: string;
+}): void {
+  const now = nowTimestamp();
+  getDbWrite()
+    .prepare(
+      "INSERT INTO client_balance (type, rel_id, invoice_item_id, amount, description, created_at, updated_at, client_id) VALUES (?, ?, NULL, ?, ?, ?, ?, ?)",
+    )
+    .run(row.type, row.rel_id, row.amount, row.description, now, now, row.client_id);
 }

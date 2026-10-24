@@ -1,0 +1,128 @@
+[
+  {
+    "name": "guest_product_get_list",
+    "route": "/api/guest/product/get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_product_get_pairs",
+    "route": "/api/guest/product/get_pairs",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_product_get_once",
+    "route": "/api/guest/product/get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_product_get_recurring",
+    "route": "/api/guest/product/get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_product_get_missing",
+    "route": "/api/guest/product/get",
+    "ok": false,
+    "error": "Product not found"
+  },
+  {
+    "name": "guest_product_category_get_list",
+    "route": "/api/guest/product/category_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_product_category_get_pairs",
+    "route": "/api/guest/product/category_get_pairs",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_cart_reset",
+    "route": "/api/guest/cart/reset",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_cart_get_empty",
+    "route": "/api/guest/cart/get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_cart_add_once",
+    "route": "/api/guest/cart/add_item",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_cart_get_once",
+    "route": "/api/guest/cart/get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_cart_add_recurring",
+    "route": "/api/guest/cart/add_item",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_cart_get_two_items",
+    "route": "/api/guest/cart/get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_cart_get_probe",
+    "route": "/api/guest/cart/get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_cart_remove_item",
+    "route": "/api/guest/cart/remove_item",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_cart_get_after_remove",
+    "route": "/api/guest/cart/get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_cart_get_currency",
+    "route": "/api/guest/cart/get_currency",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_cart_apply_promo_missing",
+    "route": "/api/guest/cart/apply_promo",
+    "ok": false,
+    "error": "The promo code has expired or does not exist"
+  },
+  {
+    "name": "guest_staff_login",
+    "route": "/api/guest/staff/login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_product_get_list",
+    "route": "/api/admin/product/get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_product_get",
+    "route": "/api/admin/product/get",
+    "ok": true,
+    "error": null
+  }
+]

@@ -61,7 +61,7 @@ Expectations were extracted from the Pest money suites
 (`ServiceTaxTest`, Cart/Invoice service tests) and from live probes;
 each fixture names its source.
 
-Current corpus (12 fixtures, all passing on PHP):
+Current corpus (13 fixtures, all passing on PHP):
 
 - **tax**: state-beats-country-and-global, country rule, global
   fallback, no rule → 0, tax-exempt client, tax disabled globally.

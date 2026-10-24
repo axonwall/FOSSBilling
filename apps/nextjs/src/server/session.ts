@@ -1,5 +1,7 @@
-import { findSession } from "./db";
-import { parseSessionContent } from "./php-serialize";
+import { randomBytes } from "node:crypto";
+import { findSession, insertSession } from "./db";
+import { parseSessionContent, phpSerialize } from "./php-serialize";
+import type { CallContext } from "./dispatch";
 
 /**
  * PHP-session authentication for TS-ported modules.
@@ -65,4 +67,22 @@ export function readSession(cookieHeader: string | null): SessionInfo | null {
     }
   }
   return info;
+}
+
+/**
+ * The session a handler should use, creating one when the request has
+ * none — the PHP cart does exactly this (a guest cart needs a session
+ * row before anything can be stored against it). The new row carries an
+ * empty Symfony attribute bag; the cookie is queued on the context so
+ * the route can attach it to the response.
+ */
+export function ensureSession(ctx: CallContext): SessionInfo {
+  if (ctx.session) return ctx.session;
+  const id = randomBytes(16).toString("hex");
+  const empty = phpSerialize({});
+  const content = `_sf2_attributes|${empty}_symfony_flashes|${empty}_sf2_meta|${empty}`;
+  insertSession(id, content, Math.floor(Date.now() / 1000) + 86400);
+  ctx.setCookies.push(`fossbilling_session=${id}; Path=/; HttpOnly; SameSite=Lax`);
+  ctx.session = { id };
+  return ctx.session;
 }

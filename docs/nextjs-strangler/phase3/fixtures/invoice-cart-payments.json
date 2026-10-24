@@ -411,6 +411,65 @@
           }
         }
       ]
+    },
+    {
+      "id": "cart-recurring-with-setup-checkout",
+      "source": "Cart Service::checkoutCart with a recurrent product (period price + setup fee lines)",
+      "seed_sql": [],
+      "steps": [
+        {
+          "call": "guest/cart/reset"
+        },
+        {
+          "call": "guest/cart/add_item",
+          "params": {
+            "id": 9,
+            "period": "1M"
+          }
+        },
+        {
+          "call": "guest/cart/get"
+        },
+        {
+          "as": "client",
+          "call": "client/cart/checkout",
+          "params": {
+            "gateway_id": 1
+          },
+          "save": {
+            "invhash": "result.invoice_hash"
+          }
+        },
+        {
+          "as": "client",
+          "call": "client/invoice/get",
+          "params": {
+            "hash": "$invhash"
+          }
+        }
+      ],
+      "expect": [
+        {
+          "step": 2,
+          "path": "result.subtotal",
+          "eq": 20
+        },
+        {
+          "step": 2,
+          "path": "result.total",
+          "eq": 20
+        },
+        {
+          "step": 4,
+          "path": "result.total",
+          "eq": 20
+        },
+        {
+          "step": 4,
+          "path": "result.status",
+          "eq": "unpaid"
+        }
+      ]
     }
   ]
 }

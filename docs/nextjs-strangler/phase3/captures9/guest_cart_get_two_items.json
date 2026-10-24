@@ -1,0 +1,58 @@
+{
+  "result": {
+    "promocode": null,
+    "promo_source": null,
+    "auto_promos": [],
+    "discount": 0,
+    "subtotal": 30,
+    "total": 30,
+    "items": [
+      {
+        "__cart_family": "9aff10de6e76509bf7556b36fe32c5b3",
+        "id": 8,
+        "product_id": 3,
+        "form_id": null,
+        "title": "Phase0 Widget Hosting",
+        "type": "custom",
+        "quantity": 1,
+        "unit": "product",
+        "price": 10,
+        "setup_price": 0,
+        "discount": 0,
+        "discount_price": 0,
+        "discount_setup": 0,
+        "total": 10
+      },
+      {
+        "period": "1M",
+        "multiple": "1",
+        "__cart_family": "5832acb481e57afdc1eb3b99df8b2320",
+        "id": 9,
+        "product_id": 9,
+        "form_id": null,
+        "title": "Phase3 Recurring Widget",
+        "type": "custom",
+        "quantity": 1,
+        "unit": "product",
+        "price": 15,
+        "setup_price": 5,
+        "discount": 0,
+        "discount_price": 0,
+        "discount_setup": 0,
+        "total": 15
+      }
+    ],
+    "currency": {
+      "code": "USD",
+      "name": "US Dollar",
+      "symbol": "$",
+      "conversion_rate": 1,
+      "is_rate_manual": false,
+      "format_pattern": null,
+      "fraction_digits": null,
+      "default": true
+    },
+    "subscribable": false
+  },
+  "error": null
+}

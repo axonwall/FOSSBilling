@@ -23,11 +23,15 @@ Mechanics:
 import json, os, pathlib, shutil, signal, socket, sqlite3, subprocess, sys, time
 import urllib.request, urllib.parse, http.cookiejar
 
+import os
 SCRATCH = pathlib.Path(os.environ.get("FB_SCRATCH", str(pathlib.Path.home() / "scratch" / "fossbilling")))
 RUNTIME_SRC = SCRATCH / "runtime" / "src"
 DISPO = SCRATCH / "disposable"
 PORT = 8081
 BASE = f"http://127.0.0.1:{PORT}"
+STACK = "php"
+API_BASE = BASE
+API_PREFIX = "/api"
 HERE = pathlib.Path(__file__).parent
 SNAPSHOT = DISPO / "snapshot.sqlite"
 
@@ -139,7 +143,7 @@ class Jar:
 
     def call(self, route, params=None, as_json=False):
         role, module, method = route.split("/")
-        url = f"{BASE}/api/{role}/{module}/{method}"
+        url = f"{API_BASE}{API_PREFIX}/{role}/{module}/{method}"
         if as_json:
             body = json.dumps(params or {}).encode()
             req = urllib.request.Request(url, data=body, method="POST")
@@ -204,7 +208,8 @@ def run_fixture(fx):
     con.close()
 
     jar = Jar()
-    jar.op.open(f"{BASE}/login", timeout=20).read()
+    prime = f"{API_BASE}{API_PREFIX}/__prime" if STACK == "next" else f"{BASE}/login"
+    jar.op.open(prime, timeout=20).read()
     logged = set()
     steps_out = []
     failures = []
@@ -251,13 +256,45 @@ def run_fixture(fx):
     return failures, steps_out, saved
 
 
+def start_next():
+    repo_next = SCRATCH / "repo" / "apps" / "nextjs"
+    env = dict(os.environ)
+    env.update({
+        "FB_TS_MODULES": "system,currency,profile,client,staff,activity,news,custompages,product,cart",
+        "FB_DATABASE_PATH": str(DISPO / "src" / "data" / "fossbilling.sqlite"),
+        "FOSSBILLING_URL": BASE,
+    })
+    subprocess.run(["npm", "run", "build"], cwd=repo_next, env=env,
+                   check=True, stdout=open("/tmp/next-fixture-build.log", "w"),
+                   stderr=subprocess.STDOUT)
+    proc = subprocess.Popen(["npx", "next", "start", "-p", "3001"], cwd=repo_next,
+                            env=env, stdout=open("/tmp/next-fixture.log", "w"),
+                            stderr=subprocess.STDOUT)
+    deadline = time.time() + 60
+    while time.time() < deadline:
+        try:
+            with socket.create_connection(("127.0.0.1", 3001), timeout=1):
+                return proc
+        except OSError:
+            time.sleep(0.5)
+    raise SystemExit("Next server did not start")
+
+
 def main():
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    global STACK, API_BASE, API_PREFIX
+    if "--stack" in sys.argv:
+        STACK = sys.argv[sys.argv.index("--stack") + 1]
+    args = [a for a in sys.argv[1:] if not a.startswith("--") and a != STACK]
     files = [pathlib.Path(a) for a in args] or sorted((HERE / "fixtures").glob("*.json"))
     corpus = []
     for f in files:
         corpus.extend(json.loads(f.read_text())["fixtures"])
     proc = setup_disposable()
+    next_proc = None
+    if STACK == "next":
+        API_BASE = "http://127.0.0.1:3001"
+        API_PREFIX = "/api/fb"
+        next_proc = start_next()
     results = {}
     total_fail = 0
     try:
@@ -276,7 +313,9 @@ def main():
             }
     finally:
         proc.send_signal(signal.SIGTERM)
-    out = HERE / "results-php.json"
+        if next_proc:
+            next_proc.send_signal(signal.SIGTERM)
+    out = HERE / f"results-{STACK}.json"
     out.write_text(json.dumps(results, indent=2))
     print(f"\n{sum(1 for r in results.values() if r['status'] == 'PASS')}/{len(results)} fixtures pass; results -> {out}")
     sys.exit(1 if total_fail else 0)

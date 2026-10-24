@@ -23,6 +23,9 @@ export interface CallContext {
   session: SessionInfo | null;
   /** Whether any session cookie was presented (drives CSRF enforcement). */
   hasSessionCookie: boolean;
+  /** Set-Cookie header values the handler wants on the response (e.g. a
+   * freshly created session cookie). The route appends them verbatim. */
+  setCookies: string[];
 }
 
 export type Handler = (ctx: CallContext) => unknown | Promise<unknown>;

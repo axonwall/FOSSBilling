@@ -1,0 +1,40 @@
+{
+  "result": {
+    "promocode": null,
+    "promo_source": null,
+    "auto_promos": [],
+    "discount": 0,
+    "subtotal": 10,
+    "total": 10,
+    "items": [
+      {
+        "__cart_family": "acc6cd540e3baa55f2ae3f33d3d11e30",
+        "id": 2,
+        "product_id": 3,
+        "form_id": null,
+        "title": "Phase0 Widget Hosting",
+        "type": "custom",
+        "quantity": 1,
+        "unit": "product",
+        "price": 10,
+        "setup_price": 0,
+        "discount": 0,
+        "discount_price": 0,
+        "discount_setup": 0,
+        "total": 10
+      }
+    ],
+    "currency": {
+      "code": "USD",
+      "name": "US Dollar",
+      "symbol": "$",
+      "conversion_rate": 1,
+      "is_rate_manual": false,
+      "format_pattern": null,
+      "fraction_digits": null,
+      "default": true
+    },
+    "subscribable": false
+  },
+  "error": null
+}

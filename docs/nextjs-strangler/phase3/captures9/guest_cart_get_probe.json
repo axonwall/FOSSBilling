@@ -1,0 +1,41 @@
+{
+  "result": {
+    "promocode": null,
+    "promo_source": null,
+    "auto_promos": [],
+    "discount": 0,
+    "subtotal": 20,
+    "total": 20,
+    "items": [
+      {
+        "period": "1M",
+        "__cart_family": "8969dfe353a8c763a32e0f4110837299",
+        "id": 3,
+        "product_id": 9,
+        "form_id": null,
+        "title": "Phase3 Recurring Widget",
+        "type": "custom",
+        "quantity": 1,
+        "unit": "product",
+        "price": 15,
+        "setup_price": 5,
+        "discount": 0,
+        "discount_price": 0,
+        "discount_setup": 0,
+        "total": 15
+      }
+    ],
+    "currency": {
+      "code": "USD",
+      "name": "US Dollar",
+      "symbol": "$",
+      "conversion_rate": 1,
+      "is_rate_manual": false,
+      "format_pattern": null,
+      "fraction_digits": null,
+      "default": true
+    },
+    "subscribable": false
+  },
+  "error": null
+}
