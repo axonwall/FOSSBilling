@@ -125,7 +125,7 @@ export function invoiceEmailContext(invoiceId: number): Record<string, unknown> 
   if (!client) return null;
   const items = db.prepare("SELECT DISTINCT rel_id AS order_id FROM invoice_item WHERE invoice_id = ? AND type = 'order' AND rel_id IS NOT NULL").all(invoiceId) as unknown as { order_id: number }[];
   const orders = items.map(({ order_id }) => {
-    const o = db.prepare("SELECT o.id, o.expires_at, p.title AS product_name FROM \"order\" o LEFT JOIN product p ON p.id = o.product_id WHERE o.id = ?").get(order_id) as Record<string, unknown> | undefined;
+    const o = db.prepare("SELECT o.id, o.expires_at, p.title AS product_name FROM client_order o LEFT JOIN product p ON p.id = o.product_id WHERE o.id = ?").get(order_id) as Record<string, unknown> | undefined;
     return o ?? { id: order_id };
   });
   const sums = db.prepare(
@@ -147,11 +147,17 @@ export function invoiceEmailContext(invoiceId: number): Record<string, unknown> 
 }
 
 export function queueInvoiceEmail(actionCode: string, invoiceId: number): number | null {
-  const ctx = invoiceEmailContext(invoiceId);
-  if (!ctx) return null;
-  const client = ctx.c as Record<string, unknown>;
-  return queueTemplatedEmail(actionCode, String(client.email), ctx, {
-    toName: `${client.first_name ?? ""} ${client.last_name ?? ""}`.trim() || null,
-    clientId: Number(client.id),
-  });
+  // Never throws: an email-context failure must not break the money
+  // flow that triggered it (PHP dispatches these via listeners).
+  try {
+    const ctx = invoiceEmailContext(invoiceId);
+    if (!ctx) return null;
+    const client = ctx.c as Record<string, unknown>;
+    return queueTemplatedEmail(actionCode, String(client.email), ctx, {
+      toName: `${client.first_name ?? ""} ${client.last_name ?? ""}`.trim() || null,
+      clientId: Number(client.id),
+    });
+  } catch {
+    return null;
+  }
 }

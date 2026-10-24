@@ -53,6 +53,14 @@ money flows, and the invoice PDF is generated in TS.
   builder queried a non-existent `invoice_item.order_id` (the link
   is `rel_id` on `type='order'` rows). Fixed; the passing run
   creates, content-checks, and deletes a fresh row.
+- Correction (post-commit): the fixture gate initially FAILED
+  10/13 on the Next stack — the same context builder queried a
+  non-existent `"order"` table (it is `client_order`), and because
+  `queueInvoiceEmail` was not failure-isolated, the throw killed
+  cart checkout. The batch-2 delivery message claimed 13/13 from a
+  run that had not finished; the completed run is what counts.
+  Fixed in the follow-up commit (table name + a try/catch around
+  the whole queue path); re-verified 13/13 on both stacks.
 
 ## Implementation notes
 
