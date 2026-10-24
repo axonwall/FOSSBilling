@@ -1,0 +1,192 @@
+[
+  {
+    "name": "guest_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_get_missing",
+    "ok": false,
+    "error": "Order Not Found"
+  },
+  {
+    "name": "admin_order_get_statuses",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_status_history",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_create",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_get_created",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_activate",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_get_active",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_suspend",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_get_suspended",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_unsuspend",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_cancel",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_uncancel",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_delete",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_order_get_deleted",
+    "ok": false,
+    "error": "Order Not Found"
+  },
+  {
+    "name": "admin_transaction_create",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_transaction_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_transaction_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_transaction_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_transaction_get_after_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_transaction_delete",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_transaction_get_deleted",
+    "ok": false,
+    "error": "Transaction not found"
+  },
+  {
+    "name": "admin_transaction_get_statuses",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_transaction_types",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_subscription_create",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_subscription_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_subscription_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_subscription_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_subscription_get_after_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_subscription_delete",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_subscription_get_deleted",
+    "ok": false,
+    "error": "Subscription not found"
+  },
+  {
+    "name": "guest_client_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_order_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_order_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_order_get_missing",
+    "ok": false,
+    "error": "Order not found"
+  }
+]

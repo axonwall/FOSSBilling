@@ -1,5 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
 import { statSync } from "node:fs";
+import { createHash } from "node:crypto";
 
 /**
  * Data layer for the TS-ported modules. Phase 2 shares the existing
@@ -1143,7 +1144,7 @@ export function insertOrder(row: {
       row.client_id, row.product_id, row.form_id, row.promo_id, row.promo_recurring ?? null,
       row.promo_used ?? null, row.group_id, row.group_master,
       row.invoice_option, row.title, row.currency, row.unpaid_invoice_id, row.service_type,
-      row.period, row.quantity, row.unit, row.price, row.discount, row.status, row.notes,
+      row.period, row.quantity, row.unit, String(row.price), String(row.discount), row.status, row.notes,
       row.config, row.suspension_grace_days, now, now,
     );
   return Number(info.lastInsertRowid);
@@ -1211,7 +1212,7 @@ export function insertInvoiceItem(row: {
       `INSERT INTO invoice_item (type, rel_id, refunded_item_id, task, status, title, period, quantity, unit, price, charged, taxed, attempts, created_at, updated_at, invoice_id)
        VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, 0, ?, 0, ?, ?, ?)`,
     )
-    .run(row.type, row.rel_id, row.task, row.status, row.title, row.period, row.quantity, row.unit, row.price, row.taxed, now, now, row.invoice_id);
+    .run(row.type, row.rel_id, row.task, row.status, row.title, row.period, row.quantity, row.unit, String(row.price), row.taxed, now, now, row.invoice_id);
   return Number(info.lastInsertRowid);
 }
 
@@ -1571,4 +1572,308 @@ export function promoApplicationsForInvoice(invoiceId: number): Record<string, u
     )
     .all(invoiceId) as unknown as Record<string, unknown>[];
   return rows;
+}
+
+// ---------------------------------------------------------------------------
+// Order / transaction / subscription helpers (Phase 3 batch 3).
+// ---------------------------------------------------------------------------
+
+export interface OrderRowFull {
+  id: number;
+  client_id: number;
+  product_id: number | null;
+  form_id: number | null;
+  promo_id: number | null;
+  promo_recurring: number | null;
+  promo_used: number | null;
+  group_id: string | null;
+  group_master: number;
+  invoice_option: string | null;
+  title: string | null;
+  currency: string | null;
+  unpaid_invoice_id: number | null;
+  service_id: number | null;
+  service_type: string | null;
+  period: string | null;
+  quantity: number;
+  unit: string | null;
+  price: number;
+  discount: number;
+  status: string;
+  reason: string | null;
+  notes: string | null;
+  config: string | null;
+  suspension_grace_days: number | null;
+  referred_by: string | null;
+  expires_at: string | null;
+  activated_at: string | null;
+  suspended_at: string | null;
+  unsuspended_at: string | null;
+  canceled_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+const ORDER_COLS = `id, client_id, product_id, form_id, promo_id, promo_recurring, promo_used,
+  group_id, group_master, invoice_option, title, currency, unpaid_invoice_id, service_id,
+  service_type, period, quantity, unit, price, discount, status, reason, notes, config,
+  suspension_grace_days, referred_by, expires_at, activated_at, suspended_at, unsuspended_at,
+  canceled_at, created_at, updated_at`;
+
+export function findOrderById(id: number): OrderRowFull | undefined {
+  return getDb().prepare(`SELECT ${ORDER_COLS} FROM client_order WHERE id = ?`).get(id) as
+    | OrderRowFull
+    | undefined;
+}
+
+export function listOrders(filters: {
+  client_id?: number;
+  status?: string;
+  product_id?: number;
+}): OrderRowFull[] {
+  const where: string[] = [];
+  const vals: unknown[] = [];
+  if (filters.client_id !== undefined) { where.push("client_id = ?"); vals.push(filters.client_id); }
+  if (filters.status) { where.push("status = ?"); vals.push(filters.status); }
+  if (filters.product_id !== undefined) { where.push("product_id = ?"); vals.push(filters.product_id); }
+  const sql = `SELECT ${ORDER_COLS} FROM client_order ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY id DESC`;
+  return getDb().prepare(sql).all(...(vals as never[])) as unknown as OrderRowFull[];
+}
+
+export function updateOrderRow(
+  id: number,
+  fields: Partial<{
+    status: string; notes: string | null; reason: string | null; expires_at: string | null;
+    activated_at: string | null; suspended_at: string | null; unsuspended_at: string | null;
+    canceled_at: string | null; unpaid_invoice_id: number | null; config: string | null;
+    service_id: number | null;
+  }>,
+): void {
+  const entries = Object.entries(fields);
+  if (entries.length === 0) return;
+  const sets = entries.map(([k]) => `${k} = ?`).join(", ");
+  const vals = entries.map(([, v]) => v);
+  getDbWrite()
+    .prepare(`UPDATE client_order SET ${sets}, updated_at = ? WHERE id = ?`)
+    .run(...(vals as never[]), nowTimestamp(), id);
+}
+
+export function deleteOrderCascade(id: number): void {
+  const w = getDbWrite();
+  w.prepare("DELETE FROM client_order_status WHERE client_order_id = ?").run(id);
+  w.prepare("DELETE FROM client_order WHERE id = ?").run(id);
+}
+
+export function listOrderStatusHistory(orderId: number): {
+  id: number; status: string; notes: string | null; created_at: string | null;
+  updated_at: string | null; client_order_id: number;
+}[] {
+  return getDb()
+    .prepare(
+      "SELECT id, status, notes, created_at, updated_at, client_order_id FROM client_order_status WHERE client_order_id = ? ORDER BY id DESC",
+    )
+    .all(orderId) as never[];
+}
+
+export function deleteOrderStatusRow(id: number): void {
+  getDbWrite().prepare("DELETE FROM client_order_status WHERE id = ?").run(id);
+}
+
+export function orderStatusCounts(): Record<string, number> {
+  const rows = getDb()
+    .prepare("SELECT status, COUNT(*) AS n FROM client_order GROUP BY status")
+    .all() as unknown as { status: string; n: number }[];
+  const out: Record<string, number> = {};
+  for (const r of rows) out[r.status] = r.n;
+  return out;
+}
+
+export function countActiveTicketsForOrder(orderId: number): number {
+  try {
+    const row = getDb()
+      .prepare(
+        "SELECT COUNT(*) AS n FROM support_ticket WHERE rel_id = ? AND rel_type = 'order' AND status NOT IN ('closed')",
+      )
+      .get(orderId) as { n: number };
+    return row.n;
+  } catch {
+    return 0;
+  }
+}
+
+export interface TransactionRowFull {
+  id: number;
+  txn_id: string | null;
+  txn_status: string | null;
+  s_id: string | null;
+  s_period: string | null;
+  amount: string | null;
+  currency: string | null;
+  type: string | null;
+  status: string | null;
+  ip: string | null;
+  error: string | null;
+  error_code: number | null;
+  ipn: string | null;
+  note: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  invoice_id: number | null;
+  gateway_id: number | null;
+}
+
+const TX_COLS = `id, txn_id, txn_status, s_id, s_period, amount, currency, type, status, ip,
+  error, error_code, ipn, note, created_at, updated_at, invoice_id, gateway_id`;
+
+export function findTransactionById(id: number): TransactionRowFull | undefined {
+  return getDb().prepare(`SELECT ${TX_COLS} FROM "transaction" WHERE id = ?`).get(id) as
+    | TransactionRowFull
+    | undefined;
+}
+
+export function listTransactions(filters: { invoice_id?: number; status?: string }): TransactionRowFull[] {
+  const where: string[] = [];
+  const vals: unknown[] = [];
+  if (filters.invoice_id !== undefined) { where.push("invoice_id = ?"); vals.push(filters.invoice_id); }
+  if (filters.status) { where.push("status = ?"); vals.push(filters.status); }
+  const sql = `SELECT ${TX_COLS} FROM "transaction" ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY id DESC`;
+  return getDb().prepare(sql).all(...(vals as never[])) as unknown as TransactionRowFull[];
+}
+
+export function insertTransactionFull(row: {
+  txn_id: string | null; txn_status: string | null; amount: string | null;
+  currency: string | null; type: string | null; status: string | null; ip: string | null;
+  ipn: string; note: string | null; invoice_id: number | null; gateway_id: number | null;
+}): number {
+  const now = nowTimestamp();
+  const info = getDbWrite()
+    .prepare(
+      `INSERT INTO "transaction" (txn_id, txn_status, s_id, s_period, amount, currency, type, status, ip, error, error_code, ipn, ipn_hash, output, note, created_at, updated_at, invoice_id, gateway_id)
+       VALUES (?, ?, NULL, NULL, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, NULL, ?, ?, ?, ?, ?)`,
+    )
+    .run(row.txn_id, row.txn_status, row.amount, row.currency, row.type, row.status, row.ip,
+      row.ipn, sha256Hex(row.ipn), row.note, now, now, row.invoice_id, row.gateway_id);
+  return Number(info.lastInsertRowid);
+}
+
+export function updateTransactionRow(
+  id: number,
+  fields: Partial<{
+    txn_id: string | null; txn_status: string | null; amount: string | null;
+    currency: string | null; type: string | null; status: string | null;
+    s_id: string | null; s_period: string | null; note: string | null;
+    error: string | null; error_code: number | null; invoice_id: number;
+    gateway_id: number;
+  }>,
+): void {
+  const entries = Object.entries(fields);
+  if (entries.length === 0) return;
+  const sets = entries.map(([k]) => `${k} = ?`).join(", ");
+  const vals = entries.map(([, v]) => v);
+  getDbWrite()
+    .prepare(`UPDATE "transaction" SET ${sets}, updated_at = ? WHERE id = ?`)
+    .run(...(vals as never[]), nowTimestamp(), id);
+}
+
+export function deleteTransactionRow(id: number): void {
+  getDbWrite().prepare('DELETE FROM "transaction" WHERE id = ?').run(id);
+}
+
+export function transactionStatusCounts(): Record<string, number> {
+  const rows = getDb()
+    .prepare('SELECT status, COUNT(*) AS n FROM "transaction" GROUP BY status')
+    .all() as unknown as { status: string; n: number }[];
+  const out: Record<string, number> = {};
+  for (const r of rows) out[r.status] = r.n;
+  return out;
+}
+
+export interface SubscriptionRowFull {
+  id: number;
+  sid: string | null;
+  period: string | null;
+  amount: string | null;
+  currency: string | null;
+  status: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  client_id: number | null;
+  pay_gateway_id: number | null;
+  rel_id: number | null;
+  rel_type: string | null;
+}
+
+export function findSubscriptionById(id: number): SubscriptionRowFull | undefined {
+  return getDb().prepare("SELECT * FROM subscription WHERE id = ?").get(id) as
+    | SubscriptionRowFull
+    | undefined;
+}
+
+export function listSubscriptions(): SubscriptionRowFull[] {
+  return getDb().prepare("SELECT * FROM subscription ORDER BY id DESC").all() as unknown as SubscriptionRowFull[];
+}
+
+export function insertSubscription(row: {
+  sid: string | null; period: string | null; amount: string | null; currency: string | null;
+  status: string | null; client_id: number | null; pay_gateway_id: number | null;
+  rel_id: number | null; rel_type: string | null;
+}): number {
+  const now = nowTimestamp();
+  const info = getDbWrite()
+    .prepare(
+      "INSERT INTO subscription (sid, period, amount, currency, status, created_at, updated_at, client_id, pay_gateway_id, rel_id, rel_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+    .run(row.sid, row.period, row.amount, row.currency, row.status, now, now,
+      row.client_id, row.pay_gateway_id, row.rel_id, row.rel_type);
+  return Number(info.lastInsertRowid);
+}
+
+export function updateSubscriptionRow(
+  id: number,
+  fields: Partial<{
+    sid: string | null; period: string | null; amount: string | null;
+    currency: string | null; status: string | null; rel_id: number | null; rel_type: string | null;
+  }>,
+): void {
+  const entries = Object.entries(fields);
+  if (entries.length === 0) return;
+  const sets = entries.map(([k]) => `${k} = ?`).join(", ");
+  const vals = entries.map(([, v]) => v);
+  getDbWrite()
+    .prepare(`UPDATE subscription SET ${sets}, updated_at = ? WHERE id = ?`)
+    .run(...(vals as never[]), nowTimestamp(), id);
+}
+
+export function deleteSubscriptionRow(id: number): void {
+  getDbWrite().prepare("DELETE FROM subscription WHERE id = ?").run(id);
+}
+
+export function findGatewayFull(id: number): {
+  id: number; gateway: string; enabled: number; name: string | null;
+} | undefined {
+  return getDb()
+    .prepare("SELECT id, gateway, enabled, name FROM pay_gateway WHERE id = ?")
+    .get(id) as
+    | { id: number; gateway: string; enabled: number; name: string | null }
+    | undefined;
+}
+
+function sha256Hex(text: string): string {
+  return createHash("sha256").update(text).digest("hex");
+}
+
+export function insertOrderStatusReturningId(orderId: number, status: string, notes: string | null): number {
+  const now = nowTimestamp();
+  const info = getDbWrite()
+    .prepare("INSERT INTO client_order_status (status, notes, created_at, updated_at, client_order_id) VALUES (?, ?, ?, ?, ?)")
+    .run(status, notes, now, now, orderId);
+  return Number(info.lastInsertRowid);
+}
+
+export function insertCustomService(clientId: number, config: string | null): number {
+  const now = nowTimestamp();
+  const info = getDbWrite()
+    .prepare("INSERT INTO service_custom (client_id, plugin, plugin_config, config, created_at, updated_at) VALUES (?, NULL, NULL, ?, ?, ?)")
+    .run(clientId, config, now, now);
+  return Number(info.lastInsertRowid);
 }

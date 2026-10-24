@@ -100,6 +100,11 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
         const callCtx = {
           params,
           rawParams,
+          ip:
+            ((req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "127.0.0.1").replace(
+              /^::ffff:/,
+              "",
+            ),
           session,
           hasSessionCookie: !!cookieHeader?.includes("fossbilling_session="),
           setCookies: [] as string[],

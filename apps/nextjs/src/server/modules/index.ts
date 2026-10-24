@@ -13,5 +13,6 @@ import "./custompages";
 import "./product";
 import "./cart";
 import "./invoice";
+import "./order";
 
 export { findHandler, tsModulesEnabled } from "../dispatch";

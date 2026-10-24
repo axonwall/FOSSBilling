@@ -1,0 +1,12 @@
+{
+  "result": {
+    "total": 10,
+    "pending_setup": 7,
+    "failed_setup": 0,
+    "failed_renew": 0,
+    "active": 3,
+    "suspended": 0,
+    "canceled": 0
+  },
+  "error": null
+}

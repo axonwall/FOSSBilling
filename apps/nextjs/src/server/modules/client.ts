@@ -158,3 +158,15 @@ register("admin", "client", "get_pairs", (ctx: CallContext) => {
   for (const p of listClientPairs(perPage)) out[String(p.id)] = p.name;
   return out;
 });
+
+/** Subscription-embedded shape: base + admin extras + group info,
+ * without balance or api_token (Invoice Subscription::toApiArray). */
+export function clientSubscriptionArray(row: ClientRow) {
+  const { groups, ...extras } = adminExtras(row);
+  return {
+    ...clientBaseArray(row),
+    ...extras,
+    group: groups.length ? groups.map((g) => g.title).join(", ") : null,
+    client_groups: groups.map((g) => ({ id: g.id, title: g.title })),
+  };
+}

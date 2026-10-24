@@ -1,0 +1,30 @@
+{
+  "result": {
+    "id": 18,
+    "invoice_id": 1,
+    "txn_id": "CAP11-1792818378",
+    "txn_status": null,
+    "gateway_id": 1,
+    "gateway": "Custom",
+    "gateway_code": "Custom",
+    "requires_manual_approval": true,
+    "amount": 6.5,
+    "currency": null,
+    "type": null,
+    "status": "approved",
+    "ip": "127.0.0.1",
+    "error": null,
+    "error_code": null,
+    "note": null,
+    "created_at": "2026-10-24 05:06:19",
+    "updated_at": "2026-10-24 05:06:20",
+    "ipn": {
+      "source": "admin",
+      "get": null,
+      "post": null,
+      "http_raw_post_data": null,
+      "server": null
+    }
+  },
+  "error": null
+}

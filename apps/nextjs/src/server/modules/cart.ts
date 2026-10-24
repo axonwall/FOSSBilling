@@ -474,7 +474,7 @@ register("client", "cart", "checkout", (ctx: CallContext) => {
       status: "pending_setup",
       notes: typeof item["notes"] === "string" ? (item["notes"] as string) : null,
       config: JSON.stringify(configForOrder),
-      suspension_grace_days: product.suspension_grace_days,
+      suspension_grace_days: null,
     });
     orderIds.push(orderId);
     insertOrderStatus(orderId, "pending_setup", "Order Created");

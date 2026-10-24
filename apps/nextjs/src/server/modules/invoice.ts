@@ -1,10 +1,25 @@
 import { createHash } from "node:crypto";
 import {
   deleteInvoiceCascade,
+  deleteSubscriptionRow,
+  deleteTransactionRow,
+  findGatewayFull,
+  findSubscriptionById,
+  findTransactionById,
+  insertSubscription,
+  insertTransactionFull,
+  listSubscriptions,
+  listTransactions,
+  transactionStatusCounts,
+  updateSubscriptionRow,
+  updateTransactionRow,
+  type SubscriptionRowFull,
+  type TransactionRowFull,
   deleteInvoiceItemRow,
   deleteTaxRow,
   findClientById,
   findGateway,
+  getDb,
   getSetting,
   findInvoiceByHash,
   findInvoiceById,
@@ -34,6 +49,7 @@ import {
   type CallContext,
 } from "../dispatch";
 import { getCompany } from "./system";
+import { clientSubscriptionArray } from "./client";
 import {
   invoiceTotals,
   issueInvoice,
@@ -664,4 +680,337 @@ register("guest", "invoice", "gateways", () => {
   return listGateways()
     .filter((g) => g.enabled)
     .map((g) => ({ id: g.id, code: g.gateway, name: g.name, enabled: !!g.enabled }));
+});
+
+// ---------------------------------------------------------------------------
+// Transactions + subscriptions (Invoice module, Phase 3 batch 3).
+// ---------------------------------------------------------------------------
+
+function transactionArray(row: TransactionRowFull): Record<string, unknown> {
+  const gateway = row.gateway_id ? findGatewayFull(row.gateway_id) : undefined;
+  return {
+    id: row.id,
+    invoice_id: row.invoice_id,
+    txn_id: row.txn_id,
+    txn_status: row.txn_status,
+    gateway_id: row.gateway_id,
+    gateway: gateway?.name ?? null,
+    gateway_code: gateway?.gateway ?? null,
+    // Derived from the gateway adapter in PHP; only the Custom gateway
+    // supports manual approval in the bundled set.
+    requires_manual_approval: gateway?.gateway === "Custom",
+    amount: row.amount !== null ? Number(row.amount) : 0,
+    currency: row.currency,
+    type: row.type,
+    status: row.status,
+    ip: row.ip,
+    error: row.error,
+    error_code: row.error_code,
+    note: row.note,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    ipn: row.ipn ? (JSON.parse(row.ipn) as unknown) : null,
+  };
+}
+
+function getTransactionOrThrow(ctx: CallContext): TransactionRowFull {
+  const id = ctx.params["id"];
+  if (!id) throw new FbError("Transaction ID is missing");
+  const tx = findTransactionById(Number(id));
+  if (!tx) throw new FbError("Transaction not found");
+  return tx;
+}
+
+register("admin", "invoice", "transaction_get", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const tx = getTransactionOrThrow(ctx);
+  const out = transactionArray(tx);
+  return out;
+});
+
+register("admin", "invoice", "transaction_get_list", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const filters: { invoice_id?: number; status?: string } = {};
+  if (ctx.params["invoice_id"]) filters.invoice_id = Number(ctx.params["invoice_id"]);
+  if (ctx.params["status"]) filters.status = ctx.params["status"];
+  const items = listTransactions(filters).map((t) => {
+    const a = transactionArray(t);
+    delete a["ipn"];
+    return a;
+  });
+  return paginateLocal(items, ctx.params);
+});
+
+register("admin", "invoice", "transaction_create", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const invoiceId = ctx.params["invoice_id"] ? Number(ctx.params["invoice_id"]) : null;
+  const gatewayId = ctx.params["gateway_id"] ? Number(ctx.params["gateway_id"]) : null;
+  if (invoiceId !== null && !findInvoiceById(invoiceId)) {
+    throw new FbError("Invoice not found");
+  }
+  if (gatewayId !== null && !findGatewayFull(gatewayId)) {
+    throw new FbError("Payment gateway not found");
+  }
+  // PHP's Transaction::create builds the record from the IPN envelope;
+  // amount/currency stay unset unless the gateway processing fills
+  // them (the admin create capture shows amount 0 / currency null).
+  const ipn = JSON.stringify({
+    source: ctx.params["source"] ?? "admin",
+    get: null,
+    post: null,
+    http_raw_post_data: null,
+    server: null,
+  });
+  return insertTransactionFull({
+    txn_id: ctx.params["txn_id"] ?? null,
+    txn_status: ctx.params["txn_status"] ?? null,
+    amount: null,
+    currency: null,
+    type: ctx.params["type"] ?? null,
+    status: ctx.params["status"] ?? "received",
+    ip: ctx.ip,
+    ipn,
+    note: ctx.params["note"] ?? null,
+    invoice_id: invoiceId,
+    gateway_id: gatewayId,
+  });
+});
+
+register("admin", "invoice", "transaction_update", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const tx = getTransactionOrThrow(ctx);
+  const p = ctx.params;
+  const fields: Parameters<typeof updateTransactionRow>[1] = {};
+  if (p["invoice_id"] !== undefined) {
+    if (!findInvoiceById(Number(p["invoice_id"]))) throw new FbError("Invoice not found");
+    fields.invoice_id = Number(p["invoice_id"]);
+  }
+  if (p["gateway_id"] !== undefined) {
+    if (!findGatewayFull(Number(p["gateway_id"]))) throw new FbError("Payment gateway not found");
+    fields.gateway_id = Number(p["gateway_id"]);
+  }
+  if (p["txn_id"] !== undefined) fields.txn_id = p["txn_id"];
+  if (p["txn_status"] !== undefined) fields.txn_status = p["txn_status"];
+  if (p["amount"] !== undefined) fields.amount = p["amount"];
+  if (p["currency"] !== undefined) fields.currency = p["currency"];
+  if (p["type"] !== undefined) fields.type = p["type"];
+  if (p["s_id"] !== undefined) fields.s_id = p["s_id"];
+  if (p["s_period"] !== undefined) fields.s_period = p["s_period"];
+  if (p["note"] !== undefined) fields.note = p["note"];
+  if (p["status"] !== undefined) fields.status = p["status"];
+  if (p["error"] !== undefined) fields.error = p["error"];
+  if (p["error_code"] !== undefined) fields.error_code = Number(p["error_code"]);
+  updateTransactionRow(tx.id, fields);
+  return true;
+});
+
+register("admin", "invoice", "transaction_delete", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const tx = getTransactionOrThrow(ctx);
+  deleteTransactionRow(tx.id);
+  return true;
+});
+
+register("admin", "invoice", "transaction_get_statuses", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const counts = transactionStatusCounts();
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  return {
+    total,
+    received: counts["received"] ?? 0,
+    approved: counts["approved"] ?? 0,
+    processing: counts["processing"] ?? 0,
+    processed: counts["processed"] ?? 0,
+    error: counts["error"] ?? 0,
+  };
+});
+
+register("admin", "invoice", "transaction_get_statuses_pairs", () => {
+  return {
+    received: "Received",
+    approved: "Approved",
+    processing: "Processing",
+    processed: "Processed",
+    error: "Error",
+  };
+});
+
+register("admin", "invoice", "transaction_statuses", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  return ["received", "approved", "processing", "processed", "error"];
+});
+
+register("admin", "invoice", "transaction_gateway_statuses", () => {
+  return {
+    succeeded: "Succeeded",
+    complete: "Complete",
+    pending: "Pending validation",
+    failed: "Failed",
+    unknown: "Unknown",
+  };
+});
+
+register("admin", "invoice", "transaction_types", () => {
+  return {
+    payment: "Payment",
+    refund: "Refund",
+    subscription_create: "Subscription create",
+    subscription_cancel: "Subscription cancel",
+    unknown: "Unknown",
+  };
+});
+
+// --- Subscriptions ------------------------------------------------------------
+
+function subscriptionArray(row: SubscriptionRowFull): Record<string, unknown> {
+  const client = row.client_id ? findClientById(row.client_id) : undefined;
+  return {
+    id: row.id,
+    sid: row.sid,
+    period: row.period,
+    amount: row.amount !== null ? String(Number(row.amount)) : null,
+    currency: row.currency,
+    status: row.status,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    client: client ? clientSubscriptionArray(client) : null,
+    gateway: row.pay_gateway_id ? gatewayArray(row.pay_gateway_id) : null,
+  };
+}
+
+/**
+ * The PayGateway API array (adapter metadata included). Form fields
+ * and descriptions are adapter-defined; the Custom gateway's are
+ * mirrored exactly, other bundled gateways get the generic shape.
+ */
+export function gatewayArray(gatewayId: number): Record<string, unknown> | null {
+  const row = getDb()
+    .prepare(
+      "SELECT id, name, gateway, accepted_currencies, enabled, allow_single, allow_recurrent, test_mode, config, custom_logo FROM pay_gateway WHERE id = ?",
+    )
+    .get(gatewayId) as
+    | {
+        id: number; name: string | null; gateway: string; accepted_currencies: string | null;
+        enabled: number; allow_single: number; allow_recurrent: number; test_mode: number;
+        config: string | null; custom_logo: string | null;
+      }
+    | undefined;
+  if (!row) return null;
+  let currencies: string[] = [];
+  try {
+    const parsed = JSON.parse(row.accepted_currencies ?? "[]") as unknown;
+    if (Array.isArray(parsed)) currencies = parsed.map(String);
+  } catch { /* keep empty */ }
+  let config: unknown = [];
+  try {
+    config = row.config ? JSON.parse(row.config) : [];
+  } catch { /* keep empty */ }
+  const www = `${(process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080").replace(/\/$/, "")}/`;
+  if (currencies.length === 0) {
+    const def = getDb().prepare("SELECT code FROM currency WHERE is_default = 1").get() as
+      | { code: string }
+      | undefined;
+    if (def) currencies = [def.code];
+  }
+  const isCustom = row.gateway === "Custom";
+  return {
+    id: row.id,
+    code: row.gateway,
+    title: row.name,
+    allow_single: !!row.allow_single,
+    allow_recurrent: !!row.allow_recurrent,
+    accepted_currencies: currencies,
+    supports_one_time_payments: true,
+    supports_subscriptions: true,
+    config,
+    secret_fields: [],
+    form: isCustom
+      ? {
+          single: ["textarea", { label: "Enter Your Text for Single Payment Information" }],
+          recurrent: ["textarea", { label: "Enter Your Text for Subscription Information" }],
+        }
+      : { single: [], recurrent: [] },
+    description: isCustom
+      ? "Custom payment gateway allows you to give instructions how can your client pay invoice. All system, client, order and invoice details can be printed. HTML code is supported."
+      : "",
+    enabled: !!row.enabled,
+    test_mode: !!row.test_mode,
+    callback: `${www}ipn.php?gateway_id=${row.id}`,
+    custom_logo_url: null,
+    custom_logo_avif_url: null,
+  };
+}
+
+function getSubscriptionOrThrow(ctx: CallContext): SubscriptionRowFull {
+  const id = ctx.params["id"];
+  if (!id) throw new FbError("Subscription ID was not passed");
+  const sub = findSubscriptionById(Number(id));
+  if (!sub) throw new FbError("Subscription not found");
+  return sub;
+}
+
+register("admin", "invoice", "subscription_create", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const clientId = ctx.params["client_id"];
+  if (!clientId) throw new FbError("Client ID was not passed");
+  const gatewayId = ctx.params["gateway_id"];
+  if (!gatewayId) throw new FbError("Payment gateway ID was not passed");
+  const currency = ctx.params["currency"];
+  if (!currency) throw new FbError("Subscription currency was not passed");
+  const client = findClientById(Number(clientId));
+  if (!client) throw new FbError("Client not found");
+  const gateway = findGatewayFull(Number(gatewayId));
+  if (!gateway) throw new FbError("Payment gateway not found");
+  if ((client.currency ?? "").toUpperCase() !== currency.toUpperCase()) {
+    throw new FbError(
+      "Client currency must match subscription currency. Check if clients currency is defined.",
+    );
+  }
+  return insertSubscription({
+    sid: ctx.params["sid"] ?? null,
+    period: ctx.params["period"] ?? null,
+    amount: ctx.params["amount"] ?? null,
+    currency,
+    status: ctx.params["status"] ?? null,
+    client_id: client.id,
+    pay_gateway_id: gateway.id,
+    rel_id: ctx.params["rel_id"] ? Number(ctx.params["rel_id"]) : null,
+    rel_type: ctx.params["rel_type"] ?? null,
+  });
+});
+
+register("admin", "invoice", "subscription_get", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  return subscriptionArray(getSubscriptionOrThrow(ctx));
+});
+
+register("admin", "invoice", "subscription_get_list", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  return paginateLocal(listSubscriptions().map(subscriptionArray), ctx.params);
+});
+
+register("admin", "invoice", "subscription_update", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const sub = getSubscriptionOrThrow(ctx);
+  const p = ctx.params;
+  const fields: Parameters<typeof updateSubscriptionRow>[1] = {};
+  if (p["sid"] !== undefined) fields.sid = p["sid"];
+  if (p["period"] !== undefined) fields.period = p["period"];
+  if (p["amount"] !== undefined) fields.amount = p["amount"];
+  if (p["currency"] !== undefined) fields.currency = p["currency"];
+  if (p["status"] !== undefined) fields.status = p["status"];
+  if (p["rel_id"] !== undefined) fields.rel_id = Number(p["rel_id"]);
+  if (p["rel_type"] !== undefined) fields.rel_type = p["rel_type"];
+  // PHP cancels at the gateway when status flips to canceled; the
+  // gateway side effect is not mirrored for the Custom gateway (no-op
+  // there in practice).
+  updateSubscriptionRow(sub.id, fields);
+  return true;
+});
+
+register("admin", "invoice", "subscription_delete", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const sub = getSubscriptionOrThrow(ctx);
+  deleteSubscriptionRow(sub.id);
+  return true;
 });

@@ -24,6 +24,8 @@ export interface CallContext {
    * structures (invoice new_item, items maps) survive here; `params`
    * only carries their stringified form. */
   rawParams: Record<string, unknown>;
+  /** Best-effort client IP (first X-Forwarded-For entry, else loopback). */
+  ip: string;
   session: SessionInfo | null;
   /** Whether any session cookie was presented (drives CSRF enforcement). */
   hasSessionCookie: boolean;

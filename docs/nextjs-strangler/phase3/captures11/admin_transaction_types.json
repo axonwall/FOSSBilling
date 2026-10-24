@@ -1,0 +1,10 @@
+{
+  "result": {
+    "payment": "Payment",
+    "refund": "Refund",
+    "subscription_create": "Subscription create",
+    "subscription_cancel": "Subscription cancel",
+    "unknown": "Unknown"
+  },
+  "error": null
+}
