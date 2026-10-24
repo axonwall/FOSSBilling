@@ -1,0 +1,13 @@
+{
+  "result": {
+    "code": "EUR",
+    "name": "Euro",
+    "symbol": "\u20ac",
+    "conversion_rate": 0.95,
+    "is_rate_manual": true,
+    "format_pattern": "{amount} EUR",
+    "fraction_digits": 3,
+    "default": false
+  },
+  "error": null
+}

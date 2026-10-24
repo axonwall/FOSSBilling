@@ -6,10 +6,12 @@ import { parseSessionContent } from "./php-serialize";
  *
  * FOSSBilling sessions are rows in the `session` table whose `content`
  * is Symfony-serialized data; the `_sf2_attributes` bag carries
- * `csrf_token` plus an `admin` and/or `client` identity array
- * ({id, email, name}). Both identities can live in one session — the
- * same model the PHP dispatcher uses. Verified against live rows in
- * Phase 2 recon.
+ * `csrf_token` plus the caller's identity. The identity encoding is
+ * asymmetric in PHP itself (verified against live rows, Phase 2):
+ * staff login stores an `admin` array ({id, email, name}), while the
+ * client API login stores a bare `client_id` integer and the PHP API
+ * layer hydrates the client per request. Both forms are accepted here
+ * (and the `client` array form, which the web login flow writes).
  */
 
 export interface Identity {
@@ -57,6 +59,9 @@ export function readSession(cookieHeader: string | null): SessionInfo | null {
         email: typeof raw.email === "string" ? raw.email : undefined,
         name: typeof raw.name === "string" ? raw.name : undefined,
       };
+    } else if (typeof attrs[`${key}_id`] === "number") {
+      // Bare-id form (what the client API login writes).
+      info[key] = { id: attrs[`${key}_id`] as number };
     }
   }
   return info;

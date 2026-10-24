@@ -1,0 +1,297 @@
+[
+  {
+    "name": "guest_client_login",
+    "route": "/api/guest/client/login",
+    "params": {
+      "email": "phase0.client@example.com",
+      "password": "Phase0-Client!42"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_profile_get",
+    "route": "/api/client/profile/get",
+    "params": {},
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_profile_logout",
+    "route": "/api/client/profile/logout",
+    "params": {},
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_staff_login",
+    "route": "/api/guest/staff/login",
+    "params": {
+      "email": "admin@phase0.local",
+      "password": "Phase1-Admin!42"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_profile_get",
+    "route": "/api/admin/profile/get",
+    "params": {},
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_client_get_list",
+    "route": "/api/admin/client/get_list",
+    "params": {
+      "page": 1,
+      "per_page": 25
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_client_get_list_search",
+    "route": "/api/admin/client/get_list",
+    "params": {
+      "search": "phase0"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_client_get_list_status",
+    "route": "/api/admin/client/get_list",
+    "params": {
+      "status": "active"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_client_get_1",
+    "route": "/api/admin/client/get",
+    "params": {
+      "id": 1
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_client_get_by_email",
+    "route": "/api/admin/client/get",
+    "params": {
+      "email": "phase0.client@example.com"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_client_get_missing",
+    "route": "/api/admin/client/get",
+    "params": {
+      "id": 99999
+    },
+    "ok": false,
+    "error": "Client not found"
+  },
+  {
+    "name": "admin_client_get_noargs",
+    "route": "/api/admin/client/get",
+    "params": {},
+    "ok": false,
+    "error": "Client ID or email is required"
+  },
+  {
+    "name": "admin_client_get_pairs",
+    "route": "/api/admin/client/get_pairs",
+    "params": {},
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_currency_create_EUR",
+    "route": "/api/admin/currency/create",
+    "params": {
+      "code": "EUR",
+      "conversion_rate": "0.92",
+      "is_rate_manual": 1
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_currency_create_EUR_dup",
+    "route": "/api/admin/currency/create",
+    "params": {
+      "code": "EUR",
+      "conversion_rate": "0.92",
+      "is_rate_manual": 1
+    },
+    "ok": false,
+    "error": "Currency already registered."
+  },
+  {
+    "name": "admin_currency_create_invalid",
+    "route": "/api/admin/currency/create",
+    "params": {
+      "code": "ZZZ",
+      "conversion_rate": "1",
+      "is_rate_manual": 1
+    },
+    "ok": false,
+    "error": "Currency code is invalid."
+  },
+  {
+    "name": "admin_currency_create_manual_norate",
+    "route": "/api/admin/currency/create",
+    "params": {
+      "code": "GBP",
+      "is_rate_manual": 1
+    },
+    "ok": false,
+    "error": "A conversion rate is required when manual override is enabled."
+  },
+  {
+    "name": "admin_currency_create_badrate",
+    "route": "/api/admin/currency/create",
+    "params": {
+      "code": "GBP",
+      "conversion_rate": "-2",
+      "is_rate_manual": 1
+    },
+    "ok": false,
+    "error": "Currency conversion rate must be a positive number."
+  },
+  {
+    "name": "admin_currency_get_EUR",
+    "route": "/api/admin/currency/get",
+    "params": {
+      "code": "EUR"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_currency_update_EUR",
+    "route": "/api/admin/currency/update",
+    "params": {
+      "code": "EUR",
+      "conversion_rate": "0.95"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_currency_update_badrate",
+    "route": "/api/admin/currency/update",
+    "params": {
+      "code": "EUR",
+      "conversion_rate": "0"
+    },
+    "ok": false,
+    "error": "Currency conversion rate is invalid."
+  },
+  {
+    "name": "admin_currency_update_pattern",
+    "route": "/api/admin/currency/update",
+    "params": {
+      "code": "EUR",
+      "format_pattern": "{amount} EUR",
+      "fraction_digits": "3"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_currency_update_pattern_bad",
+    "route": "/api/admin/currency/update",
+    "params": {
+      "code": "EUR",
+      "format_pattern": "no placeholder"
+    },
+    "ok": false,
+    "error": "Currency format pattern must contain exactly one {amount} placeholder."
+  },
+  {
+    "name": "admin_currency_update_digits_bad",
+    "route": "/api/admin/currency/update",
+    "params": {
+      "code": "EUR",
+      "fraction_digits": "9"
+    },
+    "ok": false,
+    "error": "Currency fraction digits must be a whole number between 0 and 6."
+  },
+  {
+    "name": "admin_currency_get_EUR_after",
+    "route": "/api/admin/currency/get",
+    "params": {
+      "code": "EUR"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_currency_set_default_EUR",
+    "route": "/api/admin/currency/set_default",
+    "params": {
+      "code": "EUR"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_currency_delete_default_EUR",
+    "route": "/api/admin/currency/delete",
+    "params": {
+      "code": "EUR"
+    },
+    "ok": false,
+    "error": "Cannot remove the default currency."
+  },
+  {
+    "name": "admin_currency_update_manual_default",
+    "route": "/api/admin/currency/update",
+    "params": {
+      "code": "EUR",
+      "is_rate_manual": 1
+    },
+    "ok": false,
+    "error": "The default currency cannot use a manual rate override."
+  },
+  {
+    "name": "admin_currency_set_default_USD",
+    "route": "/api/admin/currency/set_default",
+    "params": {
+      "code": "USD"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_currency_delete_EUR",
+    "route": "/api/admin/currency/delete",
+    "params": {
+      "code": "EUR"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_currency_delete_missing",
+    "route": "/api/admin/currency/delete",
+    "params": {
+      "code": "EUR"
+    },
+    "ok": false,
+    "error": "Currency not found."
+  },
+  {
+    "name": "admin_currency_get_list_final",
+    "route": "/api/admin/currency/get_list",
+    "params": {},
+    "ok": true,
+    "error": null
+  }
+]

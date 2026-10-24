@@ -1,7 +1,11 @@
 import {
+  deleteCurrencyRow,
   findCurrencyByCode,
   findDefaultCurrency,
+  insertCurrency,
   listCurrencies,
+  setDefaultCurrencyRow,
+  updateCurrencyRow,
   type CurrencyRow,
 } from "../db";
 import { FbError, register, requireAdmin, type CallContext } from "../dispatch";
@@ -146,6 +150,116 @@ function adminGetDefault(ctx: CallContext) {
   return currencyToApi(row);
 }
 
+// --- Mutations (Phase 2 batch 2). Error messages/codes mirror the PHP
+// Admin API + Service, verified against captures6. Staff fine-grained
+// permissions (checkPermissions) are not yet modeled — admin identity is
+// required; see phase2/findings.md.
+
+function validCurrencyCode(code: string): boolean {
+  return code in NAMES || Intl.supportedValuesOf("currency").includes(code);
+}
+
+function normalizeFormatPattern(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (trimmed === "") return null;
+  if (trimmed.length > 100) {
+    throw new FbError("Currency format pattern cannot exceed 100 characters.");
+  }
+  if ((trimmed.match(/\{amount\}/g) ?? []).length !== 1) {
+    throw new FbError("Currency format pattern must contain exactly one {amount} placeholder.");
+  }
+  // eslint-disable-next-line no-control-regex
+  if (/[\x00-\x1F\x7F]/.test(trimmed)) {
+    throw new FbError("Currency format pattern must be a single line of plain text.");
+  }
+  return trimmed;
+}
+
+function normalizeFractionDigits(raw: string): number | null {
+  if (raw === "") return null;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 0 || n > 6) {
+    throw new FbError("Currency fraction digits must be a whole number between 0 and 6.");
+  }
+  return n;
+}
+
+function adminCreate(ctx: CallContext) {
+  requireAdmin(ctx);
+  const code = ctx.params["code"];
+  if (!code) throw new FbError("Currency code is missing");
+  if (findCurrencyByCode(code)) throw new FbError("Currency already registered.");
+  if (!validCurrencyCode(code)) throw new FbError("Currency code is invalid.");
+  const manual = truthy(ctx.params["is_rate_manual"], false);
+  const rateRaw = ctx.params["conversion_rate"];
+  let rate: number;
+  if (manual && (rateRaw === undefined || rateRaw === "")) {
+    throw new FbError("A conversion rate is required when manual override is enabled.");
+  }
+  if (rateRaw === undefined || rateRaw === "") {
+    // PHP first tries its external rate provider and falls back to 1.0 on
+    // failure; TS uses the fallback directly (documented divergence).
+    rate = 1.0;
+  } else {
+    if (!/^-?\d+(\.\d+)?$/.test(rateRaw) || Number(rateRaw) <= 0) {
+      throw new FbError("Currency conversion rate must be a positive number.");
+    }
+    rate = Number(rateRaw);
+  }
+  insertCurrency({ code, conversion_rate: rate, is_rate_manual: manual ? 1 : 0 });
+  return code;
+}
+
+function adminUpdate(ctx: CallContext) {
+  requireAdmin(ctx);
+  const code = ctx.params["code"];
+  if (!code) throw new FbError("Currency code is missing");
+  const row = findCurrencyByCode(code);
+  if (!row) throw new FbError("Currency not found.");
+  const fields: Parameters<typeof updateCurrencyRow>[1] = {};
+  if ("format_pattern" in ctx.params) {
+    fields.format_pattern = normalizeFormatPattern(ctx.params["format_pattern"] ?? "");
+  }
+  if ("fraction_digits" in ctx.params) {
+    fields.fraction_digits = normalizeFractionDigits(ctx.params["fraction_digits"] ?? "");
+  }
+  const manual = "is_rate_manual" in ctx.params ? truthy(ctx.params["is_rate_manual"], false) : null;
+  if (manual === true && row.is_default === 1) {
+    throw new FbError("The default currency cannot use a manual rate override.");
+  }
+  const rateRaw = ctx.params["conversion_rate"];
+  if (rateRaw !== undefined && rateRaw !== "") {
+    if (!/^-?\d+(\.\d+)?$/.test(rateRaw) || Number(rateRaw) <= 0) {
+      throw new FbError("Currency conversion rate is invalid.", 151);
+    }
+    fields.conversion_rate = Number(rateRaw);
+  }
+  if (manual !== null) fields.is_rate_manual = manual ? 1 : 0;
+  updateCurrencyRow(code, fields);
+  return true;
+}
+
+function adminDelete(ctx: CallContext) {
+  requireAdmin(ctx);
+  const code = ctx.params["code"];
+  if (!code) throw new FbError("Currency code is missing");
+  const row = findCurrencyByCode(code);
+  if (!row) throw new FbError("Currency not found.");
+  if (row.is_default === 1) throw new FbError("Cannot remove the default currency.");
+  deleteCurrencyRow(code);
+  return true;
+}
+
+function adminSetDefault(ctx: CallContext) {
+  requireAdmin(ctx);
+  const code = ctx.params["code"];
+  if (!code) throw new FbError("Currency code is missing");
+  const row = findCurrencyByCode(code);
+  if (!row) throw new FbError("Currency not found.");
+  if (row.is_default !== 1) setDefaultCurrencyRow(code);
+  return true;
+}
+
 register("guest", "currency", "get_pairs", guestGetPairs);
 register("guest", "currency", "get", guestGet);
 register("guest", "currency", "format", guestFormat);
@@ -153,3 +267,7 @@ register("admin", "currency", "get_list", adminGetList);
 register("admin", "currency", "get_pairs", adminGetPairs);
 register("admin", "currency", "get", adminGet);
 register("admin", "currency", "get_default", adminGetDefault);
+register("admin", "currency", "create", adminCreate);
+register("admin", "currency", "update", adminUpdate);
+register("admin", "currency", "delete", adminDelete);
+register("admin", "currency", "set_default", adminSetDefault);

@@ -5,5 +5,6 @@
  */
 import "./system";
 import "./currency";
+import "./client";
 
 export { findHandler, tsModulesEnabled } from "../dispatch";
