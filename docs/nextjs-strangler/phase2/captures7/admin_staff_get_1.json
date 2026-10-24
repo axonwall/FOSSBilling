@@ -1,0 +1,29 @@
+{
+  "result": {
+    "id": 1,
+    "email": "admin@phase0.local",
+    "name": "Phase Zero Admin",
+    "system_name": null,
+    "status": "active",
+    "signature": null,
+    "timezone": null,
+    "created_at": "2026-10-23 20:32:43",
+    "updated_at": "2026-10-23 21:59:30",
+    "groups": [
+      {
+        "id": 1,
+        "name": "Super Administrator",
+        "system_name": "super_admin",
+        "parent_id": null,
+        "parent_name": null,
+        "path": "Super Administrator",
+        "depth": 0,
+        "permissions": [],
+        "protected": true,
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43"
+      }
+    ]
+  },
+  "error": null
+}

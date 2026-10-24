@@ -6,5 +6,9 @@
 import "./system";
 import "./currency";
 import "./client";
+import "./staff";
+import "./activity";
+import "./news";
+import "./custompages";
 
 export { findHandler, tsModulesEnabled } from "../dispatch";

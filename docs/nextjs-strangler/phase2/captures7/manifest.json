@@ -1,0 +1,224 @@
+[
+  {
+    "name": "guest_news_get_list_empty",
+    "route": "/api/guest/news/get_list",
+    "params": {},
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "guest_pages_get_list",
+    "route": "/api/guest/custompages/get_list",
+    "params": {},
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "guest_staff_login",
+    "route": "/api/guest/staff/login",
+    "params": {
+      "email": "admin@phase0.local",
+      "password": "Phase1-Admin!42"
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_staff_get_list",
+    "route": "/api/admin/staff/get_list",
+    "params": {},
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_staff_get_1",
+    "route": "/api/admin/staff/get",
+    "params": {
+      "id": 1
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_staff_get_missing",
+    "route": "/api/admin/staff/get",
+    "params": {
+      "id": 99999
+    },
+    "ok": false,
+    "error": "Staff member not found",
+    "result": null
+  },
+  {
+    "name": "admin_staff_get_pairs",
+    "route": "/api/admin/staff/get_pairs",
+    "params": {},
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_staff_is_super",
+    "route": "/api/admin/staff/is_super_administrator",
+    "params": {},
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_activity_log_get_list",
+    "route": "/api/admin/activity/log_get_list",
+    "params": {},
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_activity_log_staff_only",
+    "route": "/api/admin/activity/log_get_list",
+    "params": {
+      "user_filter": "only_staff"
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_news_create",
+    "route": "/api/admin/news/create",
+    "params": {
+      "title": "Parity Post",
+      "content": "Hello parity",
+      "description": "pd",
+      "status": "active"
+    },
+    "ok": true,
+    "error": null,
+    "result": 7
+  },
+  {
+    "name": "guest_news_get_list_after",
+    "route": "/api/guest/news/get_list",
+    "params": {},
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "guest_news_get",
+    "route": "/api/guest/news/get",
+    "params": {
+      "id": 7
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_news_get",
+    "route": "/api/admin/news/get",
+    "params": {
+      "id": 7
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_news_update",
+    "route": "/api/admin/news/update",
+    "params": {
+      "id": 7,
+      "title": "Parity Post Edited"
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_news_get_after_update",
+    "route": "/api/admin/news/get",
+    "params": {
+      "id": 7
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_news_delete",
+    "route": "/api/admin/news/delete",
+    "params": {
+      "id": 7
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_news_get_deleted",
+    "route": "/api/admin/news/get",
+    "params": {
+      "id": 7
+    },
+    "ok": false,
+    "error": "News item not found.",
+    "result": null
+  },
+  {
+    "name": "admin_page_create",
+    "route": "/api/admin/custompages/create",
+    "params": {
+      "title": "Parity Page",
+      "content": "Page body",
+      "description": "d",
+      "keywords": "k"
+    },
+    "ok": true,
+    "error": null,
+    "result": 4
+  },
+  {
+    "name": "guest_pages_get_list_after",
+    "route": "/api/guest/custompages/get_list",
+    "params": {},
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "guest_pages_get",
+    "route": "/api/guest/custompages/get",
+    "params": {
+      "id": 4
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_page_get_page",
+    "route": "/api/admin/custompages/get_page",
+    "params": {
+      "page_id": 4
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  },
+  {
+    "name": "admin_page_delete",
+    "route": "/api/admin/custompages/delete",
+    "params": {
+      "id": 4
+    },
+    "ok": true,
+    "error": null,
+    "result": null
+  }
+]

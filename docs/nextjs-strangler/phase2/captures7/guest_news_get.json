@@ -1,0 +1,22 @@
+{
+  "result": {
+    "id": 7,
+    "title": "Parity Post",
+    "description": "pd",
+    "content": "Hello parity",
+    "status": "active",
+    "slug": "parity-post",
+    "image": null,
+    "section": null,
+    "publish_at": null,
+    "published_at": null,
+    "expires_at": null,
+    "created_at": "2026-10-24 00:35:05",
+    "updated_at": "2026-10-24 00:35:05",
+    "author": {
+      "name": "Phase Zero Admin"
+    },
+    "excerpt": null
+  },
+  "error": null
+}

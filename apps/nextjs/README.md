@@ -23,8 +23,10 @@ recommended defaults unless Josh directs otherwise).
   proxy serves a call from TS only when its module is enabled via
   `FB_TS_MODULES` (comma list) and falls back to PHP otherwise. Ported so
   far: `system` (guest reads), `currency` (guest + admin reads and admin
-  mutations), `profile` (client + admin get), and `client` (admin
-  get/get_list/get_pairs) — verified at 16/16 + 32/32 parity against PHP
+  mutations), `profile` (client + admin get), `client` (admin
+  get/get_list/get_pairs), `staff` (admin reads), `activity` (admin log
+  list), `news` and `custompages` (guest/admin reads + admin mutations)
+  — verified at 16/16 + 32/32 + 21/21 parity against PHP
   (`FB_PARITY=1` deep-compares TS vs PHP responses; see
   `docs/nextjs-strangler/phase2/`). TS modules need
   `FB_DATABASE_PATH` pointing at the install's SQLite file in the

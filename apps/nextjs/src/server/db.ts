@@ -298,6 +298,269 @@ export function findAdminById(id: number): AdminRow | undefined {
     .get(id) as unknown as AdminRow | undefined;
 }
 
+export interface AdminFullRow extends AdminRow {
+  system_name: string | null;
+}
+
+export function listAdmins(): AdminFullRow[] {
+  return getDb()
+    .prepare(
+      "SELECT id, email, name, signature, status, api_token, timezone, created_at, updated_at, system_name FROM admin WHERE system_name IS NULL ORDER BY id",
+    )
+    .all() as unknown as AdminFullRow[];
+}
+
+export function findAdminFullById(id: number): AdminFullRow | undefined {
+  return getDb()
+    .prepare(
+      "SELECT id, email, name, signature, status, api_token, timezone, created_at, updated_at, system_name FROM admin WHERE id = ?",
+    )
+    .get(id) as unknown as AdminFullRow | undefined;
+}
+
+export function listAdminPairs(): { id: number; name: string | null }[] {
+  return getDb()
+    .prepare("SELECT id, name FROM admin ORDER BY id")
+    .all() as unknown as { id: number; name: string | null }[];
+}
+
+export interface AdminGroupRow {
+  id: number;
+  name: string;
+  system_name: string | null;
+  permissions: string | null;
+  protected: number;
+  parent_id: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export function listAdminGroups(): AdminGroupRow[] {
+  return getDb()
+    .prepare(
+      "SELECT id, name, system_name, permissions, protected, parent_id, created_at, updated_at FROM admin_group ORDER BY id",
+    )
+    .all() as unknown as AdminGroupRow[];
+}
+
+export function adminGroupIdsFor(adminId: number): number[] {
+  const rows = getDb()
+    .prepare("SELECT admin_group_id FROM admin_group_member WHERE admin_id = ?")
+    .all(adminId) as unknown as { admin_group_id: number }[];
+  return rows.map((r) => r.admin_group_id);
+}
+
+export interface ActivityRow {
+  id: number;
+  priority: number;
+  admin_id: number | null;
+  client_id: number | null;
+  message: string | null;
+  ip: string | null;
+  created_at: string | null;
+  staff_id: number | null;
+  staff_email: string | null;
+  staff_name: string | null;
+  client_name: string | null;
+  client_email: string | null;
+}
+
+export function listActivity(filters: {
+  priority?: string;
+  minPriority?: string;
+  userFilter?: string;
+  adminId?: string;
+  clientId?: string;
+  ip?: string;
+  search?: string;
+}): ActivityRow[] {
+  const where: string[] = [];
+  const args: (string | number)[] = [];
+  if (filters.priority) {
+    where.push("m.priority = ?");
+    args.push(Number(filters.priority));
+  } else if (filters.minPriority) {
+    where.push("m.priority <= ?");
+    args.push(Number(filters.minPriority));
+  }
+  if (filters.userFilter === "only_staff") where.push("m.admin_id IS NOT NULL");
+  if (filters.userFilter === "only_clients") where.push("m.client_id IS NOT NULL");
+  if (filters.adminId) {
+    where.push("m.admin_id = ?");
+    args.push(Number(filters.adminId));
+  }
+  if (filters.clientId) {
+    where.push("m.client_id = ?");
+    args.push(Number(filters.clientId));
+  }
+  if (filters.ip) {
+    where.push("m.ip = ?");
+    args.push(filters.ip);
+  }
+  if (filters.search) {
+    where.push("m.message LIKE ?");
+    args.push(`%${filters.search}%`);
+  }
+  const sql = `SELECT m.*, a.id as staff_id, a.email as staff_email, a.name as staff_name,
+      TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')) as client_name,
+      c.email as client_email
+    FROM activity_system m
+    LEFT JOIN admin a ON a.id = m.admin_id
+    LEFT JOIN client c ON c.id = m.client_id
+    ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
+    ORDER BY m.id DESC`;
+  return getDb().prepare(sql).all(...args) as unknown as ActivityRow[];
+}
+
+export interface PostRow {
+  id: number;
+  admin_id: number | null;
+  title: string;
+  description: string | null;
+  content: string | null;
+  status: string;
+  slug: string;
+  image: string | null;
+  section: string | null;
+  publish_at: string | null;
+  published_at: string | null;
+  expires_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+const POST_COLUMNS =
+  "id, admin_id, title, description, content, status, slug, image, section, publish_at, published_at, expires_at, created_at, updated_at";
+
+export function listPosts(activeOnly: boolean): PostRow[] {
+  const sql = `SELECT ${POST_COLUMNS} FROM post ${activeOnly ? "WHERE status = 'active'" : ""} ORDER BY created_at DESC, id`;
+  return getDb().prepare(sql).all() as unknown as PostRow[];
+}
+
+export function findPostById(id: number): PostRow | undefined {
+  return getDb().prepare(`SELECT ${POST_COLUMNS} FROM post WHERE id = ?`).get(id) as unknown as
+    | PostRow
+    | undefined;
+}
+
+export function findPostBySlug(slug: string): PostRow | undefined {
+  return getDb().prepare(`SELECT ${POST_COLUMNS} FROM post WHERE slug = ?`).get(slug) as unknown as
+    | PostRow
+    | undefined;
+}
+
+export function insertPost(row: {
+  admin_id: number;
+  title: string;
+  slug: string;
+  content: string | null;
+  status: string;
+  description: string | null;
+}): number {
+  const ts = nowTimestamp();
+  const info = getDbWrite()
+    .prepare(
+      "INSERT INTO post (admin_id, title, slug, content, status, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+    .run(row.admin_id, row.title, row.slug, row.content, row.status, row.description, ts, ts);
+  return Number(info.lastInsertRowid);
+}
+
+export function updatePostRow(
+  id: number,
+  fields: Partial<{ title: string; description: string | null; content: string | null; status: string }>,
+): void {
+  const sets: string[] = [];
+  const values: (string | number | null)[] = [];
+  for (const [k, v] of Object.entries(fields)) {
+    sets.push(`${k} = ?`);
+    values.push(v);
+  }
+  sets.push("updated_at = ?");
+  values.push(nowTimestamp(), id);
+  getDbWrite()
+    .prepare(`UPDATE post SET ${sets.join(", ")} WHERE id = ?`)
+    .run(...(values as (string | number)[]));
+}
+
+export function deletePostRow(id: number): void {
+  getDbWrite().prepare("DELETE FROM post WHERE id = ?").run(id);
+}
+
+export interface PageRow {
+  id: number;
+  title: string;
+  description: string | null;
+  keywords: string | null;
+  content: string | null;
+  slug: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+const PAGE_COLUMNS = "id, title, description, keywords, content, slug, created_at, updated_at";
+
+export function listPages(): PageRow[] {
+  return getDb()
+    .prepare(`SELECT ${PAGE_COLUMNS} FROM custom_pages ORDER BY created_at DESC, id`)
+    .all() as unknown as PageRow[];
+}
+
+export function findPageById(id: number): PageRow | undefined {
+  return getDb().prepare(`SELECT ${PAGE_COLUMNS} FROM custom_pages WHERE id = ?`).get(id) as unknown as
+    | PageRow
+    | undefined;
+}
+
+export function findPageBySlug(slug: string): PageRow | undefined {
+  return getDb()
+    .prepare(`SELECT ${PAGE_COLUMNS} FROM custom_pages WHERE slug = ?`)
+    .get(slug) as unknown as PageRow | undefined;
+}
+
+export function insertPage(row: {
+  title: string;
+  slug: string;
+  content: string | null;
+  description: string | null;
+  keywords: string | null;
+}): number {
+  const ts = nowTimestamp();
+  const info = getDbWrite()
+    .prepare(
+      "INSERT INTO custom_pages (title, slug, content, description, keywords, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    )
+    .run(row.title, row.slug, row.content, row.description, row.keywords, ts, ts);
+  return Number(info.lastInsertRowid);
+}
+
+export function updatePageRow(
+  id: number,
+  fields: Partial<{
+    title: string;
+    description: string | null;
+    keywords: string | null;
+    content: string | null;
+    slug: string;
+  }>,
+): void {
+  const sets: string[] = [];
+  const values: (string | number | null)[] = [];
+  for (const [k, v] of Object.entries(fields)) {
+    sets.push(`${k} = ?`);
+    values.push(v);
+  }
+  sets.push("updated_at = ?");
+  values.push(nowTimestamp(), id);
+  getDbWrite()
+    .prepare(`UPDATE custom_pages SET ${sets.join(", ")} WHERE id = ?`)
+    .run(...(values as (string | number)[]));
+}
+
+export function deletePageRow(id: number): void {
+  getDbWrite().prepare("DELETE FROM custom_pages WHERE id = ?").run(id);
+}
+
 export interface SessionRow {
   id: string;
   content: string;
