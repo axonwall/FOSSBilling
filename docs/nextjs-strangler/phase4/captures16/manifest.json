@@ -1,0 +1,302 @@
+[
+  {
+    "name": "guest_client_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_helpdesk_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_helpdesk_get_pairs",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_ticket_get_statuses",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_ticket_get_statuses_titles",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_canned_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_canned_pairs",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_canned_category_pairs",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_kb_article_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_kb_category_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_helpdesk_get_pairs",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_ticket_get_list_empty",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_ticket_get_missing",
+    "ok": false,
+    "error": "Ticket ID is missing"
+  },
+  {
+    "name": "client_ticket_create",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_ticket_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_ticket_reply",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_ticket_reply",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_ticket_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_ticket_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_ticket_message_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_ticket_message_history",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_ticket_message_update_client_refused",
+    "ok": false,
+    "error": "Only admin replies can be edited"
+  },
+  {
+    "name": "admin_note_create",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_note_delete",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_ticket_close",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_ticket_close_idempotent",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_ticket_reopen_reply",
+    "ok": false,
+    "error": "Ticket cannot be reopened."
+  },
+  {
+    "name": "admin_ticket_get_after_reopen",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_ticket_create",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_batch_ticket_auto_close",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_ticket_create_missing_subject",
+    "ok": false,
+    "error": "Ticket subject required"
+  },
+  {
+    "name": "client_ticket_create_bad_helpdesk",
+    "ok": false,
+    "error": "Helpdesk invalid"
+  },
+  {
+    "name": "client_ticket_get_foreign",
+    "ok": false,
+    "error": "Ticket not found"
+  },
+  {
+    "name": "guest_tickets_enabled",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_ticket_create",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_ticket_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_ticket_reply",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_ticket_close",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_ticket_get_bad_hash",
+    "ok": false,
+    "error": "Guest ticket not found"
+  },
+  {
+    "name": "admin_kb_category_create",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_kb_article_create",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_kb_article_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_kb_article_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_kb_article_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_kb_article_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_kb_category_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_kb_article_delete",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_kb_category_delete",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_helpdesk_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_canned_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_canned_category_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_kb_category_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_kb_category_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_staff_login_2",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_extension_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_extension_get_navigation",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_extension_languages",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_extension_config_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_extension_locale_completion",
+    "ok": true,
+    "error": null
+  }
+]

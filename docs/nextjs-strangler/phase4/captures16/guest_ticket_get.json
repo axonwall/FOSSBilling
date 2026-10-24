@@ -1,0 +1,51 @@
+{
+  "result": {
+    "id": 13,
+    "author_name": "Guest User",
+    "author_email": "phase0.guest@example.com",
+    "subject": "Guest capture16",
+    "status": "open",
+    "created_at": "2026-10-24 15:23:54",
+    "updated_at": "2026-10-24 15:23:54",
+    "hash": "8a28b43d4a8d05386de7679bcec9779b238f848ff7",
+    "replies": 1,
+    "first": {
+      "id": 27,
+      "content": "Guest needs help.",
+      "attachment": null,
+      "created_at": "2026-10-24 15:23:54",
+      "updated_at": "2026-10-24 15:23:54",
+      "author": {
+        "name": "Guest User",
+        "email": "phase0.guest@example.com",
+        "role": "guest"
+      }
+    },
+    "helpdesk": {
+      "id": 1,
+      "name": "General",
+      "can_reopen": false
+    },
+    "author": {
+      "name": "Guest User",
+      "role": "guest",
+      "email": "phase0.guest@example.com"
+    },
+    "client": [],
+    "messages": [
+      {
+        "id": 27,
+        "content": "Guest needs help.",
+        "attachment": null,
+        "created_at": "2026-10-24 15:23:54",
+        "updated_at": "2026-10-24 15:23:54",
+        "author": {
+          "name": "Guest User",
+          "email": "phase0.guest@example.com",
+          "role": "guest"
+        }
+      }
+    ]
+  },
+  "error": null
+}

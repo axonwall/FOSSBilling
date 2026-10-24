@@ -1,0 +1,215 @@
+{
+  "result": {
+    "pages": 1,
+    "page": 1,
+    "per_page": 100,
+    "total": 17,
+    "list": [
+      {
+        "id": 2,
+        "support_pr_category_id": 1,
+        "title": "Message Acknowledgement",
+        "content": "Hi there,\n\nThank you for reaching out. We will take a look at your issue and get back to you as soon as possible.",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 1,
+          "title": "Greetings"
+        }
+      },
+      {
+        "id": 1,
+        "support_pr_category_id": 1,
+        "title": "Welcome Message",
+        "content": "Hi,\n\nThank you for choosing our hosting services.\n\nIf you need any assistance just create a support ticket anytime, we are here to help.",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 1,
+          "title": "Greetings"
+        }
+      },
+      {
+        "id": 3,
+        "support_pr_category_id": 2,
+        "title": "Issue Resolved",
+        "content": "The reported issue has been resolved on your account.\n\nIf you are still experiencing problems, have any further questions or need additional support, feel free to contact us.",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 2,
+          "title": "General Support"
+        }
+      },
+      {
+        "id": 4,
+        "support_pr_category_id": 2,
+        "title": "Request Completed",
+        "content": "Your request has been completed.\n\nLet us know if there is anything else we can help you with.",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 2,
+          "title": "General Support"
+        }
+      },
+      {
+        "id": 6,
+        "support_pr_category_id": 2,
+        "title": "Request for Error Details",
+        "content": "Are you seeing any specific error messages?\n\nIf so, please copy and paste the full message here and it will make it much quicker for us to help you quickly find the cause of the issue and get it resolved.",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 2,
+          "title": "General Support"
+        }
+      },
+      {
+        "id": 5,
+        "support_pr_category_id": 2,
+        "title": "Website Check",
+        "content": "We have checked your website and everything appears to be working correctly on our end.\n\nPlease check from your side and let us know if you still encounter any issues.",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 2,
+          "title": "General Support"
+        }
+      },
+      {
+        "id": 9,
+        "support_pr_category_id": 3,
+        "title": "Account Suspension Warning",
+        "content": "Hello,\n\nYour account is at risk of suspension due to an outstanding issue. Please take action as soon as possible to avoid service interruption.",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 3,
+          "title": "Billing & Payments"
+        }
+      },
+      {
+        "id": 7,
+        "support_pr_category_id": 3,
+        "title": "Invoice Paid Confirmation",
+        "content": "Hello,\n\nWe have received your payment successfully and your invoice has been marked as paid.\n\nThank you!",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 3,
+          "title": "Billing & Payments"
+        }
+      },
+      {
+        "id": 8,
+        "support_pr_category_id": 3,
+        "title": "Invoice Reminder",
+        "content": "Hello,\n\nThis is a friendly reminder that you have an unpaid invoice.\n\nPlease log in to your client area to complete the payment to avoid further action.",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 3,
+          "title": "Billing & Payments"
+        }
+      },
+      {
+        "id": 11,
+        "support_pr_category_id": 4,
+        "title": "Password Reset Instructions",
+        "content": "Hello,\n\nTo reset your password, please click the \"Forgot Password\" link on the login page and follow the instructions provided.",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 4,
+          "title": "Account Management"
+        }
+      },
+      {
+        "id": 10,
+        "support_pr_category_id": 4,
+        "title": "Plan Upgrade Complete",
+        "content": "Hello,\n\nYour hosting plan has been successfully upgraded. The new resources are now active on your account.",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 4,
+          "title": "Account Management"
+        }
+      },
+      {
+        "id": 12,
+        "support_pr_category_id": 4,
+        "title": "Request for Product Info",
+        "content": "Could you please let us know which domain name or hosting plan you are having the issue with?\n\nThis will help us to find the issue and get it solved for you much more easily.",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 4,
+          "title": "Account Management"
+        }
+      },
+      {
+        "id": 14,
+        "support_pr_category_id": 5,
+        "title": "Backup Restored",
+        "content": "Hello,\n\nYour requested backup has been successfully restored. Please verify that everything is working as expected.",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 5,
+          "title": "Technical Issues"
+        }
+      },
+      {
+        "id": 13,
+        "support_pr_category_id": 5,
+        "title": "DNS Not Pointing",
+        "content": "Your domain is currently not pointing to our servers.\n\nPlease update the nameservers at your domain registrar. Note that it may take up to 24 hours for the changes to fully take effect.",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 5,
+          "title": "Technical Issues"
+        }
+      },
+      {
+        "id": 15,
+        "support_pr_category_id": 5,
+        "title": "Ticket Escalated",
+        "content": "Hello,\n\nWe have escalated your request to our senior support team. You will receive a response shortly. Thank you for your patience.",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 5,
+          "title": "Technical Issues"
+        }
+      },
+      {
+        "id": 16,
+        "support_pr_category_id": 6,
+        "title": "Scheduled Maintenance Notice",
+        "content": "Hello,\n\nWe will be performing scheduled maintenance soon that may affect your sites. Temporary service interruptions could possibly occur. Thank you for your understanding.",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 6,
+          "title": "Notices & Maintenance"
+        }
+      },
+      {
+        "id": 17,
+        "support_pr_category_id": 7,
+        "title": "Domain Renewal Reminder",
+        "content": "Hello,\n\nOne of your domains is expiring soon, this is just a reminder to renew your domain to avoid any service interruption.",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 7,
+          "title": "Domain & SSL"
+        }
+      }
+    ]
+  },
+  "error": null
+}

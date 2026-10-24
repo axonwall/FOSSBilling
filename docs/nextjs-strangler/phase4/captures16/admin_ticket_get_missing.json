@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Ticket ID is missing",
+    "code": 9999
+  }
+}

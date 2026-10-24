@@ -1,0 +1,55 @@
+{
+  "result": {
+    "id": 11,
+    "author_name": null,
+    "author_email": null,
+    "subject": "Capture16 help",
+    "status": "open",
+    "created_at": "2026-10-24 15:23:44",
+    "updated_at": "2026-10-24 15:23:44",
+    "replies": 1,
+    "first": {
+      "id": 23,
+      "content": "My widget is down, please help.",
+      "attachment": null,
+      "created_at": "2026-10-24 15:23:45",
+      "updated_at": "2026-10-24 15:23:45",
+      "author": {
+        "name": "Phase Zero",
+        "role": "client"
+      }
+    },
+    "helpdesk": {
+      "id": 1,
+      "name": "General",
+      "can_reopen": false
+    },
+    "author": {
+      "id": 1,
+      "name": "Phase Zero",
+      "first_name": "Phase",
+      "last_name": "Zero",
+      "email": "phase0.client@example.com",
+      "role": "client"
+    },
+    "client": {
+      "id": 1,
+      "first_name": "Phase",
+      "last_name": "Zero"
+    },
+    "messages": [
+      {
+        "id": 23,
+        "content": "My widget is down, please help.",
+        "attachment": null,
+        "created_at": "2026-10-24 15:23:45",
+        "updated_at": "2026-10-24 15:23:45",
+        "author": {
+          "name": "Phase Zero",
+          "role": "client"
+        }
+      }
+    ]
+  },
+  "error": null
+}

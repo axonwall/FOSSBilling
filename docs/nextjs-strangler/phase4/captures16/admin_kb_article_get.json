@@ -1,0 +1,19 @@
+{
+  "result": {
+    "id": 7,
+    "slug": "capture16-kb-article",
+    "title": "Capture16 KB article",
+    "views": 0,
+    "created_at": "2026-10-24 15:23:57",
+    "status": "active",
+    "updated_at": "2026-10-24 15:23:57",
+    "category": {
+      "id": 6,
+      "slug": "capture16-kb-cat",
+      "title": "Capture16 KB cat"
+    },
+    "content": "Body of the capture16 article.",
+    "kb_article_category_id": 6
+  },
+  "error": null
+}

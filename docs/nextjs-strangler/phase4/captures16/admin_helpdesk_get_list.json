@@ -1,0 +1,21 @@
+{
+  "result": {
+    "pages": 1,
+    "page": 1,
+    "per_page": 100,
+    "total": 1,
+    "list": [
+      {
+        "id": 1,
+        "name": "General",
+        "email": "info@yourcompany.com",
+        "can_reopen": false,
+        "close_after": 24,
+        "signature": "Always a pleasure to help. Wishing you a great day!",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43"
+      }
+    ]
+  },
+  "error": null
+}

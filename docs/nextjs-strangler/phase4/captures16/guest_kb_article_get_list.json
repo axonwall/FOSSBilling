@@ -1,0 +1,67 @@
+{
+  "result": {
+    "pages": 1,
+    "page": 1,
+    "per_page": 100,
+    "total": 4,
+    "list": [
+      {
+        "id": 7,
+        "slug": "capture16-kb-article",
+        "title": "Capture16 KB article (updated)",
+        "views": 0,
+        "created_at": "2026-10-24 15:23:57",
+        "status": "active",
+        "updated_at": "2026-10-24 15:23:58",
+        "category": {
+          "id": 6,
+          "slug": "capture16-kb-cat",
+          "title": "Capture16 KB cat"
+        }
+      },
+      {
+        "id": 3,
+        "slug": "example-article",
+        "title": "Example article",
+        "views": 0,
+        "created_at": "2026-10-23 20:32:43",
+        "status": "active",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 2,
+          "slug": "how-to",
+          "title": "How to's"
+        }
+      },
+      {
+        "id": 1,
+        "slug": "how-to-contact-support",
+        "title": "How to contact support",
+        "views": 0,
+        "created_at": "2026-10-23 20:32:43",
+        "status": "active",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 2,
+          "slug": "how-to",
+          "title": "How to's"
+        }
+      },
+      {
+        "id": 2,
+        "slug": "how-to-place-new-order",
+        "title": "How to place a new order",
+        "views": 0,
+        "created_at": "2026-10-23 20:32:43",
+        "status": "active",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 2,
+          "slug": "how-to",
+          "title": "How to's"
+        }
+      }
+    ]
+  },
+  "error": null
+}

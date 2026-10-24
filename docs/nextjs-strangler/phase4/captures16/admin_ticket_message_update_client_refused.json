@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Only admin replies can be edited",
+    "code": 9999
+  }
+}

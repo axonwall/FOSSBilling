@@ -1,0 +1,75 @@
+{
+  "result": {
+    "pages": 1,
+    "page": 1,
+    "per_page": 100,
+    "total": 2,
+    "list": [
+      {
+        "id": 1,
+        "title": "Frequently asked questions",
+        "description": "Section for common issues",
+        "slug": "faq",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "articles": []
+      },
+      {
+        "id": 2,
+        "title": "How to's",
+        "description": "Section dedicated for tutorials",
+        "slug": "how-to",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "articles": [
+          {
+            "id": 3,
+            "slug": "example-article",
+            "title": "Example article",
+            "views": 0,
+            "created_at": "2026-10-23 20:32:43",
+            "status": "active",
+            "updated_at": "2026-10-23 20:32:43",
+            "category": {
+              "id": 2,
+              "slug": "how-to",
+              "title": "How to's"
+            },
+            "kb_article_category_id": 2
+          },
+          {
+            "id": 1,
+            "slug": "how-to-contact-support",
+            "title": "How to contact support",
+            "views": 0,
+            "created_at": "2026-10-23 20:32:43",
+            "status": "active",
+            "updated_at": "2026-10-23 20:32:43",
+            "category": {
+              "id": 2,
+              "slug": "how-to",
+              "title": "How to's"
+            },
+            "kb_article_category_id": 2
+          },
+          {
+            "id": 2,
+            "slug": "how-to-place-new-order",
+            "title": "How to place a new order",
+            "views": 0,
+            "created_at": "2026-10-23 20:32:43",
+            "status": "active",
+            "updated_at": "2026-10-23 20:32:43",
+            "category": {
+              "id": 2,
+              "slug": "how-to",
+              "title": "How to's"
+            },
+            "kb_article_category_id": 2
+          }
+        ]
+      }
+    ]
+  },
+  "error": null
+}

@@ -1,0 +1,36 @@
+{
+  "result": {
+    "Greetings": {
+      "2": "Message Acknowledgement",
+      "1": "Welcome Message"
+    },
+    "General Support": {
+      "3": "Issue Resolved",
+      "4": "Request Completed",
+      "6": "Request for Error Details",
+      "5": "Website Check"
+    },
+    "Billing & Payments": {
+      "9": "Account Suspension Warning",
+      "7": "Invoice Paid Confirmation",
+      "8": "Invoice Reminder"
+    },
+    "Account Management": {
+      "11": "Password Reset Instructions",
+      "10": "Plan Upgrade Complete",
+      "12": "Request for Product Info"
+    },
+    "Technical Issues": {
+      "14": "Backup Restored",
+      "13": "DNS Not Pointing",
+      "15": "Ticket Escalated"
+    },
+    "Notices & Maintenance": {
+      "16": "Scheduled Maintenance Notice"
+    },
+    "Domain & SSL": {
+      "17": "Domain Renewal Reminder"
+    }
+  },
+  "error": null
+}

@@ -16,5 +16,7 @@ import "./invoice";
 import "./order";
 import "./cron";
 import "./email";
+import "./support";
+import "./extension";
 
 export { findHandler, tsModulesEnabled } from "../dispatch";

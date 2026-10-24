@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Ticket cannot be reopened.",
+    "code": 9999
+  }
+}

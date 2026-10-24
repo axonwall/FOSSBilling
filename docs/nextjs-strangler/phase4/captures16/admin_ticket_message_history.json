@@ -1,0 +1,13 @@
+{
+  "result": [
+    {
+      "id": 3,
+      "support_ticket_message_id": 25,
+      "admin_id": 1,
+      "content": "We are looking into it.",
+      "created_at": "2026-10-24 15:23:48",
+      "content_html": "<p>We are looking into it.</p>\n"
+    }
+  ],
+  "error": null
+}

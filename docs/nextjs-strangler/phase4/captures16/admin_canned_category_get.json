@@ -1,0 +1,35 @@
+{
+  "result": {
+    "id": 1,
+    "title": "Greetings",
+    "created_at": "2026-10-23 20:32:43",
+    "updated_at": "2026-10-23 20:32:43",
+    "responses": [
+      {
+        "id": 2,
+        "support_pr_category_id": 1,
+        "title": "Message Acknowledgement",
+        "content": "Hi there,\n\nThank you for reaching out. We will take a look at your issue and get back to you as soon as possible.",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 1,
+          "title": "Greetings"
+        }
+      },
+      {
+        "id": 1,
+        "support_pr_category_id": 1,
+        "title": "Welcome Message",
+        "content": "Hi,\n\nThank you for choosing our hosting services.\n\nIf you need any assistance just create a support ticket anytime, we are here to help.",
+        "created_at": "2026-10-23 20:32:43",
+        "updated_at": "2026-10-23 20:32:43",
+        "category": {
+          "id": 1,
+          "title": "Greetings"
+        }
+      }
+    ]
+  },
+  "error": null
+}
