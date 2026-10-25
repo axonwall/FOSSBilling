@@ -19,5 +19,6 @@ import "./email";
 import "./support";
 import "./extension";
 import "./profile";
+import "./stats";
 
 export { findHandler, tsModulesEnabled } from "../dispatch";

@@ -1,0 +1,107 @@
+[
+  {
+    "name": "tmp_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_summary",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_summary_income",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_orders_statuses",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_product_summary",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_product_sales",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_product_sales_dated",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_income_vs_refunds",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_refunds",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_refunds_dated",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_income",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_income_dated",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_orders",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_orders_dated",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_clients",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_invoices",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_tickets",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_client_countries",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_client_countries_limit2",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_sales_countries",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "stats_sales_countries_limit2",
+    "ok": true,
+    "error": null
+  }
+]

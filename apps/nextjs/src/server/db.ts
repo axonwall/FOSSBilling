@@ -1688,8 +1688,11 @@ export function deleteOrderStatusRow(id: number): void {
 }
 
 export function orderStatusCounts(): Record<string, number> {
+  // PHP's Order counter() counts group masters only; on the
+  // reference DB every order is a master, so this never changed
+  // a parity result — but the filter is the faithful query.
   const rows = getDb()
-    .prepare("SELECT status, COUNT(*) AS n FROM client_order GROUP BY status")
+    .prepare("SELECT status, COUNT(*) AS n FROM client_order WHERE group_master = 1 GROUP BY status")
     .all() as unknown as { status: string; n: number }[];
   const out: Record<string, number> = {};
   for (const r of rows) out[r.status] = r.n;

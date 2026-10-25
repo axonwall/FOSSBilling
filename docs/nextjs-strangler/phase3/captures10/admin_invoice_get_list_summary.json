@@ -1,15 +1,15 @@
 {
   "result": {
-    "pages": 2,
+    "pages": 3,
     "page": 1,
     "per_page": 100,
-    "total": 163,
+    "total": 270,
     "list": [
       {
-        "id": 189,
+        "id": 336,
         "serie": "FOSS",
-        "nr": "133",
-        "serie_nr": "FOSS00133",
+        "nr": "248",
+        "serie_nr": "FOSS00248",
         "client_id": 1,
         "client": {
           "id": 1
@@ -19,10 +19,10 @@
         "subtotal": 85,
         "total": 85,
         "status": "paid",
-        "due_at": "2026-10-29 05:47:18",
-        "paid_at": "2026-10-24 05:47:19",
-        "created_at": "2026-10-24 05:47:18",
-        "updated_at": "2026-10-24 05:47:19",
+        "due_at": "2026-10-30 21:49:30",
+        "paid_at": "2026-10-25 21:49:31",
+        "created_at": "2026-10-25 21:49:30",
+        "updated_at": "2026-10-25 21:49:31",
         "buyer": {
           "first_name": "Phase",
           "last_name": "Zero",
@@ -32,10 +32,10 @@
         "cancellable": false
       },
       {
-        "id": 187,
+        "id": 334,
         "serie": "FOSS",
-        "nr": "132",
-        "serie_nr": "FOSS00132",
+        "nr": "247",
+        "serie_nr": "FOSS00247",
         "client_id": 1,
         "client": {
           "id": 1
@@ -45,10 +45,10 @@
         "subtotal": 85,
         "total": 85,
         "status": "paid",
-        "due_at": "2026-10-29 05:47:12",
-        "paid_at": "2026-10-24 05:47:13",
-        "created_at": "2026-10-24 05:47:12",
-        "updated_at": "2026-10-24 05:47:13",
+        "due_at": "2026-10-30 21:49:21",
+        "paid_at": "2026-10-25 21:49:22",
+        "created_at": "2026-10-25 21:49:21",
+        "updated_at": "2026-10-25 21:49:22",
         "buyer": {
           "first_name": "Phase",
           "last_name": "Zero",
@@ -58,62 +58,10 @@
         "cancellable": false
       },
       {
-        "id": 185,
+        "id": 333,
         "serie": "FOSS",
-        "nr": "131",
-        "serie_nr": "FOSS00131",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 85,
-        "total": 85,
-        "status": "paid",
-        "due_at": "2026-10-29 05:46:51",
-        "paid_at": "2026-10-24 05:46:51",
-        "created_at": "2026-10-24 05:46:51",
-        "updated_at": "2026-10-24 05:46:51",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 183,
-        "serie": "FOSS",
-        "nr": "130",
-        "serie_nr": "FOSS00130",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 85,
-        "total": 85,
-        "status": "paid",
-        "due_at": "2026-10-29 05:46:40",
-        "paid_at": "2026-10-24 05:46:40",
-        "created_at": "2026-10-24 05:46:40",
-        "updated_at": "2026-10-24 05:46:40",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 182,
-        "serie": "FOSS",
-        "nr": "129",
-        "serie_nr": "FOSS00129",
+        "nr": "246",
+        "serie_nr": "FOSS00246",
         "client_id": 1,
         "client": {
           "id": 1
@@ -123,10 +71,10 @@
         "subtotal": 10,
         "total": 10,
         "status": "unpaid",
-        "due_at": "2026-10-29 05:46:35",
+        "due_at": "2026-10-30 21:49:19",
         "paid_at": null,
-        "created_at": "2026-10-24 05:46:35",
-        "updated_at": "2026-10-24 05:46:36",
+        "created_at": "2026-10-25 21:49:19",
+        "updated_at": "2026-10-25 21:49:20",
         "buyer": {
           "first_name": "Phase",
           "last_name": "Zero",
@@ -136,10 +84,10 @@
         "cancellable": true
       },
       {
-        "id": 181,
+        "id": 332,
         "serie": "FOSS",
-        "nr": "128",
-        "serie_nr": "FOSS00128",
+        "nr": "245",
+        "serie_nr": "FOSS00245",
         "client_id": 1,
         "client": {
           "id": 1
@@ -149,10 +97,10 @@
         "subtotal": 25,
         "total": 25,
         "status": "unpaid",
-        "due_at": "2026-10-29 05:46:35",
+        "due_at": "2026-10-30 21:49:19",
         "paid_at": null,
-        "created_at": "2026-10-24 05:46:35",
-        "updated_at": "2026-10-24 05:46:35",
+        "created_at": "2026-10-25 21:49:19",
+        "updated_at": "2026-10-25 21:49:19",
         "buyer": {
           "first_name": "Phase",
           "last_name": "Zero",
@@ -162,10 +110,10 @@
         "cancellable": true
       },
       {
-        "id": 180,
+        "id": 331,
         "serie": "FOSS",
-        "nr": "127",
-        "serie_nr": "FOSS00127",
+        "nr": "244",
+        "serie_nr": "FOSS00244",
         "client_id": 1,
         "client": {
           "id": 1
@@ -175,10 +123,10 @@
         "subtotal": 25,
         "total": 25,
         "status": "canceled",
-        "due_at": "2026-10-29 05:46:34",
+        "due_at": "2026-10-30 21:49:18",
         "paid_at": null,
-        "created_at": "2026-10-24 05:46:34",
-        "updated_at": "2026-10-24 05:46:35",
+        "created_at": "2026-10-25 21:49:18",
+        "updated_at": "2026-10-25 21:49:19",
         "buyer": {
           "first_name": "Phase",
           "last_name": "Zero",
@@ -188,10 +136,10 @@
         "cancellable": false
       },
       {
-        "id": 179,
+        "id": 330,
         "serie": "FOSS",
-        "nr": "126",
-        "serie_nr": "FOSS00126",
+        "nr": "243",
+        "serie_nr": "FOSS00243",
         "client_id": 1,
         "client": {
           "id": 1
@@ -201,10 +149,10 @@
         "subtotal": 25,
         "total": 25,
         "status": "canceled",
-        "due_at": "2026-10-29 05:46:34",
+        "due_at": "2026-10-30 21:49:17",
         "paid_at": null,
-        "created_at": "2026-10-24 05:46:34",
-        "updated_at": "2026-10-24 05:46:34",
+        "created_at": "2026-10-25 21:49:17",
+        "updated_at": "2026-10-25 21:49:18",
         "buyer": {
           "first_name": "Phase",
           "last_name": "Zero",
@@ -214,10 +162,1596 @@
         "cancellable": false
       },
       {
-        "id": 178,
+        "id": 329,
         "serie": "DN-",
-        "nr": "14",
-        "serie_nr": "DN-00014",
+        "nr": "24",
+        "serie_nr": "DN-00024",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 15,
+        "total": 15,
+        "status": "unpaid",
+        "due_at": "2026-10-30 21:49:17",
+        "paid_at": null,
+        "created_at": "2026-10-25 21:49:17",
+        "updated_at": "2026-10-25 21:49:17",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 328,
+        "serie": "FOSS",
+        "nr": "242",
+        "serie_nr": "FOSS00242",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 30,
+        "total": 30,
+        "status": "paid",
+        "due_at": "2026-10-30 21:49:16",
+        "paid_at": "2026-10-25 21:49:16",
+        "created_at": "2026-10-25 21:49:16",
+        "updated_at": "2026-10-25 21:49:17",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 327,
+        "serie": "CN-",
+        "nr": "25",
+        "serie_nr": "CN-00025",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": -30,
+        "total": -30,
+        "status": "refunded",
+        "due_at": null,
+        "paid_at": "2026-10-25 21:49:15",
+        "created_at": "2026-10-25 21:49:15",
+        "updated_at": "2026-10-25 21:49:15",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 326,
+        "serie": "FOSS",
+        "nr": "241",
+        "serie_nr": "FOSS00241",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 30,
+        "total": 30,
+        "status": "refunded",
+        "due_at": "2026-10-30 21:49:14",
+        "paid_at": "2026-10-25 21:49:15",
+        "created_at": "2026-10-25 21:49:14",
+        "updated_at": "2026-10-25 21:49:15",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 325,
+        "serie": "FOSS",
+        "nr": "240",
+        "serie_nr": "FOSS00240",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "paid",
+        "due_at": "2026-10-30 21:49:11",
+        "paid_at": "2026-10-25 21:49:12",
+        "created_at": "2026-10-25 21:49:11",
+        "updated_at": "2026-10-25 21:49:12",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 324,
+        "serie": "FOSS",
+        "nr": "239",
+        "serie_nr": "FOSS00239",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "paid",
+        "due_at": "2026-10-30 21:49:10",
+        "paid_at": "2026-10-25 21:49:11",
+        "created_at": "2026-10-25 21:49:10",
+        "updated_at": "2026-10-25 21:49:11",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 323,
+        "serie": "FOSS",
+        "nr": "238",
+        "serie_nr": "FOSS00238",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "paid",
+        "due_at": "2026-10-30 21:49:09",
+        "paid_at": "2026-10-25 21:49:10",
+        "created_at": "2026-10-25 21:49:09",
+        "updated_at": "2026-10-25 21:49:10",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 317,
+        "serie": "FOSS",
+        "nr": "233",
+        "serie_nr": "FOSS00233",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 85,
+        "total": 85,
+        "status": "paid",
+        "due_at": "2026-10-30 21:41:06",
+        "paid_at": "2026-10-25 21:41:07",
+        "created_at": "2026-10-25 21:41:06",
+        "updated_at": "2026-10-25 21:41:07",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 316,
+        "serie": "FOSS",
+        "nr": "232",
+        "serie_nr": "FOSS00232",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 10,
+        "total": 10,
+        "status": "unpaid",
+        "due_at": "2026-10-30 21:41:04",
+        "paid_at": null,
+        "created_at": "2026-10-25 21:41:04",
+        "updated_at": "2026-10-25 21:41:04",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 315,
+        "serie": "FOSS",
+        "nr": "231",
+        "serie_nr": "FOSS00231",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "unpaid",
+        "due_at": "2026-10-30 21:41:03",
+        "paid_at": null,
+        "created_at": "2026-10-25 21:41:03",
+        "updated_at": "2026-10-25 21:41:04",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 314,
+        "serie": "FOSS",
+        "nr": "230",
+        "serie_nr": "FOSS00230",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "canceled",
+        "due_at": "2026-10-30 21:41:03",
+        "paid_at": null,
+        "created_at": "2026-10-25 21:41:03",
+        "updated_at": "2026-10-25 21:41:04",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 313,
+        "serie": "FOSS",
+        "nr": "229",
+        "serie_nr": "FOSS00229",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "canceled",
+        "due_at": "2026-10-30 21:41:02",
+        "paid_at": null,
+        "created_at": "2026-10-25 21:41:02",
+        "updated_at": "2026-10-25 21:41:03",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 312,
+        "serie": "DN-",
+        "nr": "23",
+        "serie_nr": "DN-00023",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 15,
+        "total": 15,
+        "status": "unpaid",
+        "due_at": "2026-10-30 21:41:02",
+        "paid_at": null,
+        "created_at": "2026-10-25 21:41:02",
+        "updated_at": "2026-10-25 21:41:02",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 311,
+        "serie": "FOSS",
+        "nr": "228",
+        "serie_nr": "FOSS00228",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 30,
+        "total": 30,
+        "status": "paid",
+        "due_at": "2026-10-30 21:41:01",
+        "paid_at": "2026-10-25 21:41:02",
+        "created_at": "2026-10-25 21:41:01",
+        "updated_at": "2026-10-25 21:41:02",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 310,
+        "serie": "CN-",
+        "nr": "24",
+        "serie_nr": "CN-00024",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": -30,
+        "total": -30,
+        "status": "refunded",
+        "due_at": null,
+        "paid_at": "2026-10-25 21:41:01",
+        "created_at": "2026-10-25 21:41:01",
+        "updated_at": "2026-10-25 21:41:01",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 309,
+        "serie": "FOSS",
+        "nr": "227",
+        "serie_nr": "FOSS00227",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 30,
+        "total": 30,
+        "status": "refunded",
+        "due_at": "2026-10-30 21:41:00",
+        "paid_at": "2026-10-25 21:41:00",
+        "created_at": "2026-10-25 21:41:00",
+        "updated_at": "2026-10-25 21:41:01",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 308,
+        "serie": "FOSS",
+        "nr": "226",
+        "serie_nr": "FOSS00226",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "paid",
+        "due_at": "2026-10-30 21:40:57",
+        "paid_at": "2026-10-25 21:40:58",
+        "created_at": "2026-10-25 21:40:57",
+        "updated_at": "2026-10-25 21:40:58",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 307,
+        "serie": "FOSS",
+        "nr": "225",
+        "serie_nr": "FOSS00225",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "paid",
+        "due_at": "2026-10-30 21:40:56",
+        "paid_at": "2026-10-25 21:40:57",
+        "created_at": "2026-10-25 21:40:56",
+        "updated_at": "2026-10-25 21:40:57",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 306,
+        "serie": "FOSS",
+        "nr": "224",
+        "serie_nr": "FOSS00224",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "paid",
+        "due_at": "2026-10-30 21:40:55",
+        "paid_at": "2026-10-25 21:40:56",
+        "created_at": "2026-10-25 21:40:55",
+        "updated_at": "2026-10-25 21:40:56",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 300,
+        "serie": "FOSS",
+        "nr": "219",
+        "serie_nr": "FOSS00219",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 85,
+        "total": 85,
+        "status": "paid",
+        "due_at": "2026-10-29 15:32:35",
+        "paid_at": "2026-10-24 15:32:36",
+        "created_at": "2026-10-24 15:32:35",
+        "updated_at": "2026-10-24 15:32:36",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 299,
+        "serie": "FOSS",
+        "nr": "218",
+        "serie_nr": "FOSS00218",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 10,
+        "total": 10,
+        "status": "unpaid",
+        "due_at": "2026-10-29 15:32:34",
+        "paid_at": null,
+        "created_at": "2026-10-24 15:32:34",
+        "updated_at": "2026-10-24 15:32:34",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 298,
+        "serie": "FOSS",
+        "nr": "217",
+        "serie_nr": "FOSS00217",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "unpaid",
+        "due_at": "2026-10-29 15:32:33",
+        "paid_at": null,
+        "created_at": "2026-10-24 15:32:33",
+        "updated_at": "2026-10-24 15:32:33",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 297,
+        "serie": "FOSS",
+        "nr": "216",
+        "serie_nr": "FOSS00216",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "canceled",
+        "due_at": "2026-10-29 15:32:33",
+        "paid_at": null,
+        "created_at": "2026-10-24 15:32:33",
+        "updated_at": "2026-10-24 15:32:34",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 296,
+        "serie": "FOSS",
+        "nr": "215",
+        "serie_nr": "FOSS00215",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "canceled",
+        "due_at": "2026-10-29 15:32:32",
+        "paid_at": null,
+        "created_at": "2026-10-24 15:32:32",
+        "updated_at": "2026-10-24 15:32:33",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 295,
+        "serie": "DN-",
+        "nr": "22",
+        "serie_nr": "DN-00022",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 15,
+        "total": 15,
+        "status": "unpaid",
+        "due_at": "2026-10-29 15:32:32",
+        "paid_at": null,
+        "created_at": "2026-10-24 15:32:32",
+        "updated_at": "2026-10-24 15:32:32",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 294,
+        "serie": "FOSS",
+        "nr": "214",
+        "serie_nr": "FOSS00214",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 30,
+        "total": 30,
+        "status": "paid",
+        "due_at": "2026-10-29 15:32:31",
+        "paid_at": "2026-10-24 15:32:32",
+        "created_at": "2026-10-24 15:32:31",
+        "updated_at": "2026-10-24 15:32:32",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 293,
+        "serie": "CN-",
+        "nr": "23",
+        "serie_nr": "CN-00023",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": -30,
+        "total": -30,
+        "status": "refunded",
+        "due_at": null,
+        "paid_at": "2026-10-24 15:32:31",
+        "created_at": "2026-10-24 15:32:31",
+        "updated_at": "2026-10-24 15:32:31",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 292,
+        "serie": "FOSS",
+        "nr": "213",
+        "serie_nr": "FOSS00213",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 30,
+        "total": 30,
+        "status": "refunded",
+        "due_at": "2026-10-29 15:32:30",
+        "paid_at": "2026-10-24 15:32:31",
+        "created_at": "2026-10-24 15:32:30",
+        "updated_at": "2026-10-24 15:32:31",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 291,
+        "serie": "FOSS",
+        "nr": "212",
+        "serie_nr": "FOSS00212",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "paid",
+        "due_at": "2026-10-29 15:32:29",
+        "paid_at": "2026-10-24 15:32:29",
+        "created_at": "2026-10-24 15:32:29",
+        "updated_at": "2026-10-24 15:32:29",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 290,
+        "serie": "FOSS",
+        "nr": "211",
+        "serie_nr": "FOSS00211",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "paid",
+        "due_at": "2026-10-29 15:32:28",
+        "paid_at": "2026-10-24 15:32:28",
+        "created_at": "2026-10-24 15:32:28",
+        "updated_at": "2026-10-24 15:32:28",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 289,
+        "serie": "FOSS",
+        "nr": "210",
+        "serie_nr": "FOSS00210",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "paid",
+        "due_at": "2026-10-29 15:32:27",
+        "paid_at": "2026-10-24 15:32:27",
+        "created_at": "2026-10-24 15:32:27",
+        "updated_at": "2026-10-24 15:32:27",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 283,
+        "serie": "FOSS",
+        "nr": "205",
+        "serie_nr": "FOSS00205",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 85,
+        "total": 85,
+        "status": "paid",
+        "due_at": "2026-10-29 12:48:16",
+        "paid_at": "2026-10-24 12:48:17",
+        "created_at": "2026-10-24 12:48:16",
+        "updated_at": "2026-10-24 12:48:17",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 282,
+        "serie": "FOSS",
+        "nr": "204",
+        "serie_nr": "FOSS00204",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 10,
+        "total": 10,
+        "status": "unpaid",
+        "due_at": "2026-10-29 12:48:14",
+        "paid_at": null,
+        "created_at": "2026-10-24 12:48:14",
+        "updated_at": "2026-10-24 12:48:14",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 281,
+        "serie": "FOSS",
+        "nr": "203",
+        "serie_nr": "FOSS00203",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "unpaid",
+        "due_at": "2026-10-29 12:48:13",
+        "paid_at": null,
+        "created_at": "2026-10-24 12:48:13",
+        "updated_at": "2026-10-24 12:48:14",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 280,
+        "serie": "FOSS",
+        "nr": "202",
+        "serie_nr": "FOSS00202",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "canceled",
+        "due_at": "2026-10-29 12:48:13",
+        "paid_at": null,
+        "created_at": "2026-10-24 12:48:13",
+        "updated_at": "2026-10-24 12:48:14",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 279,
+        "serie": "FOSS",
+        "nr": "201",
+        "serie_nr": "FOSS00201",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "canceled",
+        "due_at": "2026-10-29 12:48:12",
+        "paid_at": null,
+        "created_at": "2026-10-24 12:48:12",
+        "updated_at": "2026-10-24 12:48:12",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 278,
+        "serie": "DN-",
+        "nr": "21",
+        "serie_nr": "DN-00021",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 15,
+        "total": 15,
+        "status": "unpaid",
+        "due_at": "2026-10-29 12:48:11",
+        "paid_at": null,
+        "created_at": "2026-10-24 12:48:11",
+        "updated_at": "2026-10-24 12:48:11",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 277,
+        "serie": "FOSS",
+        "nr": "200",
+        "serie_nr": "FOSS00200",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 30,
+        "total": 30,
+        "status": "paid",
+        "due_at": "2026-10-29 12:48:10",
+        "paid_at": "2026-10-24 12:48:11",
+        "created_at": "2026-10-24 12:48:10",
+        "updated_at": "2026-10-24 12:48:11",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 276,
+        "serie": "CN-",
+        "nr": "22",
+        "serie_nr": "CN-00022",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": -30,
+        "total": -30,
+        "status": "refunded",
+        "due_at": null,
+        "paid_at": "2026-10-24 12:48:10",
+        "created_at": "2026-10-24 12:48:10",
+        "updated_at": "2026-10-24 12:48:10",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 275,
+        "serie": "FOSS",
+        "nr": "199",
+        "serie_nr": "FOSS00199",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 30,
+        "total": 30,
+        "status": "refunded",
+        "due_at": "2026-10-29 12:48:09",
+        "paid_at": "2026-10-24 12:48:09",
+        "created_at": "2026-10-24 12:48:09",
+        "updated_at": "2026-10-24 12:48:10",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 274,
+        "serie": "FOSS",
+        "nr": "198",
+        "serie_nr": "FOSS00198",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "paid",
+        "due_at": "2026-10-29 12:48:07",
+        "paid_at": "2026-10-24 12:48:07",
+        "created_at": "2026-10-24 12:48:07",
+        "updated_at": "2026-10-24 12:48:07",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 273,
+        "serie": "FOSS",
+        "nr": "197",
+        "serie_nr": "FOSS00197",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "paid",
+        "due_at": "2026-10-29 12:48:05",
+        "paid_at": "2026-10-24 12:48:06",
+        "created_at": "2026-10-24 12:48:05",
+        "updated_at": "2026-10-24 12:48:06",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 272,
+        "serie": "FOSS",
+        "nr": "196",
+        "serie_nr": "FOSS00196",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "paid",
+        "due_at": "2026-10-29 12:48:04",
+        "paid_at": "2026-10-24 12:48:05",
+        "created_at": "2026-10-24 12:48:04",
+        "updated_at": "2026-10-24 12:48:05",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 255,
+        "serie": "FOSS",
+        "nr": "",
+        "serie_nr": "FOSS00255",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 12,
+        "total": 12,
+        "status": "unpaid",
+        "due_at": "2026-10-29 06:12:11",
+        "paid_at": null,
+        "created_at": "2026-10-24 06:12:11",
+        "updated_at": "2026-10-24 06:12:11",
+        "buyer": {
+          "first_name": null,
+          "last_name": null,
+          "email": null
+        },
+        "issued": false,
+        "cancellable": false
+      },
+      {
+        "id": 253,
+        "serie": "FOSS",
+        "nr": "179",
+        "serie_nr": "FOSS00179",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 85,
+        "total": 85,
+        "status": "paid",
+        "due_at": "2026-10-29 06:02:47",
+        "paid_at": "2026-10-24 06:02:47",
+        "created_at": "2026-10-24 06:02:47",
+        "updated_at": "2026-10-24 06:02:47",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 252,
+        "serie": "FOSS",
+        "nr": "178",
+        "serie_nr": "FOSS00178",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "paid",
+        "due_at": "2026-10-29 06:02:41",
+        "paid_at": "2026-10-24 06:02:41",
+        "created_at": "2026-10-24 06:02:41",
+        "updated_at": "2026-10-24 06:02:41",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 251,
+        "serie": "FOSS",
+        "nr": "177",
+        "serie_nr": "FOSS00177",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "paid",
+        "due_at": "2026-10-29 06:02:39",
+        "paid_at": "2026-10-24 06:02:40",
+        "created_at": "2026-10-24 06:02:39",
+        "updated_at": "2026-10-24 06:02:40",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 250,
+        "serie": "FOSS",
+        "nr": "176",
+        "serie_nr": "FOSS00176",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "paid",
+        "due_at": "2026-10-29 06:02:38",
+        "paid_at": "2026-10-24 06:02:39",
+        "created_at": "2026-10-24 06:02:38",
+        "updated_at": "2026-10-24 06:02:39",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 249,
+        "serie": "FOSS",
+        "nr": "175",
+        "serie_nr": "FOSS00175",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "unpaid",
+        "due_at": "2026-10-29 05:59:47",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:59:47",
+        "updated_at": "2026-10-24 05:59:48",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 248,
+        "serie": "FOSS",
+        "nr": "174",
+        "serie_nr": "FOSS00174",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "paid",
+        "due_at": "2026-10-29 05:59:11",
+        "paid_at": "2026-10-24 05:59:14",
+        "created_at": "2026-10-24 05:59:11",
+        "updated_at": "2026-10-24 05:59:14",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 247,
+        "serie": "FOSS",
+        "nr": "173",
+        "serie_nr": "FOSS00173",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "paid",
+        "due_at": "2026-10-29 05:59:06",
+        "paid_at": "2026-10-24 05:59:10",
+        "created_at": "2026-10-24 05:59:06",
+        "updated_at": "2026-10-24 05:59:10",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 246,
+        "serie": "FOSS",
+        "nr": "172",
+        "serie_nr": "FOSS00172",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 40,
+        "total": 40,
+        "status": "unpaid",
+        "due_at": "2026-10-29 05:58:42",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:58:41",
+        "updated_at": "2026-10-24 05:58:43",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 244,
+        "serie": "FOSS",
+        "nr": "171",
+        "serie_nr": "FOSS00171",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 85,
+        "total": 85,
+        "status": "paid",
+        "due_at": "2026-10-29 05:53:09",
+        "paid_at": "2026-10-24 05:53:10",
+        "created_at": "2026-10-24 05:53:09",
+        "updated_at": "2026-10-24 05:53:10",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 243,
+        "serie": "FOSS",
+        "nr": "170",
+        "serie_nr": "FOSS00170",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 10,
+        "total": 10,
+        "status": "unpaid",
+        "due_at": "2026-10-29 05:53:08",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:53:08",
+        "updated_at": "2026-10-24 05:53:08",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 242,
+        "serie": "FOSS",
+        "nr": "169",
+        "serie_nr": "FOSS00169",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "unpaid",
+        "due_at": "2026-10-29 05:53:07",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:53:07",
+        "updated_at": "2026-10-24 05:53:07",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 241,
+        "serie": "FOSS",
+        "nr": "168",
+        "serie_nr": "FOSS00168",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "canceled",
+        "due_at": "2026-10-29 05:53:07",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:53:07",
+        "updated_at": "2026-10-24 05:53:07",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 240,
+        "serie": "FOSS",
+        "nr": "167",
+        "serie_nr": "FOSS00167",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "canceled",
+        "due_at": "2026-10-29 05:53:06",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:53:06",
+        "updated_at": "2026-10-24 05:53:06",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 239,
+        "serie": "DN-",
+        "nr": "20",
+        "serie_nr": "DN-00020",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 15,
+        "total": 15,
+        "status": "unpaid",
+        "due_at": "2026-10-29 05:53:06",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:53:06",
+        "updated_at": "2026-10-24 05:53:06",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 238,
+        "serie": "FOSS",
+        "nr": "166",
+        "serie_nr": "FOSS00166",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 30,
+        "total": 30,
+        "status": "paid",
+        "due_at": "2026-10-29 05:53:05",
+        "paid_at": "2026-10-24 05:53:06",
+        "created_at": "2026-10-24 05:53:05",
+        "updated_at": "2026-10-24 05:53:06",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 237,
+        "serie": "CN-",
+        "nr": "21",
+        "serie_nr": "CN-00021",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": -30,
+        "total": -30,
+        "status": "refunded",
+        "due_at": null,
+        "paid_at": "2026-10-24 05:53:05",
+        "created_at": "2026-10-24 05:53:05",
+        "updated_at": "2026-10-24 05:53:05",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 236,
+        "serie": "FOSS",
+        "nr": "165",
+        "serie_nr": "FOSS00165",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 30,
+        "total": 30,
+        "status": "refunded",
+        "due_at": "2026-10-29 05:53:04",
+        "paid_at": "2026-10-24 05:53:05",
+        "created_at": "2026-10-24 05:53:04",
+        "updated_at": "2026-10-24 05:53:05",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 235,
+        "serie": "DN-",
+        "nr": "19",
+        "serie_nr": "DN-00019",
         "client_id": 1,
         "client": {
           "id": 1
@@ -229,8 +1763,8 @@
         "status": "unpaid",
         "due_at": null,
         "paid_at": null,
-        "created_at": "2026-10-24 05:46:34",
-        "updated_at": "2026-10-24 05:46:34",
+        "created_at": "2026-10-24 05:52:01",
+        "updated_at": "2026-10-24 05:52:01",
         "buyer": {
           "first_name": "Phase",
           "last_name": "Zero",
@@ -240,10 +1774,10 @@
         "cancellable": false
       },
       {
-        "id": 177,
+        "id": 234,
         "serie": "FOSS",
-        "nr": "125",
-        "serie_nr": "FOSS00125",
+        "nr": "164",
+        "serie_nr": "FOSS00164",
         "client_id": 1,
         "client": {
           "id": 1
@@ -253,10 +1787,10 @@
         "subtotal": 30,
         "total": 30,
         "status": "paid",
-        "due_at": "2026-10-29 05:46:33",
-        "paid_at": "2026-10-24 05:46:34",
-        "created_at": "2026-10-24 05:46:33",
-        "updated_at": "2026-10-24 05:46:34",
+        "due_at": "2026-10-29 05:52:00",
+        "paid_at": "2026-10-24 05:52:01",
+        "created_at": "2026-10-24 05:52:00",
+        "updated_at": "2026-10-24 05:52:01",
         "buyer": {
           "first_name": "Phase",
           "last_name": "Zero",
@@ -266,10 +1800,660 @@
         "cancellable": false
       },
       {
-        "id": 176,
+        "id": 233,
+        "serie": "FOSS",
+        "nr": "163",
+        "serie_nr": "FOSS00163",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 10,
+        "total": 10,
+        "status": "unpaid",
+        "due_at": "2026-10-29 05:51:52",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:51:52",
+        "updated_at": "2026-10-24 05:51:52",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 232,
+        "serie": "FOSS",
+        "nr": "162",
+        "serie_nr": "FOSS00162",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "unpaid",
+        "due_at": "2026-10-29 05:51:51",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:51:51",
+        "updated_at": "2026-10-24 05:51:52",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 231,
+        "serie": "FOSS",
+        "nr": "161",
+        "serie_nr": "FOSS00161",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "canceled",
+        "due_at": "2026-10-29 05:51:51",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:51:51",
+        "updated_at": "2026-10-24 05:51:52",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 230,
+        "serie": "FOSS",
+        "nr": "160",
+        "serie_nr": "FOSS00160",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "canceled",
+        "due_at": "2026-10-29 05:51:50",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:51:50",
+        "updated_at": "2026-10-24 05:51:51",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 229,
+        "serie": "DN-",
+        "nr": "18",
+        "serie_nr": "DN-00018",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 15,
+        "total": 15,
+        "status": "unpaid",
+        "due_at": null,
+        "paid_at": null,
+        "created_at": "2026-10-24 05:51:50",
+        "updated_at": "2026-10-24 05:51:50",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 228,
+        "serie": "FOSS",
+        "nr": "159",
+        "serie_nr": "FOSS00159",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 30,
+        "total": 30,
+        "status": "paid",
+        "due_at": "2026-10-29 05:51:49",
+        "paid_at": "2026-10-24 05:51:49",
+        "created_at": "2026-10-24 05:51:49",
+        "updated_at": "2026-10-24 05:51:50",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 227,
         "serie": "CN-",
+        "nr": "20",
+        "serie_nr": "CN-00020",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": -30,
+        "total": -30,
+        "status": "refunded",
+        "due_at": null,
+        "paid_at": "2026-10-24 05:51:49",
+        "created_at": "2026-10-24 05:51:49",
+        "updated_at": "2026-10-24 05:51:49",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 226,
+        "serie": "FOSS",
+        "nr": "158",
+        "serie_nr": "FOSS00158",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 30,
+        "total": 30,
+        "status": "refunded",
+        "due_at": "2026-10-29 05:51:48",
+        "paid_at": "2026-10-24 05:51:49",
+        "created_at": "2026-10-24 05:51:48",
+        "updated_at": "2026-10-24 05:51:49",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 224,
+        "serie": "FOSS",
+        "nr": "157",
+        "serie_nr": "FOSS00157",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 85,
+        "total": 85,
+        "status": "paid",
+        "due_at": "2026-10-29 05:51:44",
+        "paid_at": "2026-10-24 05:51:45",
+        "created_at": "2026-10-24 05:51:44",
+        "updated_at": "2026-10-24 05:51:45",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 223,
+        "serie": "FOSS",
+        "nr": "156",
+        "serie_nr": "FOSS00156",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 10,
+        "total": 10,
+        "status": "unpaid",
+        "due_at": "2026-10-29 05:51:34",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:51:34",
+        "updated_at": "2026-10-24 05:51:35",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 222,
+        "serie": "FOSS",
+        "nr": "155",
+        "serie_nr": "FOSS00155",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "unpaid",
+        "due_at": "2026-10-29 05:51:34",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:51:34",
+        "updated_at": "2026-10-24 05:51:34",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 221,
+        "serie": "FOSS",
+        "nr": "154",
+        "serie_nr": "FOSS00154",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "canceled",
+        "due_at": "2026-10-29 05:51:34",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:51:34",
+        "updated_at": "2026-10-24 05:51:34",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 220,
+        "serie": "FOSS",
+        "nr": "153",
+        "serie_nr": "FOSS00153",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "canceled",
+        "due_at": "2026-10-29 05:51:33",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:51:33",
+        "updated_at": "2026-10-24 05:51:33",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 219,
+        "serie": "DN-",
+        "nr": "17",
+        "serie_nr": "DN-00017",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 15,
+        "total": 15,
+        "status": "unpaid",
+        "due_at": null,
+        "paid_at": null,
+        "created_at": "2026-10-24 05:51:33",
+        "updated_at": "2026-10-24 05:51:33",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 218,
+        "serie": "FOSS",
+        "nr": "152",
+        "serie_nr": "FOSS00152",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 30,
+        "total": 30,
+        "status": "paid",
+        "due_at": "2026-10-29 05:51:32",
+        "paid_at": "2026-10-24 05:51:33",
+        "created_at": "2026-10-24 05:51:32",
+        "updated_at": "2026-10-24 05:51:33",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 217,
+        "serie": "CN-",
+        "nr": "19",
+        "serie_nr": "CN-00019",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": -30,
+        "total": -30,
+        "status": "refunded",
+        "due_at": null,
+        "paid_at": "2026-10-24 05:51:32",
+        "created_at": "2026-10-24 05:51:32",
+        "updated_at": "2026-10-24 05:51:32",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 216,
+        "serie": "FOSS",
+        "nr": "151",
+        "serie_nr": "FOSS00151",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 30,
+        "total": 30,
+        "status": "refunded",
+        "due_at": "2026-10-29 05:51:31",
+        "paid_at": "2026-10-24 05:51:31",
+        "created_at": "2026-10-24 05:51:31",
+        "updated_at": "2026-10-24 05:51:32",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 214,
+        "serie": "FOSS",
+        "nr": "150",
+        "serie_nr": "FOSS00150",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 85,
+        "total": 85,
+        "status": "paid",
+        "due_at": "2026-10-29 05:51:27",
+        "paid_at": "2026-10-24 05:51:27",
+        "created_at": "2026-10-24 05:51:27",
+        "updated_at": "2026-10-24 05:51:27",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 213,
+        "serie": "FOSS",
+        "nr": "149",
+        "serie_nr": "FOSS00149",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 11,
+        "total": 11,
+        "status": "paid",
+        "due_at": "2026-10-29 05:50:03",
+        "paid_at": "2026-10-24 05:50:06",
+        "created_at": "2026-10-24 05:50:03",
+        "updated_at": "2026-10-24 05:50:06",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 212,
+        "serie": "FOSS",
+        "nr": "148",
+        "serie_nr": "FOSS00148",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 10,
+        "total": 10,
+        "status": "unpaid",
+        "due_at": "2026-10-29 05:49:25",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:49:25",
+        "updated_at": "2026-10-24 05:49:26",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 211,
+        "serie": "FOSS",
+        "nr": "147",
+        "serie_nr": "FOSS00147",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "unpaid",
+        "due_at": "2026-10-29 05:49:25",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:49:25",
+        "updated_at": "2026-10-24 05:49:25",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": true
+      },
+      {
+        "id": 210,
+        "serie": "FOSS",
+        "nr": "146",
+        "serie_nr": "FOSS00146",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "canceled",
+        "due_at": "2026-10-29 05:49:24",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:49:24",
+        "updated_at": "2026-10-24 05:49:25",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 209,
+        "serie": "FOSS",
+        "nr": "145",
+        "serie_nr": "FOSS00145",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 25,
+        "total": 25,
+        "status": "canceled",
+        "due_at": "2026-10-29 05:49:23",
+        "paid_at": null,
+        "created_at": "2026-10-24 05:49:23",
+        "updated_at": "2026-10-24 05:49:24",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 208,
+        "serie": "DN-",
         "nr": "16",
-        "serie_nr": "CN-00016",
+        "serie_nr": "DN-00016",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 15,
+        "total": 15,
+        "status": "unpaid",
+        "due_at": null,
+        "paid_at": null,
+        "created_at": "2026-10-24 05:49:23",
+        "updated_at": "2026-10-24 05:49:23",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 207,
+        "serie": "FOSS",
+        "nr": "144",
+        "serie_nr": "FOSS00144",
+        "client_id": 1,
+        "client": {
+          "id": 1
+        },
+        "currency": "USD",
+        "tax": 0,
+        "subtotal": 30,
+        "total": 30,
+        "status": "paid",
+        "due_at": "2026-10-29 05:49:22",
+        "paid_at": "2026-10-24 05:49:23",
+        "created_at": "2026-10-24 05:49:22",
+        "updated_at": "2026-10-24 05:49:23",
+        "buyer": {
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        },
+        "issued": true,
+        "cancellable": false
+      },
+      {
+        "id": 206,
+        "serie": "CN-",
+        "nr": "18",
+        "serie_nr": "CN-00018",
         "client_id": 1,
         "client": {
           "id": 1
@@ -280,9 +2464,9 @@
         "total": -30,
         "status": "refunded",
         "due_at": null,
-        "paid_at": "2026-10-24 05:46:33",
-        "created_at": "2026-10-24 05:46:33",
-        "updated_at": "2026-10-24 05:46:33",
+        "paid_at": "2026-10-24 05:49:22",
+        "created_at": "2026-10-24 05:49:22",
+        "updated_at": "2026-10-24 05:49:22",
         "buyer": {
           "first_name": "Phase",
           "last_name": "Zero",
@@ -292,10 +2476,10 @@
         "cancellable": false
       },
       {
-        "id": 175,
+        "id": 205,
         "serie": "FOSS",
-        "nr": "124",
-        "serie_nr": "FOSS00124",
+        "nr": "143",
+        "serie_nr": "FOSS00143",
         "client_id": 1,
         "client": {
           "id": 1
@@ -305,10 +2489,10 @@
         "subtotal": 30,
         "total": 30,
         "status": "refunded",
-        "due_at": "2026-10-29 05:46:32",
-        "paid_at": "2026-10-24 05:46:33",
-        "created_at": "2026-10-24 05:46:32",
-        "updated_at": "2026-10-24 05:46:33",
+        "due_at": "2026-10-29 05:49:21",
+        "paid_at": "2026-10-24 05:49:21",
+        "created_at": "2026-10-24 05:49:21",
+        "updated_at": "2026-10-24 05:49:22",
         "buyer": {
           "first_name": "Phase",
           "last_name": "Zero",
@@ -318,10 +2502,10 @@
         "cancellable": false
       },
       {
-        "id": 173,
+        "id": 203,
         "serie": "FOSS",
-        "nr": "123",
-        "serie_nr": "FOSS00123",
+        "nr": "142",
+        "serie_nr": "FOSS00142",
         "client_id": 1,
         "client": {
           "id": 1
@@ -331,10 +2515,10 @@
         "subtotal": 85,
         "total": 85,
         "status": "paid",
-        "due_at": "2026-10-29 05:46:29",
-        "paid_at": "2026-10-24 05:46:30",
-        "created_at": "2026-10-24 05:46:29",
-        "updated_at": "2026-10-24 05:46:30",
+        "due_at": "2026-10-29 05:49:17",
+        "paid_at": "2026-10-24 05:49:17",
+        "created_at": "2026-10-24 05:49:17",
+        "updated_at": "2026-10-24 05:49:17",
         "buyer": {
           "first_name": "Phase",
           "last_name": "Zero",
@@ -344,62 +2528,10 @@
         "cancellable": false
       },
       {
-        "id": 171,
+        "id": 202,
         "serie": "FOSS",
-        "nr": "122",
-        "serie_nr": "FOSS00122",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 85,
-        "total": 85,
-        "status": "paid",
-        "due_at": "2026-10-29 05:46:16",
-        "paid_at": "2026-10-24 05:46:17",
-        "created_at": "2026-10-24 05:46:16",
-        "updated_at": "2026-10-24 05:46:17",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 169,
-        "serie": "FOSS",
-        "nr": "121",
-        "serie_nr": "FOSS00121",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 85,
-        "total": 85,
-        "status": "paid",
-        "due_at": "2026-10-29 05:46:10",
-        "paid_at": "2026-10-24 05:46:10",
-        "created_at": "2026-10-24 05:46:10",
-        "updated_at": "2026-10-24 05:46:10",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 168,
-        "serie": "FOSS",
-        "nr": "120",
-        "serie_nr": "FOSS00120",
+        "nr": "141",
+        "serie_nr": "FOSS00141",
         "client_id": 1,
         "client": {
           "id": 1
@@ -409,10 +2541,10 @@
         "subtotal": 10,
         "total": 10,
         "status": "unpaid",
-        "due_at": "2026-10-29 05:46:08",
+        "due_at": "2026-10-29 05:49:03",
         "paid_at": null,
-        "created_at": "2026-10-24 05:46:08",
-        "updated_at": "2026-10-24 05:46:08",
+        "created_at": "2026-10-24 05:49:03",
+        "updated_at": "2026-10-24 05:49:03",
         "buyer": {
           "first_name": "Phase",
           "last_name": "Zero",
@@ -422,10 +2554,10 @@
         "cancellable": true
       },
       {
-        "id": 167,
+        "id": 201,
         "serie": "FOSS",
-        "nr": "119",
-        "serie_nr": "FOSS00119",
+        "nr": "140",
+        "serie_nr": "FOSS00140",
         "client_id": 1,
         "client": {
           "id": 1
@@ -435,10 +2567,10 @@
         "subtotal": 25,
         "total": 25,
         "status": "unpaid",
-        "due_at": "2026-10-29 05:46:07",
+        "due_at": "2026-10-29 05:49:02",
         "paid_at": null,
-        "created_at": "2026-10-24 05:46:07",
-        "updated_at": "2026-10-24 05:46:08",
+        "created_at": "2026-10-24 05:49:02",
+        "updated_at": "2026-10-24 05:49:02",
         "buyer": {
           "first_name": "Phase",
           "last_name": "Zero",
@@ -448,10 +2580,10 @@
         "cancellable": true
       },
       {
-        "id": 166,
+        "id": 200,
         "serie": "FOSS",
-        "nr": "118",
-        "serie_nr": "FOSS00118",
+        "nr": "139",
+        "serie_nr": "FOSS00139",
         "client_id": 1,
         "client": {
           "id": 1
@@ -461,2142 +2593,10 @@
         "subtotal": 25,
         "total": 25,
         "status": "canceled",
-        "due_at": "2026-10-29 05:46:07",
+        "due_at": "2026-10-29 05:49:01",
         "paid_at": null,
-        "created_at": "2026-10-24 05:46:07",
-        "updated_at": "2026-10-24 05:46:08",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 165,
-        "serie": "FOSS",
-        "nr": "117",
-        "serie_nr": "FOSS00117",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "canceled",
-        "due_at": "2026-10-29 05:46:06",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:46:06",
-        "updated_at": "2026-10-24 05:46:07",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 164,
-        "serie": "DN-",
-        "nr": "13",
-        "serie_nr": "DN-00013",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 15,
-        "total": 15,
-        "status": "unpaid",
-        "due_at": null,
-        "paid_at": null,
-        "created_at": "2026-10-24 05:46:06",
-        "updated_at": "2026-10-24 05:46:06",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 163,
-        "serie": "FOSS",
-        "nr": "116",
-        "serie_nr": "FOSS00116",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "paid",
-        "due_at": "2026-10-29 05:46:06",
-        "paid_at": "2026-10-24 05:46:06",
-        "created_at": "2026-10-24 05:46:06",
-        "updated_at": "2026-10-24 05:46:06",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 162,
-        "serie": "CN-",
-        "nr": "15",
-        "serie_nr": "CN-00015",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": -30,
-        "total": -30,
-        "status": "refunded",
-        "due_at": null,
-        "paid_at": "2026-10-24 05:46:05",
-        "created_at": "2026-10-24 05:46:05",
-        "updated_at": "2026-10-24 05:46:05",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 161,
-        "serie": "FOSS",
-        "nr": "115",
-        "serie_nr": "FOSS00115",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "refunded",
-        "due_at": "2026-10-29 05:46:05",
-        "paid_at": "2026-10-24 05:46:05",
-        "created_at": "2026-10-24 05:46:05",
-        "updated_at": "2026-10-24 05:46:06",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 159,
-        "serie": "FOSS",
-        "nr": "114",
-        "serie_nr": "FOSS00114",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 85,
-        "total": 85,
-        "status": "paid",
-        "due_at": "2026-10-29 05:45:57",
-        "paid_at": "2026-10-24 05:45:58",
-        "created_at": "2026-10-24 05:45:57",
-        "updated_at": "2026-10-24 05:45:58",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 158,
-        "serie": "FOSS",
-        "nr": "113",
-        "serie_nr": "FOSS00113",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 10,
-        "total": 10,
-        "status": "unpaid",
-        "due_at": "2026-10-29 05:45:55",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:45:55",
-        "updated_at": "2026-10-24 05:45:55",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": true
-      },
-      {
-        "id": 157,
-        "serie": "FOSS",
-        "nr": "112",
-        "serie_nr": "FOSS00112",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "unpaid",
-        "due_at": "2026-10-29 05:45:54",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:45:54",
-        "updated_at": "2026-10-24 05:45:55",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": true
-      },
-      {
-        "id": 156,
-        "serie": "FOSS",
-        "nr": "111",
-        "serie_nr": "FOSS00111",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "canceled",
-        "due_at": "2026-10-29 05:45:54",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:45:54",
-        "updated_at": "2026-10-24 05:45:55",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 155,
-        "serie": "FOSS",
-        "nr": "110",
-        "serie_nr": "FOSS00110",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "canceled",
-        "due_at": "2026-10-29 05:45:53",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:45:53",
-        "updated_at": "2026-10-24 05:45:53",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 154,
-        "serie": "DN-",
-        "nr": "12",
-        "serie_nr": "DN-00012",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 15,
-        "total": 15,
-        "status": "unpaid",
-        "due_at": null,
-        "paid_at": null,
-        "created_at": "2026-10-24 05:45:53",
-        "updated_at": "2026-10-24 05:45:53",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 153,
-        "serie": "FOSS",
-        "nr": "109",
-        "serie_nr": "FOSS00109",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "paid",
-        "due_at": "2026-10-29 05:45:52",
-        "paid_at": "2026-10-24 05:45:52",
-        "created_at": "2026-10-24 05:45:52",
-        "updated_at": "2026-10-24 05:45:53",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 152,
-        "serie": "CN-",
-        "nr": "14",
-        "serie_nr": "CN-00014",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": -30,
-        "total": -30,
-        "status": "refunded",
-        "due_at": null,
-        "paid_at": "2026-10-24 05:45:51",
-        "created_at": "2026-10-24 05:45:51",
-        "updated_at": "2026-10-24 05:45:51",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 151,
-        "serie": "FOSS",
-        "nr": "108",
-        "serie_nr": "FOSS00108",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "refunded",
-        "due_at": "2026-10-29 05:45:51",
-        "paid_at": "2026-10-24 05:45:51",
-        "created_at": "2026-10-24 05:45:51",
-        "updated_at": "2026-10-24 05:45:52",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 150,
-        "serie": "DN-",
-        "nr": "11",
-        "serie_nr": "DN-00011",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 15,
-        "total": 15,
-        "status": "unpaid",
-        "due_at": null,
-        "paid_at": null,
-        "created_at": "2026-10-24 05:44:57",
-        "updated_at": "2026-10-24 05:44:57",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 149,
-        "serie": "FOSS",
-        "nr": "107",
-        "serie_nr": "FOSS00107",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "paid",
-        "due_at": "2026-10-29 05:44:56",
-        "paid_at": "2026-10-24 05:44:56",
-        "created_at": "2026-10-24 05:44:56",
-        "updated_at": "2026-10-24 05:44:57",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 148,
-        "serie": "CN-",
-        "nr": "13",
-        "serie_nr": "CN-00013",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": -30,
-        "total": -30,
-        "status": "refunded",
-        "due_at": null,
-        "paid_at": "2026-10-24 05:44:56",
-        "created_at": "2026-10-24 05:44:56",
-        "updated_at": "2026-10-24 05:44:56",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 147,
-        "serie": "FOSS",
-        "nr": "106",
-        "serie_nr": "FOSS00106",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "refunded",
-        "due_at": "2026-10-29 05:44:55",
-        "paid_at": "2026-10-24 05:44:56",
-        "created_at": "2026-10-24 05:44:55",
-        "updated_at": "2026-10-24 05:44:56",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 146,
-        "serie": "FOSS",
-        "nr": "105",
-        "serie_nr": "FOSS00105",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 10,
-        "total": 10,
-        "status": "unpaid",
-        "due_at": "2026-10-29 05:44:36",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:44:36",
-        "updated_at": "2026-10-24 05:44:36",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": true
-      },
-      {
-        "id": 145,
-        "serie": "FOSS",
-        "nr": "104",
-        "serie_nr": "FOSS00104",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "unpaid",
-        "due_at": "2026-10-29 05:44:35",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:44:35",
-        "updated_at": "2026-10-24 05:44:36",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": true
-      },
-      {
-        "id": 144,
-        "serie": "FOSS",
-        "nr": "103",
-        "serie_nr": "FOSS00103",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "canceled",
-        "due_at": "2026-10-29 05:44:35",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:44:35",
-        "updated_at": "2026-10-24 05:44:36",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 143,
-        "serie": "FOSS",
-        "nr": "102",
-        "serie_nr": "FOSS00102",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "canceled",
-        "due_at": "2026-10-29 05:44:34",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:44:34",
-        "updated_at": "2026-10-24 05:44:34",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 142,
-        "serie": "DN-",
-        "nr": "10",
-        "serie_nr": "DN-00010",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 15,
-        "total": 15,
-        "status": "unpaid",
-        "due_at": null,
-        "paid_at": null,
-        "created_at": "2026-10-24 05:44:34",
-        "updated_at": "2026-10-24 05:44:34",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 141,
-        "serie": "FOSS",
-        "nr": "101",
-        "serie_nr": "FOSS00101",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "paid",
-        "due_at": "2026-10-29 05:44:32",
-        "paid_at": "2026-10-24 05:44:33",
-        "created_at": "2026-10-24 05:44:32",
-        "updated_at": "2026-10-24 05:44:34",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 140,
-        "serie": "CN-",
-        "nr": "12",
-        "serie_nr": "CN-00012",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": -30,
-        "total": -30,
-        "status": "refunded",
-        "due_at": null,
-        "paid_at": "2026-10-24 05:44:32",
-        "created_at": "2026-10-24 05:44:32",
-        "updated_at": "2026-10-24 05:44:32",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 139,
-        "serie": "FOSS",
-        "nr": "100",
-        "serie_nr": "FOSS00100",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "refunded",
-        "due_at": "2026-10-29 05:44:31",
-        "paid_at": "2026-10-24 05:44:32",
-        "created_at": "2026-10-24 05:44:31",
-        "updated_at": "2026-10-24 05:44:32",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 138,
-        "serie": "FOSS",
-        "nr": "99",
-        "serie_nr": "FOSS00099",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 10,
-        "total": 10,
-        "status": "unpaid",
-        "due_at": "2026-10-29 05:44:18",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:44:18",
-        "updated_at": "2026-10-24 05:44:18",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": true
-      },
-      {
-        "id": 137,
-        "serie": "FOSS",
-        "nr": "98",
-        "serie_nr": "FOSS00098",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "unpaid",
-        "due_at": "2026-10-29 05:44:18",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:44:18",
-        "updated_at": "2026-10-24 05:44:18",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": true
-      },
-      {
-        "id": 136,
-        "serie": "FOSS",
-        "nr": "97",
-        "serie_nr": "FOSS00097",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "canceled",
-        "due_at": "2026-10-29 05:44:17",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:44:17",
-        "updated_at": "2026-10-24 05:44:18",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 135,
-        "serie": "FOSS",
-        "nr": "96",
-        "serie_nr": "FOSS00096",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "canceled",
-        "due_at": "2026-10-29 05:44:17",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:44:17",
-        "updated_at": "2026-10-24 05:44:17",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 134,
-        "serie": "DN-",
-        "nr": "9",
-        "serie_nr": "DN-00009",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 15,
-        "total": 15,
-        "status": "unpaid",
-        "due_at": null,
-        "paid_at": null,
-        "created_at": "2026-10-24 05:44:17",
-        "updated_at": "2026-10-24 05:44:17",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 133,
-        "serie": "FOSS",
-        "nr": "95",
-        "serie_nr": "FOSS00095",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "paid",
-        "due_at": "2026-10-29 05:44:16",
-        "paid_at": "2026-10-24 05:44:16",
-        "created_at": "2026-10-24 05:44:16",
-        "updated_at": "2026-10-24 05:44:17",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 132,
-        "serie": "CN-",
-        "nr": "11",
-        "serie_nr": "CN-00011",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": -30,
-        "total": -30,
-        "status": "refunded",
-        "due_at": null,
-        "paid_at": "2026-10-24 05:44:16",
-        "created_at": "2026-10-24 05:44:16",
-        "updated_at": "2026-10-24 05:44:16",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 131,
-        "serie": "FOSS",
-        "nr": "94",
-        "serie_nr": "FOSS00094",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "refunded",
-        "due_at": "2026-10-29 05:44:15",
-        "paid_at": "2026-10-24 05:44:16",
-        "created_at": "2026-10-24 05:44:15",
-        "updated_at": "2026-10-24 05:44:16",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 130,
-        "serie": "FOSS",
-        "nr": "93",
-        "serie_nr": "FOSS00093",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "canceled",
-        "due_at": "2026-10-29 05:42:50",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:42:50",
-        "updated_at": "2026-10-24 05:42:51",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 129,
-        "serie": "FOSS",
-        "nr": "92",
-        "serie_nr": "FOSS00092",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 10,
-        "total": 10,
-        "status": "unpaid",
-        "due_at": "2026-10-29 05:42:40",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:42:40",
-        "updated_at": "2026-10-24 05:42:40",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": true
-      },
-      {
-        "id": 128,
-        "serie": "FOSS",
-        "nr": "91",
-        "serie_nr": "FOSS00091",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "unpaid",
-        "due_at": "2026-10-29 05:42:39",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:42:39",
-        "updated_at": "2026-10-24 05:42:39",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": true
-      },
-      {
-        "id": 127,
-        "serie": "FOSS",
-        "nr": "90",
-        "serie_nr": "FOSS00090",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "canceled",
-        "due_at": "2026-10-29 05:42:38",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:42:38",
-        "updated_at": "2026-10-24 05:42:40",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 126,
-        "serie": "FOSS",
-        "nr": "89",
-        "serie_nr": "FOSS00089",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "canceled",
-        "due_at": "2026-10-29 05:42:38",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:42:38",
-        "updated_at": "2026-10-24 05:42:38",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 125,
-        "serie": "DN-",
-        "nr": "8",
-        "serie_nr": "DN-00008",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 15,
-        "total": 15,
-        "status": "unpaid",
-        "due_at": null,
-        "paid_at": null,
-        "created_at": "2026-10-24 05:42:37",
-        "updated_at": "2026-10-24 05:42:37",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 124,
-        "serie": "FOSS",
-        "nr": "88",
-        "serie_nr": "FOSS00088",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "paid",
-        "due_at": "2026-10-29 05:42:36",
-        "paid_at": "2026-10-24 05:42:37",
-        "created_at": "2026-10-24 05:42:36",
-        "updated_at": "2026-10-24 05:42:37",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 123,
-        "serie": "CN-",
-        "nr": "10",
-        "serie_nr": "CN-00010",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": -30,
-        "total": -30,
-        "status": "refunded",
-        "due_at": null,
-        "paid_at": "2026-10-24 05:42:36",
-        "created_at": "2026-10-24 05:42:36",
-        "updated_at": "2026-10-24 05:42:36",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 122,
-        "serie": "FOSS",
-        "nr": "87",
-        "serie_nr": "FOSS00087",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "refunded",
-        "due_at": "2026-10-29 05:42:35",
-        "paid_at": "2026-10-24 05:42:36",
-        "created_at": "2026-10-24 05:42:35",
-        "updated_at": "2026-10-24 05:42:36",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 120,
-        "serie": "FOSS",
-        "nr": "86",
-        "serie_nr": "FOSS00086",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 85,
-        "total": 85,
-        "status": "paid",
-        "due_at": "2026-10-29 05:42:24",
-        "paid_at": "2026-10-24 05:42:24",
-        "created_at": "2026-10-24 05:42:24",
-        "updated_at": "2026-10-24 05:42:24",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 118,
-        "serie": "FOSS",
-        "nr": "85",
-        "serie_nr": "FOSS00085",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 85,
-        "total": 85,
-        "status": "paid",
-        "due_at": "2026-10-29 05:42:13",
-        "paid_at": "2026-10-24 05:42:14",
-        "created_at": "2026-10-24 05:42:13",
-        "updated_at": "2026-10-24 05:42:14",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 117,
-        "serie": "FOSS",
-        "nr": "84",
-        "serie_nr": "FOSS00084",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 10,
-        "total": 10,
-        "status": "unpaid",
-        "due_at": "2026-10-29 05:42:11",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:42:11",
-        "updated_at": "2026-10-24 05:42:12",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": true
-      },
-      {
-        "id": 116,
-        "serie": "FOSS",
-        "nr": "83",
-        "serie_nr": "FOSS00083",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "unpaid",
-        "due_at": "2026-10-29 05:42:11",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:42:11",
-        "updated_at": "2026-10-24 05:42:11",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": true
-      },
-      {
-        "id": 115,
-        "serie": "FOSS",
-        "nr": "82",
-        "serie_nr": "FOSS00082",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "canceled",
-        "due_at": "2026-10-29 05:42:10",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:42:10",
-        "updated_at": "2026-10-24 05:42:11",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 114,
-        "serie": "FOSS",
-        "nr": "81",
-        "serie_nr": "FOSS00081",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "canceled",
-        "due_at": "2026-10-29 05:42:09",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:42:09",
-        "updated_at": "2026-10-24 05:42:10",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 113,
-        "serie": "DN-",
-        "nr": "7",
-        "serie_nr": "DN-00007",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 15,
-        "total": 15,
-        "status": "unpaid",
-        "due_at": null,
-        "paid_at": null,
-        "created_at": "2026-10-24 05:42:09",
-        "updated_at": "2026-10-24 05:42:09",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 112,
-        "serie": "FOSS",
-        "nr": "80",
-        "serie_nr": "FOSS00080",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "paid",
-        "due_at": "2026-10-29 05:42:08",
-        "paid_at": "2026-10-24 05:42:09",
-        "created_at": "2026-10-24 05:42:08",
-        "updated_at": "2026-10-24 05:42:09",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 111,
-        "serie": "CN-",
-        "nr": "9",
-        "serie_nr": "CN-00009",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": -30,
-        "total": -30,
-        "status": "refunded",
-        "due_at": null,
-        "paid_at": "2026-10-24 05:42:08",
-        "created_at": "2026-10-24 05:42:08",
-        "updated_at": "2026-10-24 05:42:08",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 110,
-        "serie": "FOSS",
-        "nr": "79",
-        "serie_nr": "FOSS00079",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "refunded",
-        "due_at": "2026-10-29 05:42:07",
-        "paid_at": "2026-10-24 05:42:08",
-        "created_at": "2026-10-24 05:42:07",
-        "updated_at": "2026-10-24 05:42:08",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 109,
-        "serie": "DN-",
-        "nr": "6",
-        "serie_nr": "DN-00006",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 15,
-        "total": 15,
-        "status": "unpaid",
-        "due_at": null,
-        "paid_at": null,
-        "created_at": "2026-10-24 05:40:57",
-        "updated_at": "2026-10-24 05:40:57",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 108,
-        "serie": "FOSS",
-        "nr": "78",
-        "serie_nr": "FOSS00078",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "paid",
-        "due_at": "2026-10-29 05:40:56",
-        "paid_at": "2026-10-24 05:40:57",
-        "created_at": "2026-10-24 05:40:56",
-        "updated_at": "2026-10-24 05:40:57",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 107,
-        "serie": "CN-",
-        "nr": "8",
-        "serie_nr": "CN-00008",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": -30,
-        "total": -30,
-        "status": "refunded",
-        "due_at": null,
-        "paid_at": "2026-10-24 05:40:56",
-        "created_at": "2026-10-24 05:40:56",
-        "updated_at": "2026-10-24 05:40:56",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 106,
-        "serie": "FOSS",
-        "nr": "77",
-        "serie_nr": "FOSS00077",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "refunded",
-        "due_at": "2026-10-29 05:40:55",
-        "paid_at": "2026-10-24 05:40:56",
-        "created_at": "2026-10-24 05:40:55",
-        "updated_at": "2026-10-24 05:40:56",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 105,
-        "serie": "FOSS",
-        "nr": "76",
-        "serie_nr": "FOSS00076",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 10,
-        "total": 10,
-        "status": "unpaid",
-        "due_at": "2026-10-29 05:40:46",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:40:46",
-        "updated_at": "2026-10-24 05:40:47",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": true
-      },
-      {
-        "id": 104,
-        "serie": "FOSS",
-        "nr": "75",
-        "serie_nr": "FOSS00075",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "unpaid",
-        "due_at": "2026-10-29 05:40:46",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:40:46",
-        "updated_at": "2026-10-24 05:40:46",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": true
-      },
-      {
-        "id": 103,
-        "serie": "FOSS",
-        "nr": "74",
-        "serie_nr": "FOSS00074",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "canceled",
-        "due_at": "2026-10-29 05:40:45",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:40:45",
-        "updated_at": "2026-10-24 05:40:46",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 102,
-        "serie": "FOSS",
-        "nr": "73",
-        "serie_nr": "FOSS00073",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "canceled",
-        "due_at": "2026-10-29 05:40:44",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:40:44",
-        "updated_at": "2026-10-24 05:40:45",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 101,
-        "serie": "DN-",
-        "nr": "5",
-        "serie_nr": "DN-00005",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 15,
-        "total": 15,
-        "status": "unpaid",
-        "due_at": null,
-        "paid_at": null,
-        "created_at": "2026-10-24 05:40:44",
-        "updated_at": "2026-10-24 05:40:44",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 100,
-        "serie": "FOSS",
-        "nr": "72",
-        "serie_nr": "FOSS00072",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "paid",
-        "due_at": "2026-10-29 05:40:43",
-        "paid_at": "2026-10-24 05:40:44",
-        "created_at": "2026-10-24 05:40:43",
-        "updated_at": "2026-10-24 05:40:44",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 99,
-        "serie": "CN-",
-        "nr": "7",
-        "serie_nr": "CN-00007",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": -30,
-        "total": -30,
-        "status": "refunded",
-        "due_at": null,
-        "paid_at": "2026-10-24 05:40:43",
-        "created_at": "2026-10-24 05:40:43",
-        "updated_at": "2026-10-24 05:40:43",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 98,
-        "serie": "FOSS",
-        "nr": "71",
-        "serie_nr": "FOSS00071",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "refunded",
-        "due_at": "2026-10-29 05:40:42",
-        "paid_at": "2026-10-24 05:40:42",
-        "created_at": "2026-10-24 05:40:42",
-        "updated_at": "2026-10-24 05:40:43",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 97,
-        "serie": "CN-",
-        "nr": "6",
-        "serie_nr": "CN-00006",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": -30,
-        "total": -30,
-        "status": "refunded",
-        "due_at": null,
-        "paid_at": "2026-10-24 05:39:17",
-        "created_at": "2026-10-24 05:39:17",
-        "updated_at": "2026-10-24 05:39:17",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 96,
-        "serie": "FOSS",
-        "nr": "70",
-        "serie_nr": "FOSS00070",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "refunded",
-        "due_at": "2026-10-29 05:39:16",
-        "paid_at": "2026-10-24 05:39:16",
-        "created_at": "2026-10-24 05:39:16",
-        "updated_at": "2026-10-24 05:39:17",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 95,
-        "serie": "FOSS",
-        "nr": "69",
-        "serie_nr": "FOSS00069",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 10,
-        "total": 10,
-        "status": "unpaid",
-        "due_at": "2026-10-29 05:39:08",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:39:08",
-        "updated_at": "2026-10-24 05:39:08",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": true
-      },
-      {
-        "id": 94,
-        "serie": "FOSS",
-        "nr": "68",
-        "serie_nr": "FOSS00068",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "unpaid",
-        "due_at": "2026-10-29 05:39:07",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:39:07",
-        "updated_at": "2026-10-24 05:39:07",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": true
-      },
-      {
-        "id": 93,
-        "serie": "FOSS",
-        "nr": "67",
-        "serie_nr": "FOSS00067",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "canceled",
-        "due_at": "2026-10-29 05:39:06",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:39:06",
-        "updated_at": "2026-10-24 05:39:08",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 92,
-        "serie": "FOSS",
-        "nr": "66",
-        "serie_nr": "FOSS00066",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "canceled",
-        "due_at": "2026-10-29 05:39:06",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:39:06",
-        "updated_at": "2026-10-24 05:39:06",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 91,
-        "serie": "DN-",
-        "nr": "4",
-        "serie_nr": "DN-00004",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 15,
-        "total": 15,
-        "status": "unpaid",
-        "due_at": null,
-        "paid_at": null,
-        "created_at": "2026-10-24 05:39:06",
-        "updated_at": "2026-10-24 05:39:06",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 90,
-        "serie": "FOSS",
-        "nr": "65",
-        "serie_nr": "FOSS00065",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "paid",
-        "due_at": "2026-10-29 05:39:05",
-        "paid_at": "2026-10-24 05:39:05",
-        "created_at": "2026-10-24 05:39:05",
-        "updated_at": "2026-10-24 05:39:06",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 89,
-        "serie": "CN-",
-        "nr": "5",
-        "serie_nr": "CN-00005",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": -30,
-        "total": -30,
-        "status": "refunded",
-        "due_at": null,
-        "paid_at": "2026-10-24 05:39:04",
-        "created_at": "2026-10-24 05:39:04",
-        "updated_at": "2026-10-24 05:39:04",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 88,
-        "serie": "FOSS",
-        "nr": "64",
-        "serie_nr": "FOSS00064",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "refunded",
-        "due_at": "2026-10-29 05:39:04",
-        "paid_at": "2026-10-24 05:39:04",
-        "created_at": "2026-10-24 05:39:04",
-        "updated_at": "2026-10-24 05:39:05",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 87,
-        "serie": "FOSS",
-        "nr": "63",
-        "serie_nr": "FOSS00063",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 10,
-        "total": 10,
-        "status": "unpaid",
-        "due_at": "2026-10-29 05:37:42",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:37:42",
-        "updated_at": "2026-10-24 05:37:43",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": true
-      },
-      {
-        "id": 86,
-        "serie": "FOSS",
-        "nr": "62",
-        "serie_nr": "FOSS00062",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "unpaid",
-        "due_at": "2026-10-29 05:37:42",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:37:42",
-        "updated_at": "2026-10-24 05:37:42",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": true
-      },
-      {
-        "id": 85,
-        "serie": "FOSS",
-        "nr": "61",
-        "serie_nr": "FOSS00061",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "canceled",
-        "due_at": "2026-10-29 05:37:41",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:37:41",
-        "updated_at": "2026-10-24 05:37:42",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 84,
-        "serie": "FOSS",
-        "nr": "60",
-        "serie_nr": "FOSS00060",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 25,
-        "total": 25,
-        "status": "canceled",
-        "due_at": "2026-10-29 05:37:41",
-        "paid_at": null,
-        "created_at": "2026-10-24 05:37:41",
-        "updated_at": "2026-10-24 05:37:41",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 83,
-        "serie": "DN-",
-        "nr": "3",
-        "serie_nr": "DN-00003",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 15,
-        "total": 15,
-        "status": "unpaid",
-        "due_at": null,
-        "paid_at": null,
-        "created_at": "2026-10-24 05:37:40",
-        "updated_at": "2026-10-24 05:37:40",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 82,
-        "serie": "FOSS",
-        "nr": "59",
-        "serie_nr": "FOSS00059",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": 30,
-        "total": 30,
-        "status": "paid",
-        "due_at": "2026-10-29 05:37:40",
-        "paid_at": "2026-10-24 05:37:40",
-        "created_at": "2026-10-24 05:37:40",
-        "updated_at": "2026-10-24 05:37:40",
-        "buyer": {
-          "first_name": "Phase",
-          "last_name": "Zero",
-          "email": "phase0.client@example.com"
-        },
-        "issued": true,
-        "cancellable": false
-      },
-      {
-        "id": 81,
-        "serie": "CN-",
-        "nr": "4",
-        "serie_nr": "CN-00004",
-        "client_id": 1,
-        "client": {
-          "id": 1
-        },
-        "currency": "USD",
-        "tax": 0,
-        "subtotal": -30,
-        "total": -30,
-        "status": "refunded",
-        "due_at": null,
-        "paid_at": "2026-10-24 05:37:39",
-        "created_at": "2026-10-24 05:37:39",
-        "updated_at": "2026-10-24 05:37:39",
+        "created_at": "2026-10-24 05:49:01",
+        "updated_at": "2026-10-24 05:49:02",
         "buyer": {
           "first_name": "Phase",
           "last_name": "Zero",
