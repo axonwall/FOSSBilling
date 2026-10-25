@@ -1,0 +1,9 @@
+{
+  "result": {
+    "id": 1,
+    "email": "phase0.client@example.com",
+    "name": "Phase Zero",
+    "role": "client"
+  },
+  "error": null
+}

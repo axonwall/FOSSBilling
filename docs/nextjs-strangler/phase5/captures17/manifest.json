@@ -1,0 +1,292 @@
+[
+  {
+    "name": "tmp_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_client_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_profile_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_profile_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_profile_get_updated",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_profile_update_bad_tz",
+    "ok": false,
+    "error": "Invalid timezone: Not/AZone"
+  },
+  {
+    "name": "admin_change_pw_missing",
+    "ok": false,
+    "error": "New password is required"
+  },
+  {
+    "name": "admin_change_pw_weak",
+    "ok": false,
+    "error": "Minimum password length is 8 characters."
+  },
+  {
+    "name": "admin_change_pw_mismatch",
+    "ok": false,
+    "error": "Passwords do not match"
+  },
+  {
+    "name": "admin_change_pw_wrong_current",
+    "ok": false,
+    "error": "Current password incorrect"
+  },
+  {
+    "name": "admin_change_pw_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_change_pw_back",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_generate_api_key",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_api_key_reset_client",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_api_key_reset_missing",
+    "ok": false,
+    "error": "Client not found"
+  },
+  {
+    "name": "tmp_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_client_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_destroy_sessions",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_second_session_dead",
+    "ok": false,
+    "error": "Authentication Failed"
+  },
+  {
+    "name": "tmp_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_logout",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_after_logout",
+    "ok": false,
+    "error": "Authentication Failed"
+  },
+  {
+    "name": "tmp_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_profile_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_profile_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_profile_get_updated",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_profile_update_dup_email",
+    "ok": false,
+    "error": "This email address is already registered."
+  },
+  {
+    "name": "client_api_key_get_null",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_api_key_reset",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_client_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_change_pw_missing",
+    "ok": false,
+    "error": "New password required"
+  },
+  {
+    "name": "client_change_pw_mismatch",
+    "ok": false,
+    "error": "Passwords do not match."
+  },
+  {
+    "name": "client_change_pw_wrong_current",
+    "ok": false,
+    "error": "Current password incorrect"
+  },
+  {
+    "name": "client_change_pw_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_client_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_change_pw_back",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_client_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_client_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_destroy_sessions",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_second_session_dead",
+    "ok": false,
+    "error": "Authentication Failed"
+  },
+  {
+    "name": "tmp_client_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_logout",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_after_logout",
+    "ok": false,
+    "error": "Authentication Failed"
+  },
+  {
+    "name": "guest_kb_enabled",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_kb_suggestions_contact",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_kb_suggestions_ticket",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_kb_suggestions_bogus",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_public_tickets_enabled",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_kb_category_get_pairs",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_cron_save_settings_on",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_cron_regenerate_hash",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_cron_save_settings_off",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_currency_is_cron_enabled",
+    "ok": true,
+    "error": null
+  }
+]

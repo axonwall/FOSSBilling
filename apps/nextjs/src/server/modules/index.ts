@@ -18,5 +18,6 @@ import "./cron";
 import "./email";
 import "./support";
 import "./extension";
+import "./profile";
 
 export { findHandler, tsModulesEnabled } from "../dispatch";

@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "New password is required",
+    "code": 9999
+  }
+}
