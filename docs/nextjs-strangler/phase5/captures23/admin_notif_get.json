@@ -1,0 +1,14 @@
+{
+  "result": {
+    "id": 23,
+    "client_id": null,
+    "extension": "mod_notification",
+    "rel_type": "staff",
+    "rel_id": "1",
+    "meta_key": "message",
+    "meta_value": "Comms23 notice one",
+    "created_at": "2026-10-26 02:47:14",
+    "updated_at": "2026-10-26 02:47:14"
+  },
+  "error": null
+}

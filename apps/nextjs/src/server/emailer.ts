@@ -5,12 +5,14 @@
 // them. Template rendering uses the twig.ts subset renderer.
 
 import { findDefaultCurrency, getDb, getDbWrite, getSetting, listCurrencies, nowTimestamp } from "./db";
+import { templateVars } from "./emailDefaults";
 import { renderTemplate } from "./twig";
 
 interface TemplateRow {
   id: number; action_code: string; category: string | null; enabled: number;
   subject: string; description: string | null; content: string | null;
   is_custom: number; is_overridden: number; last_error: string | null;
+  vars?: string | null; error_checked_at?: string | null;
 }
 
 export function findEmailTemplate(codeOrId: string | number): TemplateRow | undefined {
@@ -44,7 +46,18 @@ export function templateToApi(t: TemplateRow, withContent = false) {
   };
   if (withContent) {
     base.content = t.content;
-    base.vars = null; // stored encrypted at rest; TS does not decrypt
+    // Stored vars decrypt via crypt.ts (same v2: format PHP writes);
+    // undecryptable or absent vars read as [] exactly like PHP getVars.
+    const vars = templateVars({
+      id: t.id, action_code: t.action_code, category: t.category, enabled: t.enabled,
+      subject: t.subject, content: t.content, description: t.description, vars: t.vars ?? null,
+      is_custom: t.is_custom, is_overridden: t.is_overridden, last_error: t.last_error,
+      error_checked_at: t.error_checked_at ?? null,
+    });
+    // PHP getVars returns [] for an empty var set; an encrypted "{}"
+    // must read the same way, not as an empty object.
+    base.vars = (vars && typeof vars === "object" && !Array.isArray(vars)
+      && Object.keys(vars).length === 0) ? [] : vars;
     base.subject_override = t.is_custom ? null : t.subject;
     base.content_override = t.is_custom ? null : t.content;
   }

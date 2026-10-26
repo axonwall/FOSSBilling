@@ -1,0 +1,21 @@
+{
+  "result": {
+    "subject": "Comms23 Alpha Updated",
+    "content": "Updated Phase.",
+    "recipients": [
+      {
+        "email": "phase1.e2e@example.com",
+        "name": "Phase One"
+      },
+      {
+        "email": "phase1.diag@example.com",
+        "name": "Diag One"
+      },
+      {
+        "email": "phase0.client@example.com",
+        "name": "Phase Zero"
+      }
+    ]
+  },
+  "error": null
+}

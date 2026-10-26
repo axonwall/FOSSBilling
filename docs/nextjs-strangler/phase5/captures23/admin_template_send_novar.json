@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Email template rendering error: Variable \"nosuchvar\" does not exist in \"__string_template__04c9407d41a76d114570c851258d2e46\" at line 1.",
+    "code": 9999
+  }
+}

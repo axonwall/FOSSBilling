@@ -266,3 +266,95 @@ function renderNodes(nodes: Node[], ctx: Ctx): string {
 export function renderTemplate(template: string, ctx: Ctx): string {
   return renderNodes(parse(template), ctx);
 }
+
+/**
+ * The email environment's strict pass (PHP: SandboxedStringRenderer +
+ * strict_variables). Missing variables are errors, not empty strings;
+ * unbalanced delimiters and unclosed if/for blocks are syntax errors.
+ * Error text follows PHP's shape, minus the per-template hash Twig
+ * appends to the template name (parity scrubs that segment).
+ * Used by template_send/_parse and template_validate_all only — the
+ * money-flow templated emails keep the forgiving renderer.
+ */
+export function renderTemplateStrict(template: string, ctx: Ctx): string {
+  const lineOf = (idx: number) => template.slice(0, idx).split("\n").length;
+  // Delimiter balance.
+  const varRe = /\{\{|\}\}|\{%|%\}/g;
+  const stack: string[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = varRe.exec(template)) !== null) {
+    const tok = m[0];
+    if (tok === "{{" || tok === "{%") stack.push(tok);
+    else if (tok === "}}" || tok === "%}") {
+      const open = tok === "}}" ? "{{" : "{%";
+      if (stack.length === 0 || stack[stack.length - 1] !== open) {
+        throw new Error(`Email template syntax error: Unexpected "${tok}" in "__string_template__" at line ${lineOf(m.index)}.`);
+      }
+      stack.pop();
+    }
+  }
+  if (stack.length > 0) {
+    const open = stack[stack.length - 1];
+    throw new Error(`Email template syntax error: Unclosed "${open === "{{" ? "variable" : "block"}" in "__string_template__" at line ${lineOf(template.length)}.`);
+  }
+  // Block balance for the tags the subset parser consumes.
+  const tagRe = /\{%\s*(if|for|endif|endfor|apply|endapply|block|endblock)\b/g;
+  const blocks: string[] = [];
+  while ((m = tagRe.exec(template)) !== null) {
+    const tag = m[1];
+    if (tag === "if" || tag === "for" || tag === "apply" || tag === "block") blocks.push(tag);
+    else {
+      const open = tag === "endif" ? "if" : tag === "endfor" ? "for" : tag === "endapply" ? "apply" : "block";
+      if (blocks.length === 0 || blocks[blocks.length - 1] !== open) {
+        throw new Error(`Email template syntax error: Unexpected "${tag}" in "__string_template__" at line ${lineOf(m.index)}.`);
+      }
+      blocks.pop();
+    }
+  }
+  if (blocks.length > 0) {
+    throw new Error(`Email template syntax error: Unexpected end of template in "__string_template__" at line 1.`);
+  }
+  // Strict variable check over every echo and condition expression.
+  // Loop variables and {% set %} names count as defined (the subset
+  // renderer does not evaluate set, so their shapes are not checked).
+  const defined = new Set(Object.keys(ctx));
+  for (const re of [/\{%\s*for\s+(\w+)\s+in/g, /\{%\s*set\s+(\w+)/g]) {
+    let sm: RegExpExecArray | null;
+    while ((sm = re.exec(template)) !== null) defined.add(sm[1]);
+  }
+  const KEYWORDS = new Set(["true", "false", "null", "not", "and", "or", "in", "is",
+    "defined", "empty", "odd", "even", "divisible", "iterable", "mapping", "sequence",
+    "same", "starts", "ends", "matches"]);
+  const exprRe = /\{\{(.*?)\}\}|\{%\s*if\s+(.*?)\s*%\}|\{%\s*for\s+\w+\s+in\s+(.*?)\s*%\}/gs;
+  while ((m = exprRe.exec(template)) !== null) {
+    const expr = (m[1] ?? m[2] ?? m[3] ?? "").trim();
+    if (!expr) continue;
+    if (/\|\s*default\b/.test(expr)) continue; // default() guards undefined
+    const base = expr.split("|")[0].replace(/'[^']*'|"[^"]*"/g, "");
+    const idRe = /[A-Za-z_][\w]*/g;
+    let im: RegExpExecArray | null;
+    while ((im = idRe.exec(base)) !== null) {
+      const root = im[0];
+      if (KEYWORDS.has(root)) continue;
+      if (base.slice(0, im.index).trimEnd().endsWith(".")) continue; // attribute, not a root
+      if (base.slice(im.index + root.length).trimStart().startsWith("(")) continue; // function call
+      if (!defined.has(root)) {
+        throw new Error(`Email template rendering error: Variable "${root}" does not exist in "__string_template__" at line ${lineOf(m.index)}.`);
+      }
+      // Nested path on a context root: a missing key is a strict error too.
+      const rest = base.slice(im.index + root.length);
+      const pathMatch = /^((?:\.[A-Za-z_][\w]*)+)/.exec(rest);
+      if (pathMatch && root in ctx) {
+        let cur: unknown = ctx[root];
+        for (const part of pathMatch[1].slice(1).split(".")) {
+          if (cur === null || cur === undefined || typeof cur !== "object"
+            || !((cur as Record<string, unknown>)[part] !== undefined)) {
+            throw new Error(`Email template rendering error: Key "${part}" for array does not exist in "__string_template__" at line ${lineOf(m.index)}.`);
+          }
+          cur = (cur as Record<string, unknown>)[part];
+        }
+      }
+    }
+  }
+  return renderTemplate(template, ctx);
+}

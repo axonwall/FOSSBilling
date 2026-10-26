@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "client_billing_email cannot be set via the API",
+    "code": 9999
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "result": {
+    "valid": 30,
+    "invalid": 3,
+    "errors": [
+      {
+        "id": 129,
+        "action_code": "comms23_broken",
+        "error": "Email template syntax error: Unexpected end of template in \"__string_template__31e00cb0fcf09422b97dbafd9ab3b568\" at line 1."
+      },
+      {
+        "id": 130,
+        "action_code": "comms23_novar",
+        "error": "Email template rendering error: Variable \"nosuchvar\" does not exist in \"__string_template__04c9407d41a76d114570c851258d2e46\" at line 1."
+      },
+      {
+        "id": 131,
+        "action_code": "comms23_staff_nogroup",
+        "error": "Email template rendering error: Variable \"staff\" does not exist in \"__string_template__b18fb300e3532e1a30a2efe91a0a76da\" at line 1."
+      }
+    ]
+  },
+  "error": null
+}

@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Message from name cannot be empty",
+    "code": 9999
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "result": {
+    "id": 13,
+    "from_email": "support@yourcompany.com",
+    "from_name": "Company Name",
+    "subject": "Comms23 Alpha Updated",
+    "content": "Updated {{ c.first_name }}.",
+    "filter": {
+      "client_status": [
+        "active"
+      ]
+    },
+    "status": "draft",
+    "sent_at": null,
+    "created_at": "2026-10-26 02:47:08",
+    "updated_at": "2026-10-26 02:47:09"
+  },
+  "error": null
+}

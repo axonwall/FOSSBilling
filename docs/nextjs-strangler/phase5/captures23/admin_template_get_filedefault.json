@@ -1,0 +1,20 @@
+{
+  "result": {
+    "id": 134,
+    "action_code": "mod_email_test",
+    "category": "email",
+    "enabled": true,
+    "subject": "[{{ guest.system_company.name }}] FOSSBilling Email Test",
+    "description": null,
+    "is_custom": false,
+    "has_default": true,
+    "is_overridden": false,
+    "content": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>Test Email From [{{ guest.system_company.name }}]</h1>\n\t<p>Hi {{ staff_member_name|default('') }},</p>\n\t<p>If you are reading this email, FOSSBilling is <strong>configured properly</strong> and is <strong>able to send emails</strong>.</p>\n\t<div class=\"signature\">{{ guest.system_email.signature }}</div>\n</body>\n</html>\n",
+    "vars": [],
+    "subject_override": "[{{ guest.system_company.name }}] FOSSBilling Email Test",
+    "content_override": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>Test Email From [{{ guest.system_company.name }}]</h1>\n\t<p>Hi {{ staff_member_name|default('') }},</p>\n\t<p>If you are reading this email, FOSSBilling is <strong>configured properly</strong> and is <strong>able to send emails</strong>.</p>\n\t<div class=\"signature\">{{ guest.system_email.signature }}</div>\n</body>\n</html>\n",
+    "has_error": false,
+    "last_error": null
+  },
+  "error": null
+}

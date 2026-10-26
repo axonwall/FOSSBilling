@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Receiver is not defined. Define to or to_client or to_staff parameter",
+    "code": 9999
+  }
+}

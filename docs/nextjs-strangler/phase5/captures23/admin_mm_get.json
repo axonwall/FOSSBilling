@@ -1,0 +1,15 @@
+{
+  "result": {
+    "id": 13,
+    "from_email": "support@yourcompany.com",
+    "from_name": "Company Name",
+    "subject": "Comms23 Alpha",
+    "content": "Hello {{ c.first_name }} {{ c.last_name }}, your email is {{ c.email }}.",
+    "filter": [],
+    "status": "draft",
+    "sent_at": null,
+    "created_at": "2026-10-26 02:47:08",
+    "updated_at": "2026-10-26 02:47:08"
+  },
+  "error": null
+}

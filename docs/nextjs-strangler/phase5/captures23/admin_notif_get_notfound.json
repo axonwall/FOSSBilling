@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Notification message was not found",
+    "code": 9999
+  }
+}

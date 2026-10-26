@@ -20,5 +20,7 @@ import "./support";
 import "./extension";
 import "./profile";
 import "./stats";
+import "./massmailer";
+import "./notification";
 
 export { findHandler, tsModulesEnabled } from "../dispatch";

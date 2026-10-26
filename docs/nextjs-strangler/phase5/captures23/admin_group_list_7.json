@@ -1,0 +1,20 @@
+{
+  "result": [
+    {
+      "id": 1,
+      "name": "Super Administrator",
+      "protected": true
+    },
+    {
+      "id": 2,
+      "name": "Support Lead",
+      "protected": false
+    },
+    {
+      "id": 3,
+      "name": "Support Staff",
+      "protected": false
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Parameters `to` and `to_client` cannot be combined. Client-bound emails are always sent to the client's registered email address.",
+    "code": 9999
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "result": {
+    "id": 129,
+    "action_code": "comms23_broken",
+    "category": "comms23",
+    "enabled": true,
+    "subject": "Broken",
+    "description": null,
+    "is_custom": true,
+    "has_default": false,
+    "is_overridden": false,
+    "content": "{% if c.first_name %}oops",
+    "vars": [],
+    "subject_override": null,
+    "content_override": null,
+    "has_error": true,
+    "last_error": "Email template syntax error: Unexpected end of template in \"__string_template__31e00cb0fcf09422b97dbafd9ab3b568\" at line 1."
+  },
+  "error": null
+}

@@ -1,0 +1,20 @@
+{
+  "result": {
+    "id": 133,
+    "action_code": "comms23_newcode",
+    "category": "custom",
+    "enabled": false,
+    "subject": "Comms23 new subject",
+    "description": null,
+    "is_custom": true,
+    "has_default": false,
+    "is_overridden": false,
+    "content": "Comms23 new body.",
+    "vars": [],
+    "subject_override": null,
+    "content_override": null,
+    "has_error": false,
+    "last_error": null
+  },
+  "error": null
+}

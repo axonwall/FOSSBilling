@@ -1,0 +1,672 @@
+[
+  {
+    "name": "tmp_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_client_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_create_plain",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_create_var",
+    "ok": false,
+    "error": "Email template rendering error: Variable \"c\" does not exist in \"__string_template__1141b7deaedde69ba55c58bb2e6ad6cb\" at line 1."
+  },
+  {
+    "name": "admin_template_create_missing",
+    "ok": false,
+    "error": "Email template subject is required"
+  },
+  {
+    "name": "admin_group_list_7",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_group_list_missing",
+    "ok": false,
+    "error": "Email ID was not passed"
+  },
+  {
+    "name": "admin_group_list_notfound",
+    "ok": false,
+    "error": "Email template not found"
+  },
+  {
+    "name": "admin_group_add_dup",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_group_add_t1",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_group_list_t1",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_group_add_badgroup",
+    "ok": false,
+    "error": "Staff group not found"
+  },
+  {
+    "name": "admin_group_add_notfound",
+    "ok": false,
+    "error": "Email template not found"
+  },
+  {
+    "name": "admin_group_remove_t1",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_group_list_t1_after",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_group_remove_absent",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_send_nocode",
+    "ok": false,
+    "error": "Template code not passed"
+  },
+  {
+    "name": "admin_template_send_noreceiver",
+    "ok": false,
+    "error": "Receiver is not defined. Define to or to_client or to_staff parameter"
+  },
+  {
+    "name": "admin_template_send_billing",
+    "ok": false,
+    "error": "client_billing_email cannot be set via the API"
+  },
+  {
+    "name": "admin_template_send_both",
+    "ok": false,
+    "error": "Parameters `to` and `to_client` cannot be combined. Client-bound emails are always sent to the client's registered email address."
+  },
+  {
+    "name": "admin_template_send_adminonly",
+    "ok": false,
+    "error": "Receiver is not defined. Define to or to_client or to_staff parameter"
+  },
+  {
+    "name": "admin_template_send_plain",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_send_client",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_send_client_missing",
+    "ok": false,
+    "error": "Client not found"
+  },
+  {
+    "name": "admin_template_send_staff_nogroups",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_send_staff",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_send_staff_err",
+    "ok": false,
+    "error": "Email template rendering error: Variable \"staff\" does not exist in \"__string_template__b18fb300e3532e1a30a2efe91a0a76da\" at line 1."
+  },
+  {
+    "name": "admin_template_send_novar",
+    "ok": false,
+    "error": "Email template rendering error: Variable \"nosuchvar\" does not exist in \"__string_template__04c9407d41a76d114570c851258d2e46\" at line 1."
+  },
+  {
+    "name": "admin_template_send_to_admin",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_send_disabled",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_send_newcode",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_get_newcode",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_send_filedefault",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_get_filedefault",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_queue_default",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_queue_pending",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_queue_client1",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_queue_sort_subject",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_validate_all",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_get_broken_after_validate",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_batch_template_delete_missing",
+    "ok": false,
+    "error": "IDs were not passed"
+  },
+  {
+    "name": "admin_batch_template_delete",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_get_t1_after_delete",
+    "ok": false,
+    "error": "Email template not found"
+  },
+  {
+    "name": "admin_template_get_3_after_delete",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_batch_template_delete_partial",
+    "ok": false,
+    "error": "Email template not found"
+  },
+  {
+    "name": "admin_template_get_t2_after_delete",
+    "ok": false,
+    "error": "Email template not found"
+  },
+  {
+    "name": "admin_batch_delete_missing",
+    "ok": false,
+    "error": "IDs were not passed"
+  },
+  {
+    "name": "admin_batch_delete_h2",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_batch_delete_notfound",
+    "ok": false,
+    "error": "Email not found"
+  },
+  {
+    "name": "admin_template_update_override4",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_get_4_overridden",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_reset_4",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_get_4_reset",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_create_t5",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_reset_custom",
+    "ok": false,
+    "error": "Email template comms23_resetme does not have a file-backed default"
+  },
+  {
+    "name": "admin_template_reset_missing_code",
+    "ok": false,
+    "error": "Email template code was not passed"
+  },
+  {
+    "name": "admin_template_reset_nodefault",
+    "ok": false,
+    "error": "Email template xyz_nope does not have a file-backed default"
+  },
+  {
+    "name": "admin_template_update_override3",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_list_before_generate",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_batch_template_generate",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_get_3_generated",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_list_after_generate",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_batch_template_disable",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_list_after_disable",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_get_3_disabled",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_batch_template_enable",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_template_get_3_enabled",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_email_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_email_list_forced",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_email_list_sender",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_email_list_search",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_email_list_date_in",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_email_list_date_out",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_email_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_email_get_other",
+    "ok": false,
+    "error": "Email not found"
+  },
+  {
+    "name": "client_email_get_missing",
+    "ok": false,
+    "error": "Email ID was not passed"
+  },
+  {
+    "name": "client_email_resend",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_email_resend_missing",
+    "ok": false,
+    "error": "Email not found"
+  },
+  {
+    "name": "client_email_delete",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_email_get_after_delete",
+    "ok": false,
+    "error": "Email not found"
+  },
+  {
+    "name": "client_email_delete_missing",
+    "ok": false,
+    "error": "Email not found"
+  },
+  {
+    "name": "admin_mm_list_empty",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_create",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_create_beta",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_create_empty",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_create_nosubject",
+    "ok": false,
+    "error": "Message subject was not passed"
+  },
+  {
+    "name": "admin_mm_create_default",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_get_default",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_get_missing",
+    "ok": false,
+    "error": "Message not found"
+  },
+  {
+    "name": "admin_mm_get_notfound",
+    "ok": false,
+    "error": "Message not found"
+  },
+  {
+    "name": "admin_mm_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_get_updated",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_update_badfilter",
+    "ok": false,
+    "error": "Mass mail filter contains invalid values for \"client_status\""
+  },
+  {
+    "name": "admin_mm_update_badfilter_key",
+    "ok": false,
+    "error": "Mass mail filter contains invalid values for \"nope\""
+  },
+  {
+    "name": "admin_mm_update_empty_fromname",
+    "ok": false,
+    "error": "Message from name cannot be empty"
+  },
+  {
+    "name": "admin_mm_update_bademail",
+    "ok": false,
+    "error": "Email address is invalid"
+  },
+  {
+    "name": "admin_mm_update_missing",
+    "ok": false,
+    "error": "Message not found"
+  },
+  {
+    "name": "admin_mm_receivers_all",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_update_filter_beta",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_receivers_beta",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_update_filter_groups",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_receivers_groups",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_preview",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_preview_recipients",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_preview_missing",
+    "ok": false,
+    "error": "Message not found"
+  },
+  {
+    "name": "admin_mm_send_test",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_send_test_empty",
+    "ok": false,
+    "error": "Add some content before sending message"
+  },
+  {
+    "name": "admin_mm_send",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_get_sent",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_send_empty",
+    "ok": false,
+    "error": "Add some content before sending message"
+  },
+  {
+    "name": "admin_mm_copy",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_get_copy",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_delete_copy",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_test_client",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_list_status_sent",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_list_search",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_mm_list_sort_subject",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_notif_list_empty",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_notif_add_one",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_notif_add_two",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_notif_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_notif_list_search",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_notif_list_date",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_notif_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_notif_get_missing",
+    "ok": false,
+    "error": "Notification ID was not passed"
+  },
+  {
+    "name": "admin_notif_get_notfound",
+    "ok": false,
+    "error": "Notification message was not found"
+  },
+  {
+    "name": "admin_notif_add_nomessage",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_notif_add_empty",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_notif_delete_two",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_notif_delete_missing",
+    "ok": false,
+    "error": "Notification ID was not passed"
+  },
+  {
+    "name": "admin_notif_delete_notfound",
+    "ok": false,
+    "error": "Notification message was not found"
+  },
+  {
+    "name": "admin_notif_delete_all",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_notif_list_after_all",
+    "ok": true,
+    "error": null
+  }
+]

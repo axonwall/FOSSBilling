@@ -1,0 +1,72 @@
+[
+  [
+    364,
+    "comms23@example.com",
+    "support@yourcompany.com",
+    "Comms23 custom subject",
+    "Comms23 custom body.",
+    "Comms Tester",
+    "Company Name",
+    null,
+    null,
+    1,
+    0,
+    "pending"
+  ],
+  [
+    365,
+    "phase0.client@example.com",
+    "support@yourcompany.com",
+    "Hello Phase",
+    "Dear Phase Zero, your email is phase0.client@example.com.",
+    "Phase Zero",
+    "Company Name",
+    1,
+    null,
+    1,
+    0,
+    "pending"
+  ],
+  [
+    366,
+    "admin@phase0.local",
+    "support@yourcompany.com",
+    "Staff note Phase Zero Admin",
+    "Hello Phase Zero Admin.",
+    "Phase Zero Admin",
+    "Company Name",
+    null,
+    1,
+    1,
+    0,
+    "pending"
+  ],
+  [
+    367,
+    "admin@phase0.local",
+    "support@yourcompany.com",
+    "Comms23 custom subject",
+    "Comms23 custom body.",
+    "Phase Zero Admin",
+    "Company Name",
+    null,
+    1,
+    1,
+    0,
+    "pending"
+  ],
+  [
+    368,
+    "comms23@example.com",
+    "support@yourcompany.com",
+    "[Company Name] FOSSBilling Email Test",
+    "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-ser",
+    "Comms Tester",
+    "Company Name",
+    null,
+    null,
+    1,
+    0,
+    "pending"
+  ]
+]

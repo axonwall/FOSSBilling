@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Mass mail filter contains invalid values for \"nope\"",
+    "code": 9999
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Email template rendering error: Variable \"staff\" does not exist in \"__string_template__b18fb300e3532e1a30a2efe91a0a76da\" at line 1.",
+    "code": 9999
+  }
+}

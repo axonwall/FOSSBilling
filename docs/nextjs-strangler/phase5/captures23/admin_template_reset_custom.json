@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Email template comms23_resetme does not have a file-backed default",
+    "code": 9999
+  }
+}

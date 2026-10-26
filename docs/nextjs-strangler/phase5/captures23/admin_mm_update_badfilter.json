@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Mass mail filter contains invalid values for \"client_status\"",
+    "code": 9999
+  }
+}

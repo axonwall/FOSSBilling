@@ -1,6 +1,6 @@
 {
   "result": {
-    "id": 9,
+    "id": 26,
     "code": "PAR21SAVE",
     "description": "cap21 promo",
     "type": "percentage",
@@ -22,8 +22,8 @@
     "auto_apply": false,
     "priority": 0,
     "stackable": false,
-    "created_at": "2026-10-25 22:43:11",
-    "updated_at": "2026-10-25 22:43:13",
+    "created_at": "2026-10-26 03:16:04",
+    "updated_at": "2026-10-26 03:16:07",
     "applies_to": {
       "6": "Phase0 Widget Hosting"
     },
