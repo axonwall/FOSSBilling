@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Custom plugin method suspend is forbidden",
+    "code": 403
+  }
+}

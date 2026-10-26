@@ -1,0 +1,96 @@
+{
+  "result": {
+    "pages": 1,
+    "page": 1,
+    "per_page": 100,
+    "total": 3,
+    "list": [
+      {
+        "id": 1,
+        "title": "Custom",
+        "label": "Custom Registrar always responds with positive results. Useful if no other registrar is suitable.",
+        "config": [],
+        "secret_fields": [],
+        "form": {
+          "use_rdap": [
+            "radio",
+            {
+              "multiOptions": {
+                "1": "Yes",
+                "0": "No"
+              },
+              "label": "Use RDAP Registry Lookups to Check for Domain Availability"
+            }
+          ]
+        },
+        "test_mode": false
+      },
+      {
+        "id": 3,
+        "title": "Internet.bs",
+        "label": "Manages domains on Internetbs via API",
+        "config": {
+          "apikey": null,
+          "apikey_set": false,
+          "password": null,
+          "password_set": false
+        },
+        "secret_fields": [
+          "apikey",
+          "password"
+        ],
+        "form": {
+          "apikey": [
+            "password",
+            {
+              "label": "Internetbs API Key",
+              "description": "Internetbs API Key",
+              "secret": true
+            }
+          ],
+          "password": [
+            "password",
+            {
+              "label": "Internetbs API Password",
+              "description": "Internetbs API Password",
+              "secret": true
+            }
+          ]
+        },
+        "test_mode": false
+      },
+      {
+        "id": 2,
+        "title": "Reseller Club",
+        "label": "Manages domains on ResellerClub via API. ResellerClub requires your server IP in order to work. Login to the ResellerClub control panel (the url will be in the email you received when you signed up with them) and then go to Settings > API and enter the IP address of the server where FOSSBilling is installed to authorize it for API access.",
+        "config": {
+          "api-key": null,
+          "api-key_set": false
+        },
+        "secret_fields": [
+          "api-key"
+        ],
+        "form": {
+          "userid": [
+            "text",
+            {
+              "label": "Reseller ID. You can get this at ResellerClub control panel Settings > Personal information > Primary profile > Reseller ID",
+              "description": "ResellerClub Reseller ID"
+            }
+          ],
+          "api-key": [
+            "password",
+            {
+              "label": "ResellerClub API Key",
+              "description": "You can get this at ResellerClub control panel, go to Settings -> API",
+              "required": false,
+              "secret": true
+            }
+          ]
+        },
+        "test_mode": false
+      }
+    ]
+  },
+  "error": null
+}

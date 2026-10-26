@@ -1,6 +1,6 @@
 {
   "result": {
-    "id": 45,
+    "id": 54,
     "code": "Stripe",
     "title": "Stripe (Copy)",
     "allow_single": true,
@@ -97,7 +97,7 @@
     "description": "You authenticate to the Stripe API by providing one of your API keys in the request. You can manage your API keys from your account.",
     "enabled": false,
     "test_mode": true,
-    "callback": "http://127.0.0.1:8080/ipn.php?gateway_id=45",
+    "callback": "http://127.0.0.1:8080/ipn.php?gateway_id=54",
     "custom_logo_url": null,
     "custom_logo_avif_url": null
   },

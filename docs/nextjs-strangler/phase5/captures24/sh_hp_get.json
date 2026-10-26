@@ -1,0 +1,18 @@
+{
+  "result": {
+    "id": 10,
+    "name": "Cap24 Plan",
+    "bandwidth": "20000",
+    "quota": "2000",
+    "max_ftp": "10",
+    "max_sql": "1",
+    "max_pop": "1",
+    "max_sub": "1",
+    "max_park": "1",
+    "max_addon": "1",
+    "config": null,
+    "created_at": "2026-10-26 03:30:05",
+    "updated_at": "2026-10-26 03:30:05"
+  },
+  "error": null
+}

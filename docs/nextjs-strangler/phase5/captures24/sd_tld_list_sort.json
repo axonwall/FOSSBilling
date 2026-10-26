@@ -1,0 +1,45 @@
+{
+  "result": {
+    "pages": 1,
+    "page": 1,
+    "per_page": 100,
+    "total": 2,
+    "list": [
+      {
+        "id": 1,
+        "tld": ".com",
+        "price_registration": "11.99",
+        "price_renew": "11.99",
+        "price_transfer": "11.99",
+        "active": true,
+        "allow_register": true,
+        "allow_transfer": true,
+        "require_transfer_code": null,
+        "min_years": 1,
+        "periods": null,
+        "registrar": {
+          "id": 1,
+          "title": "Custom"
+        }
+      },
+      {
+        "id": 5,
+        "tld": ".cap24inactive",
+        "price_registration": "9.99",
+        "price_renew": "9.99",
+        "price_transfer": "9.99",
+        "active": false,
+        "allow_register": true,
+        "allow_transfer": true,
+        "require_transfer_code": null,
+        "min_years": 1,
+        "periods": null,
+        "registrar": {
+          "id": 1,
+          "title": "Custom"
+        }
+      }
+    ]
+  },
+  "error": null
+}

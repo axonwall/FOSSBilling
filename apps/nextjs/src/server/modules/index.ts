@@ -22,5 +22,10 @@ import "./profile";
 import "./stats";
 import "./massmailer";
 import "./notification";
+import "./servicecustom";
+import "./servicelicense";
+import "./servicedownloadable";
+import "./servicehosting";
+import "./servicedomain";
 
 export { findHandler, tsModulesEnabled } from "../dispatch";

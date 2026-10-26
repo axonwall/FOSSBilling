@@ -1,0 +1,912 @@
+[
+  {
+    "name": "tmp_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_client_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_admin_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_admin_update_missing",
+    "ok": false,
+    "error": "Order ID is missing"
+  },
+  {
+    "name": "sd_admin_update_notfound",
+    "ok": false,
+    "error": "Order not found"
+  },
+  {
+    "name": "sd_admin_update_wrongtype",
+    "ok": false,
+    "error": "Domain order is not activated"
+  },
+  {
+    "name": "sd_admin_ns",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_admin_contacts",
+    "ok": false,
+    "error": "Required field contact is missing"
+  },
+  {
+    "name": "sd_admin_privacy_on",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_admin_privacy_off",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_admin_sync",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_admin_transfer_code",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_admin_lock",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_admin_unlock",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_admin_batch_sync",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_tld_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_tld_list_sort",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_tld_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_tld_get_missing",
+    "ok": false,
+    "error": "TLD is missing"
+  },
+  {
+    "name": "sd_tld_get_notfound",
+    "ok": false,
+    "error": "TLD not found"
+  },
+  {
+    "name": "sd_tld_get_id",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_tld_get_id_notfound",
+    "ok": false,
+    "error": "TLD not found"
+  },
+  {
+    "name": "sd_tld_create",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_tld_create_dup",
+    "ok": false,
+    "error": "TLD already registered"
+  },
+  {
+    "name": "sd_tld_create_missing",
+    "ok": false,
+    "error": "TLD registrar ID is missing"
+  },
+  {
+    "name": "sd_tld_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_tld_update_notfound",
+    "ok": false,
+    "error": "TLD not found"
+  },
+  {
+    "name": "sd_tld_delete_used",
+    "ok": false,
+    "error": "An exception occurred while executing a query: SQLSTATE[HY000]: General error: 1 near \"'.'\": syntax error"
+  },
+  {
+    "name": "sd_tld_delete",
+    "ok": false,
+    "error": "An exception occurred while executing a query: SQLSTATE[HY000]: General error: 1 near \"'.'\": syntax error"
+  },
+  {
+    "name": "sd_tld_delete_notfound",
+    "ok": false,
+    "error": "An exception occurred while executing a query: SQLSTATE[HY000]: General error: 1 near \"'.'\": syntax error"
+  },
+  {
+    "name": "sd_reg_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_reg_pairs",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_reg_available",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_reg_install_installed",
+    "ok": false,
+    "error": "Registrar is not available for installation."
+  },
+  {
+    "name": "sd_reg_install_unknown",
+    "ok": false,
+    "error": "Registrar is not available for installation."
+  },
+  {
+    "name": "sd_reg_install_missing",
+    "ok": false,
+    "error": "Registrar code is missing"
+  },
+  {
+    "name": "sd_reg_install_namecheap",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_reg_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_reg_get_notfound",
+    "ok": false,
+    "error": "Registrar not found"
+  },
+  {
+    "name": "sd_reg_get_nc",
+    "ok": false,
+    "error": "Registrar not found"
+  },
+  {
+    "name": "sd_reg_update_nc",
+    "ok": false,
+    "error": "Registrar not found"
+  },
+  {
+    "name": "sd_reg_copy_nc",
+    "ok": false,
+    "error": "Registrar not found"
+  },
+  {
+    "name": "sd_reg_delete_nc",
+    "ok": false,
+    "error": "Registrar not found"
+  },
+  {
+    "name": "sd_reg_delete_notfound",
+    "ok": false,
+    "error": "Registrar not found"
+  },
+  {
+    "name": "sd_reg_update_notfound",
+    "ok": false,
+    "error": "Registrar not found"
+  },
+  {
+    "name": "sd_client_ns",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_client_ns_other",
+    "ok": false,
+    "error": "Order not found"
+  },
+  {
+    "name": "sd_client_ns_inactive",
+    "ok": false,
+    "error": "Order is not activated"
+  },
+  {
+    "name": "sd_client_ns_missing",
+    "ok": false,
+    "error": "Order ID is required"
+  },
+  {
+    "name": "sd_client_contacts",
+    "ok": false,
+    "error": "Required field contact is missing"
+  },
+  {
+    "name": "sd_client_privacy_on",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_client_privacy_off",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_client_sync",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_client_transfer_code",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_client_lock",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_client_unlock",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_guest_tlds",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_guest_tlds_reg",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_guest_tlds_trans",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_guest_pricing",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_guest_pricing_notfound",
+    "ok": false,
+    "error": "TLD not found"
+  },
+  {
+    "name": "sd_guest_pricing_missing",
+    "ok": false,
+    "error": "TLD is missing"
+  },
+  {
+    "name": "sd_guest_check",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_guest_check_invalid",
+    "ok": false,
+    "error": "Domain bad sld! is invalid"
+  },
+  {
+    "name": "sd_guest_check_notld",
+    "ok": false,
+    "error": "Domain availability could not be determined. TLD is not configured."
+  },
+  {
+    "name": "sd_guest_check_inactive",
+    "ok": false,
+    "error": "Domain availability could not be determined. TLD is not active."
+  },
+  {
+    "name": "sd_guest_check_missing",
+    "ok": false,
+    "error": "TLD is missing"
+  },
+  {
+    "name": "sd_guest_transfer",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sd_guest_transfer_notld",
+    "ok": false,
+    "error": "TLD is not configured."
+  },
+  {
+    "name": "sd_guest_transfer_inactive",
+    "ok": false,
+    "error": "TLD is not active."
+  },
+  {
+    "name": "sh_admin_change_plan",
+    "ok": false,
+    "error": "TLS connect error: error:0A00010B:SSL routines::wrong version number for \"https://hestia.cap24.local:8083/api/\"."
+  },
+  {
+    "name": "sh_admin_change_plan_missing",
+    "ok": false,
+    "error": "plan_id is missing"
+  },
+  {
+    "name": "sh_admin_change_plan_notfound",
+    "ok": false,
+    "error": "Hosting plan not found"
+  },
+  {
+    "name": "sh_admin_change_plan_wrongtype",
+    "ok": false,
+    "error": "Order is not activated"
+  },
+  {
+    "name": "sh_admin_change_username",
+    "ok": false,
+    "error": "HestiaCP does not support username changes"
+  },
+  {
+    "name": "sh_admin_change_ip",
+    "ok": false,
+    "error": "HestiaCP does not support changing the account IP"
+  },
+  {
+    "name": "sh_admin_change_domain",
+    "ok": false,
+    "error": "HestiaCP does not support changing the account domain"
+  },
+  {
+    "name": "sh_admin_change_password",
+    "ok": false,
+    "error": "TLS connect error: error:0A00010B:SSL routines::wrong version number for \"https://hestia.cap24.local:8083/api/\"."
+  },
+  {
+    "name": "sh_admin_change_password_mismatch",
+    "ok": false,
+    "error": "Account password is missing or is invalid"
+  },
+  {
+    "name": "sh_admin_change_password_noconfirm",
+    "ok": false,
+    "error": "Account password is missing or is invalid"
+  },
+  {
+    "name": "sh_admin_sync",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_admin_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_admin_update_missing",
+    "ok": false,
+    "error": "Order ID name is missing"
+  },
+  {
+    "name": "sh_admin_update_notfound",
+    "ok": false,
+    "error": "Order not found"
+  },
+  {
+    "name": "sh_admin_getservice",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_admin_getservice_missing",
+    "ok": false,
+    "error": "Order ID name is missing"
+  },
+  {
+    "name": "sh_manager_pairs",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_server_pairs",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_server_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_server_list_sort",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_account_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_account_list_server",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_server_create",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_server_create_missing",
+    "ok": false,
+    "error": "Server IP was not passed"
+  },
+  {
+    "name": "sh_server_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_server_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_server_update_badmanager",
+    "ok": false,
+    "error": "Server manager Nosuchmanager is not a valid server manager"
+  },
+  {
+    "name": "sh_server_test_custom",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_server_delete",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_server_get_after_delete",
+    "ok": false,
+    "error": "Server not found"
+  },
+  {
+    "name": "sh_server_get_notfound",
+    "ok": false,
+    "error": "Server not found"
+  },
+  {
+    "name": "sh_server_test_hestia",
+    "ok": false,
+    "error": "TLS connect error: error:0A00010B:SSL routines::wrong version number for \"https://hestia.cap24.local:8083/api/\"."
+  },
+  {
+    "name": "sh_server_test_notfound",
+    "ok": false,
+    "error": "Server not found"
+  },
+  {
+    "name": "sh_server_delete_inuse",
+    "ok": false,
+    "error": "Hosting server is used by 2 service hostings"
+  },
+  {
+    "name": "sh_server_delete_orphan_noforce",
+    "ok": false,
+    "error": "Hosting server is used by 1 orphaned service hostings with no linked order. Re-run with force=true to detach them and delete the server."
+  },
+  {
+    "name": "sh_server_delete_orphan_force",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_server_delete_orphan_after",
+    "ok": false,
+    "error": "Server not found"
+  },
+  {
+    "name": "sh_hp_create",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_hp_create_missing",
+    "ok": false,
+    "error": "Hosting plan name was not passed"
+  },
+  {
+    "name": "sh_hp_pairs",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_hp_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_hp_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_hp_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_hp_delete",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_hp_get_after_delete",
+    "ok": false,
+    "error": "Hosting plan not found"
+  },
+  {
+    "name": "sh_hp_get_notfound",
+    "ok": false,
+    "error": "Hosting plan not found"
+  },
+  {
+    "name": "sh_hp_delete_inuse",
+    "ok": false,
+    "error": "Hosting plan is used by 2 service hostings"
+  },
+  {
+    "name": "sh_hp_delete_orphan_noforce",
+    "ok": false,
+    "error": "Hosting plan is used by 1 orphaned service hostings with no linked order. Re-run with force=true to detach them and delete the plan."
+  },
+  {
+    "name": "sh_hp_delete_orphan_force",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_hp_delete_orphan_after",
+    "ok": false,
+    "error": "Hosting plan not found"
+  },
+  {
+    "name": "sh_client_username",
+    "ok": false,
+    "error": "HestiaCP does not support username changes"
+  },
+  {
+    "name": "sh_client_username_other",
+    "ok": false,
+    "error": "Order not found"
+  },
+  {
+    "name": "sh_client_username_inactive",
+    "ok": false,
+    "error": "Order is not activated"
+  },
+  {
+    "name": "sh_client_domain",
+    "ok": false,
+    "error": "HestiaCP does not support changing the account domain"
+  },
+  {
+    "name": "sh_client_password",
+    "ok": false,
+    "error": "TLS connect error: error:0A00010B:SSL routines::wrong version number for \"https://hestia.cap24.local:8083/api/\"."
+  },
+  {
+    "name": "sh_client_password_mismatch",
+    "ok": false,
+    "error": "Account password is missing or is invalid"
+  },
+  {
+    "name": "sh_client_hp_pairs",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_client_login_url",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_client_getservice",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_client_getservice_missing",
+    "ok": false,
+    "error": "Order ID is required"
+  },
+  {
+    "name": "sh_guest_free_tlds",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sh_guest_free_tlds_custom",
+    "ok": false,
+    "error": "Product type is invalid"
+  },
+  {
+    "name": "sh_guest_free_tlds_missing",
+    "ok": false,
+    "error": "Product ID is missing"
+  },
+  {
+    "name": "sh_guest_free_tlds_notfound",
+    "ok": false,
+    "error": "Product not found"
+  },
+  {
+    "name": "dl_admin_upload_nofile",
+    "ok": false,
+    "error": "File was not uploaded."
+  },
+  {
+    "name": "dl_admin_upload_missing",
+    "ok": false,
+    "error": "Product ID was not passed"
+  },
+  {
+    "name": "dl_admin_update_nofile",
+    "ok": false,
+    "error": "File upload failed: no files in request."
+  },
+  {
+    "name": "dl_admin_update_notfound",
+    "ok": false,
+    "error": "Order not found"
+  },
+  {
+    "name": "dl_admin_update_wrongtype",
+    "ok": false,
+    "error": "Order is not activated"
+  },
+  {
+    "name": "dl_admin_file_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "dl_admin_file_update_badkey",
+    "ok": false,
+    "error": "File not found"
+  },
+  {
+    "name": "dl_admin_file_update_missing",
+    "ok": false,
+    "error": "File ID was not passed"
+  },
+  {
+    "name": "dl_admin_config_save",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "dl_admin_config_save_missing",
+    "ok": false,
+    "error": "Product ID was not passed"
+  },
+  {
+    "name": "dl_admin_file_delete",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "dl_admin_file_delete_again",
+    "ok": false,
+    "error": "File not found"
+  },
+  {
+    "name": "dl_admin_file_delete_cascade",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "dl_admin_order_file_delete",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "dl_admin_order_file_delete_again",
+    "ok": false,
+    "error": "File not found"
+  },
+  {
+    "name": "lic_admin_plugin_pairs",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "lic_admin_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "lic_admin_update_array",
+    "ok": false,
+    "error": "explode(): Argument #2 ($string) must be of type string, array given"
+  },
+  {
+    "name": "lic_admin_update_missing",
+    "ok": false,
+    "error": "Order ID is required"
+  },
+  {
+    "name": "lic_admin_update_wrongtype",
+    "ok": false,
+    "error": "Order is not activated"
+  },
+  {
+    "name": "lic_admin_reset",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "lic_admin_getservice",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "lic_admin_getservice_missing",
+    "ok": false,
+    "error": "Order ID is required"
+  },
+  {
+    "name": "lic_client_reset",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "lic_client_reset_other",
+    "ok": false,
+    "error": "Order not found"
+  },
+  {
+    "name": "lic_client_reset_inactive",
+    "ok": false,
+    "error": "Order is not activated"
+  },
+  {
+    "name": "lic_client_getservice",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "lic_guest_check",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "lic_guest_check_badhost",
+    "ok": false,
+    "error": "An unexpected error occurred. Please try again later."
+  },
+  {
+    "name": "lic_guest_check_badip",
+    "ok": false,
+    "error": "An unexpected error occurred. Please try again later."
+  },
+  {
+    "name": "lic_guest_check_inactive",
+    "ok": false,
+    "error": "An unexpected error occurred. Please try again later."
+  },
+  {
+    "name": "lic_guest_check_noversion",
+    "ok": false,
+    "error": "An unexpected error occurred. Please try again later."
+  },
+  {
+    "name": "lic_guest_check_unknown",
+    "ok": false,
+    "error": "An unexpected error occurred. Please try again later."
+  },
+  {
+    "name": "lic_guest_check_missing",
+    "ok": false,
+    "error": "An unexpected error occurred. Please try again later."
+  },
+  {
+    "name": "lic_guest_check_format2",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "lic_guest_check_format2_bad",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sc_admin_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sc_admin_update_missing",
+    "ok": false,
+    "error": "Order ID is required"
+  },
+  {
+    "name": "sc_admin_update_notfound",
+    "ok": false,
+    "error": "Order not found"
+  },
+  {
+    "name": "sc_admin_update_badconfig",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sc_admin_bogus_method",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sc_admin_forbidden_method",
+    "ok": false,
+    "error": "Custom plugin method delete is forbidden"
+  },
+  {
+    "name": "sc_admin_bogus_missing",
+    "ok": false,
+    "error": "Order ID is required"
+  },
+  {
+    "name": "sc_client_call",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "sc_client_call_forbidden",
+    "ok": false,
+    "error": "Custom plugin method suspend is forbidden"
+  },
+  {
+    "name": "sc_client_call_missing_method",
+    "ok": false,
+    "error": "Method is required"
+  },
+  {
+    "name": "sc_client_call_missing_order",
+    "ok": false,
+    "error": "Order ID is required"
+  },
+  {
+    "name": "sc_client_call_notfound",
+    "ok": false,
+    "error": "Order not found"
+  }
+]

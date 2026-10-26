@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "HestiaCP does not support changing the account domain",
+    "code": 9999
+  }
+}

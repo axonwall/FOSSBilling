@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "TLS connect error: error:0A00010B:SSL routines::wrong version number for \"https://hestia.cap24.local:8083/api/\".",
+    "code": 9999
+  }
+}

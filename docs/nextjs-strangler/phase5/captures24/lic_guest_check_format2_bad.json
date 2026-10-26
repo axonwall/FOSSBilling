@@ -1,0 +1,11 @@
+{
+  "result": {
+    "licensed_to": null,
+    "created_at": null,
+    "expires_at": null,
+    "valid": false,
+    "error": "Your license key is invalid.",
+    "error_code": 1005
+  },
+  "error": null
+}

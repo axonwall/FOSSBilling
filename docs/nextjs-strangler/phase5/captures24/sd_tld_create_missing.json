@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "TLD registrar ID is missing",
+    "code": 9999
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Product type is invalid",
+    "code": 9999
+  }
+}

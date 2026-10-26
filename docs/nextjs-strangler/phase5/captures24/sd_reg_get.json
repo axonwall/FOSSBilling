@@ -1,0 +1,23 @@
+{
+  "result": {
+    "id": 1,
+    "title": "Custom",
+    "label": "Custom Registrar always responds with positive results. Useful if no other registrar is suitable.",
+    "config": [],
+    "secret_fields": [],
+    "form": {
+      "use_rdap": [
+        "radio",
+        {
+          "multiOptions": {
+            "1": "Yes",
+            "0": "No"
+          },
+          "label": "Use RDAP Registry Lookups to Check for Domain Availability"
+        }
+      ]
+    },
+    "test_mode": false
+  },
+  "error": null
+}

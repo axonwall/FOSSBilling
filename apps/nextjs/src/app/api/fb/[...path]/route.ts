@@ -144,6 +144,10 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
   const res = await fetchPhp(req, path, bodyText);
 
   const out = new Headers({ "content-type": res.headers.get("content-type") ?? "application/json" });
+  // PHP sets Content-Disposition on file downloads; forward it so
+  // proxied send_file responses keep their attachment filename.
+  const disposition = res.headers.get("content-disposition");
+  if (disposition) out.set("content-disposition", disposition);
   forwardCookies(res, out);
   // Binary passthrough (invoice PDFs, CSV exports) must not go through
   // res.text(), which mangles non-UTF-8 bytes; JSON is unchanged.

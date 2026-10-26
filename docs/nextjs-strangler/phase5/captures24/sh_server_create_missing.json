@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Server IP was not passed",
+    "code": 9999
+  }
+}

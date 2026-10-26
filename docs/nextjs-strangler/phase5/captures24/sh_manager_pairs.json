@@ -1,0 +1,103 @@
+{
+  "result": {
+    "CWP": {
+      "label": "CWP",
+      "form": {
+        "credentials": {
+          "fields": [
+            {
+              "name": "accesshash",
+              "type": "text",
+              "label": "API Key",
+              "placeholder": "API key you generated from within CWP.",
+              "required": true,
+              "secret": true
+            }
+          ]
+        }
+      }
+    },
+    "Custom": {
+      "label": "Custom Server Manager"
+    },
+    "Directadmin": {
+      "label": "DirectAdmin",
+      "form": {
+        "credentials": {
+          "fields": [
+            {
+              "name": "username",
+              "type": "text",
+              "label": "Username",
+              "placeholder": "Username used to connect to the server",
+              "required": true,
+              "secret": true
+            },
+            {
+              "name": "password",
+              "type": "text",
+              "label": "Password / Login Key",
+              "placeholder": "Password or login key used to connect to the server",
+              "required": true,
+              "secret": true
+            }
+          ]
+        }
+      }
+    },
+    "Hestia": {
+      "label": "Hestia Control Panel",
+      "form": {
+        "credentials": {
+          "fields": [
+            {
+              "name": "username",
+              "type": "text",
+              "label": "Access Key ID",
+              "placeholder": "ID for the access key you've generated in Hestia.",
+              "required": true,
+              "secret": true
+            },
+            {
+              "name": "accesshash",
+              "type": "text",
+              "label": "Secret Key",
+              "placeholder": "Secret key for the access key you've generated in Hestia",
+              "required": true,
+              "secret": true
+            }
+          ]
+        }
+      }
+    },
+    "Plesk": {
+      "label": "Plesk"
+    },
+    "Whm": {
+      "label": "WHM (cPanel)",
+      "form": {
+        "credentials": {
+          "fields": [
+            {
+              "name": "username",
+              "type": "text",
+              "label": "Username",
+              "placeholder": "Username to connect to the server",
+              "required": true,
+              "secret": true
+            },
+            {
+              "name": "accesshash",
+              "type": "text",
+              "label": "Access Hash or API Token",
+              "placeholder": "Access hash or WHM API token to connect to the server",
+              "required": true,
+              "secret": true
+            }
+          ]
+        }
+      }
+    }
+  },
+  "error": null
+}

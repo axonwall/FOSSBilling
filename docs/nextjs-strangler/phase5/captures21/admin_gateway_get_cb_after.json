@@ -1,6 +1,6 @@
 {
   "result": {
-    "id": 43,
+    "id": 52,
     "code": "ClientBalance",
     "title": "ClientBalance Test",
     "allow_single": false,
@@ -18,7 +18,7 @@
     "description": null,
     "enabled": true,
     "test_mode": true,
-    "callback": "http://127.0.0.1:8080/ipn.php?gateway_id=43",
+    "callback": "http://127.0.0.1:8080/ipn.php?gateway_id=52",
     "custom_logo_url": null,
     "custom_logo_avif_url": null
   },

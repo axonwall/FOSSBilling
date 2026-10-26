@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "TLD already registered",
+    "code": 9999
+  }
+}

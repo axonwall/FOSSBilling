@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Hosting plan is used by 1 orphaned service hostings with no linked order. Re-run with force=true to detach them and delete the plan.",
+    "code": 704
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "result": [
+    {
+      "tld": ".com"
+    },
+    {
+      "tld": ".net"
+    }
+  ],
+  "error": null
+}

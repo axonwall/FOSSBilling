@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Hosting plan not found",
+    "code": 9999
+  }
+}

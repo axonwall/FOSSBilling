@@ -1,0 +1,7 @@
+{
+  "status": 200,
+  "content_type": "application/octet-stream",
+  "content_disposition": "attachment; filename=cap24prod.txt",
+  "length": 28,
+  "head_hex": "436170323420646f776e6c6f616461626c6520636f6e74656e742e0a"
+}

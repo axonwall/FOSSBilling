@@ -1,12 +1,12 @@
 {
   "result": {
-    "id": 457,
+    "id": 489,
     "serie": "FOSS",
     "nr": null,
     "client_id": 1,
-    "serie_nr": "FOSS00457",
-    "hash": "caf4cbd232d091235ee268d405cb53746ee1893d14a10e7772",
-    "hash_expires_at": "2027-01-24 03:16:03",
+    "serie_nr": "FOSS00489",
+    "hash": "e7d2629a43e3406dbdd3de7e1d89d6",
+    "hash_expires_at": "2027-01-24 04:24:22",
     "gateway_id": null,
     "taxname": "",
     "taxrate": "0",
@@ -19,13 +19,13 @@
     "notes": null,
     "text_1": null,
     "text_2": null,
-    "due_at": "2026-10-31 03:16:03",
+    "due_at": "2026-10-31 04:24:22",
     "paid_at": null,
-    "created_at": "2026-10-26 03:16:03",
-    "updated_at": "2026-10-26 03:16:03",
+    "created_at": "2026-10-26 04:24:22",
+    "updated_at": "2026-10-26 04:24:22",
     "lines": [
       {
-        "id": 455,
+        "id": 495,
         "title": "Cap21 filler",
         "period": null,
         "quantity": 1,
@@ -43,7 +43,7 @@
         "remaining_quantity": 1
       },
       {
-        "id": 456,
+        "id": 496,
         "title": "Phase0 Widget Hosting",
         "period": "1M",
         "quantity": 1,
@@ -146,7 +146,7 @@
     ],
     "promo_applications": [
       {
-        "promo_id": 26,
+        "promo_id": 31,
         "code": "PAR21SAVE",
         "title": "Promotional Code: PAR21SAVE - 10%",
         "order_id": 1,

@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "HestiaCP does not support username changes",
+    "code": 9999
+  }
+}

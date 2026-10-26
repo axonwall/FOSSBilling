@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Hosting plan is used by 2 service hostings",
+    "code": 704
+  }
+}

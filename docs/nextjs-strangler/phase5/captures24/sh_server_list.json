@@ -1,0 +1,113 @@
+{
+  "result": {
+    "pages": 1,
+    "page": 1,
+    "per_page": 100,
+    "total": 3,
+    "list": [
+      {
+        "name": "Cap24 Hestia",
+        "hostname": "hestia.cap24.local",
+        "ip": "192.0.2.10",
+        "ns1": "ns1.cap24.local",
+        "ns2": "ns2.cap24.local",
+        "ns3": null,
+        "ns4": null,
+        "cpanel_url": "https://hestia.cap24.local:8083/",
+        "reseller_cpanel_url": "https://hestia.cap24.local:8083/",
+        "id": 11,
+        "active": true,
+        "secure": true,
+        "assigned_ips": [],
+        "status_url": null,
+        "max_accounts": 100,
+        "manager": "Hestia",
+        "config": {
+          "userprefix": null,
+          "tls_verify": true
+        },
+        "port": 8083,
+        "passwordLength": null,
+        "created_at": "2026-10-25 12:00:00",
+        "updated_at": "2026-10-25 12:00:00",
+        "password": null,
+        "password_set": true,
+        "accesshash": null,
+        "accesshash_set": false,
+        "username": null,
+        "username_set": true,
+        "secret_fields": [
+          "password",
+          "accesshash",
+          "username"
+        ]
+      },
+      {
+        "name": "Cap24 Custom",
+        "hostname": "custom.cap24.local",
+        "ip": "192.0.2.11",
+        "ns1": null,
+        "ns2": null,
+        "ns3": null,
+        "ns4": null,
+        "cpanel_url": "http://www.google.com?q=cpanel",
+        "reseller_cpanel_url": "http://www.google.com?q=whm",
+        "id": 12,
+        "active": true,
+        "secure": false,
+        "assigned_ips": [],
+        "status_url": null,
+        "max_accounts": null,
+        "manager": "Custom",
+        "config": {
+          "userprefix": null,
+          "tls_verify": true
+        },
+        "port": null,
+        "passwordLength": null,
+        "created_at": "2026-10-25 12:00:00",
+        "updated_at": "2026-10-25 12:00:00",
+        "password": null,
+        "password_set": true,
+        "accesshash": null,
+        "accesshash_set": false,
+        "secret_fields": [
+          "password",
+          "accesshash"
+        ]
+      },
+      {
+        "name": "Cap24 Doomed",
+        "hostname": "doomed.cap24.local",
+        "ip": "192.0.2.12",
+        "ns1": null,
+        "ns2": null,
+        "ns3": null,
+        "ns4": null,
+        "cpanel_url": "http://www.google.com?q=cpanel",
+        "reseller_cpanel_url": "http://www.google.com?q=whm",
+        "id": 13,
+        "active": true,
+        "secure": null,
+        "assigned_ips": [],
+        "status_url": null,
+        "max_accounts": null,
+        "manager": "Custom",
+        "config": [],
+        "port": null,
+        "passwordLength": null,
+        "created_at": "2026-10-25 12:00:00",
+        "updated_at": "2026-10-25 12:00:00",
+        "password": null,
+        "password_set": false,
+        "accesshash": null,
+        "accesshash_set": false,
+        "secret_fields": [
+          "password",
+          "accesshash"
+        ]
+      }
+    ]
+  },
+  "error": null
+}

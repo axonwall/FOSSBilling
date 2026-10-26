@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "File cannot be downloaded at the moment. Please contact support.",
+    "code": 404
+  }
+}

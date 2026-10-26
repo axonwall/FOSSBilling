@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "File ID was not passed",
+    "code": 9999
+  }
+}
