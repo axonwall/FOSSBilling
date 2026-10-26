@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Invalid country code: XX",
+    "code": 9999
+  }
+}

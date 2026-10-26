@@ -1,0 +1,29 @@
+{
+  "result": {
+    "id": 10,
+    "email": "cap19a@example.com",
+    "email_approved": null,
+    "type": null,
+    "first_name": "Cap",
+    "last_name": null,
+    "gender": null,
+    "birthday": null,
+    "phone_cc": null,
+    "phone": null,
+    "company": null,
+    "company_vat": null,
+    "company_number": null,
+    "address_1": null,
+    "address_2": null,
+    "city": null,
+    "state": null,
+    "postcode": null,
+    "country": null,
+    "currency": null,
+    "lang": null,
+    "timezone": null,
+    "billing_email": null,
+    "balance": 0
+  },
+  "error": null
+}

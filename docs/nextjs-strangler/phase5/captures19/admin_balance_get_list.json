@@ -1,0 +1,46 @@
+{
+  "result": {
+    "pages": 1,
+    "page": 1,
+    "per_page": 100,
+    "total": 5,
+    "list": [
+      {
+        "id": 30,
+        "description": "capture19 funds",
+        "amount": 25,
+        "currency": "USD",
+        "created_at": "2026-10-25 22:05:36"
+      },
+      {
+        "id": 4,
+        "description": "IPN line",
+        "amount": -40,
+        "currency": "USD",
+        "created_at": "2026-10-24 05:59:14"
+      },
+      {
+        "id": 3,
+        "description": "Custom transaction No: ADM-CAP13-1792821553",
+        "amount": 40,
+        "currency": "USD",
+        "created_at": "2026-10-24 05:59:14"
+      },
+      {
+        "id": 2,
+        "description": "IPN line",
+        "amount": -40,
+        "currency": "USD",
+        "created_at": "2026-10-24 05:59:10"
+      },
+      {
+        "id": 1,
+        "description": "Custom transaction No: ",
+        "amount": 40,
+        "currency": "USD",
+        "created_at": "2026-10-24 05:59:09"
+      }
+    ]
+  },
+  "error": null
+}

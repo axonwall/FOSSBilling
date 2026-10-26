@@ -1,0 +1,392 @@
+[
+  {
+    "name": "tmp_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_types",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_prepare_missing_title",
+    "ok": false,
+    "error": "You must specify a title"
+  },
+  {
+    "name": "admin_prepare_missing_type",
+    "ok": false,
+    "error": "Type was not passed"
+  },
+  {
+    "name": "admin_prepare_bad_type",
+    "ok": false,
+    "error": "Product type nope is not registered."
+  },
+  {
+    "name": "admin_prepare_domain_dup",
+    "ok": false,
+    "error": "You have already created domain product."
+  },
+  {
+    "name": "admin_prepare_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_new",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_update_missing_id",
+    "ok": false,
+    "error": "Product ID was not passed"
+  },
+  {
+    "name": "admin_update_missing_product",
+    "ok": false,
+    "error": "Product not found"
+  },
+  {
+    "name": "admin_update_icon_too_long",
+    "ok": false,
+    "error": "Icon URL must not exceed 255 characters."
+  },
+  {
+    "name": "admin_update_bad_grace",
+    "ok": false,
+    "error": "Suspension grace days must be a non-negative integer."
+  },
+  {
+    "name": "admin_update_pricing_no_type",
+    "ok": false,
+    "error": "Pricing type is required"
+  },
+  {
+    "name": "admin_update_pricing_bad_type",
+    "ok": false,
+    "error": "Pricing type is required"
+  },
+  {
+    "name": "admin_update_pricing_recurrent_empty",
+    "ok": false,
+    "error": "At least one billing period must be configured for a recurring product"
+  },
+  {
+    "name": "admin_update_pricing_bad_period",
+    "ok": false,
+    "error": "Invalid billing period 99Z"
+  },
+  {
+    "name": "admin_update_pricing_once",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_after_once",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_update_pricing_recurrent",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_after_recurrent",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_update_pricing_recurrent_replace",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_after_replace",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_update_fields",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_after_fields",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_update_config",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_after_config",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_update_priority_missing",
+    "ok": false,
+    "error": "priority params is missing"
+  },
+  {
+    "name": "admin_update_priority_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_after_priority",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_update_priority_restore",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_addon_create_missing",
+    "ok": false,
+    "error": "You must specify a title"
+  },
+  {
+    "name": "admin_addon_create_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_addon_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_addon_get_not_addon",
+    "ok": false,
+    "error": "Addon not found"
+  },
+  {
+    "name": "admin_addon_get_missing",
+    "ok": false,
+    "error": "Product not found"
+  },
+  {
+    "name": "admin_addon_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_addon_get_pairs",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_addon_delete",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_delete_missing_id",
+    "ok": false,
+    "error": "Product ID was not passed"
+  },
+  {
+    "name": "admin_delete_missing_product",
+    "ok": false,
+    "error": "Product not found"
+  },
+  {
+    "name": "admin_delete_blocked_orders",
+    "ok": false,
+    "error": "Cannot remove product which has active orders."
+  },
+  {
+    "name": "admin_delete_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_after_delete",
+    "ok": false,
+    "error": "Product not found"
+  },
+  {
+    "name": "admin_category_create_missing",
+    "ok": false,
+    "error": "Category title is required"
+  },
+  {
+    "name": "admin_category_create_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_category_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_category_get_missing",
+    "ok": false,
+    "error": "Category not found"
+  },
+  {
+    "name": "admin_category_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_category_update_icon_too_long",
+    "ok": false,
+    "error": "Icon URL must not exceed 255 characters."
+  },
+  {
+    "name": "admin_category_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_category_get_list_search",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_category_get_pairs",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_category_update_priority_bad",
+    "ok": false,
+    "error": "Priority must be an integer."
+  },
+  {
+    "name": "admin_category_update_priority_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_category_get_after_priority",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_prepare_in_category",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_category_delete_blocked",
+    "ok": false,
+    "error": "Cannot remove product category with products"
+  },
+  {
+    "name": "admin_delete_incat",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_category_delete_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_category_delete_missing",
+    "ok": false,
+    "error": "Category not found"
+  },
+  {
+    "name": "admin_promo_create_missing",
+    "ok": false,
+    "error": "Promo code is missing"
+  },
+  {
+    "name": "admin_promo_create_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_create_dup",
+    "ok": false,
+    "error": "This promotion code already exists."
+  },
+  {
+    "name": "admin_promo_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_get_missing",
+    "ok": false,
+    "error": "Promo not found"
+  },
+  {
+    "name": "admin_promo_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_get_list_search",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_get_list_status_active",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_get_after_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_duplicate",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_get_dup",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_redemption_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_redemption_missing_id",
+    "ok": false,
+    "error": "Promo ID is missing"
+  },
+  {
+    "name": "admin_promo_update_dup_code",
+    "ok": false,
+    "error": "This promotion code already exists."
+  },
+  {
+    "name": "admin_promo_delete_dup",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_delete_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_delete_missing",
+    "ok": false,
+    "error": "Promo not found"
+  }
+]

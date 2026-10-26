@@ -1,0 +1,53 @@
+{
+  "result": {
+    "id": 10,
+    "product_category_id": null,
+    "type": "custom",
+    "title": "Par20 Widget Renamed",
+    "slug": "par20-renamed",
+    "description": "cap20 desc",
+    "unit": "product",
+    "priority": 81,
+    "pricing": {
+      "type": "recurrent",
+      "free": {
+        "price": 0,
+        "setup": 0
+      },
+      "once": {
+        "price": 42,
+        "setup": 7
+      },
+      "recurrent": {
+        "1M": {
+          "price": 20,
+          "setup": 0,
+          "enabled": true,
+          "title": "Every 1 month"
+        }
+      }
+    },
+    "config": {
+      "baz": "qux",
+      "extra": "val"
+    },
+    "addons": [],
+    "price_starting_from": 20,
+    "icon_url": null,
+    "allow_quantity_select": false,
+    "form_id": null,
+    "created_at": "2026-10-25 22:17:47",
+    "updated_at": "2026-10-25 22:17:51",
+    "suspension_grace_days": 0,
+    "quantity_in_stock": 3,
+    "stock_control": true,
+    "upgrades": {
+      "2": "Phase0 Widget Hosting",
+      "3": "Phase0 Widget Hosting"
+    },
+    "status": "enabled",
+    "hidden": true,
+    "setup": "after_order"
+  },
+  "error": null
+}

@@ -1,0 +1,48 @@
+{
+  "result": {
+    "pages": 1,
+    "page": 1,
+    "per_page": 100,
+    "total": 1,
+    "list": [
+      {
+        "id": 1,
+        "code": "PAR20SAVE",
+        "description": "cap20 promo",
+        "type": "percentage",
+        "value": 10,
+        "maxuses": 100,
+        "used": 0,
+        "freesetup": false,
+        "once_per_client": false,
+        "recurring": false,
+        "active": true,
+        "products": [
+          "2",
+          "3"
+        ],
+        "periods": [
+          "1M"
+        ],
+        "client_groups": [],
+        "requires_products": [],
+        "start_at": null,
+        "end_at": null,
+        "auto_apply": false,
+        "priority": 0,
+        "stackable": false,
+        "created_at": "2026-10-25 22:17:59",
+        "updated_at": "2026-10-25 22:17:59",
+        "applies_to": {
+          "2": "Phase0 Widget Hosting",
+          "3": "Phase0 Widget Hosting"
+        },
+        "requires": null,
+        "cgroups": null,
+        "redemption_count": 0,
+        "can_be_deleted": true
+      }
+    ]
+  },
+  "error": null
+}

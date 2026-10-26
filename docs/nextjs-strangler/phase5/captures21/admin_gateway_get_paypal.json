@@ -1,0 +1,36 @@
+{
+  "result": {
+    "id": 2,
+    "code": "PayPalEmail",
+    "title": "PayPal",
+    "allow_single": true,
+    "allow_recurrent": true,
+    "accepted_currencies": [
+      "USD"
+    ],
+    "supports_one_time_payments": true,
+    "supports_subscriptions": true,
+    "config": {
+      "email": "paypal@example.com"
+    },
+    "secret_fields": [],
+    "form": {
+      "email": [
+        "text",
+        {
+          "label": "PayPal email address for payments",
+          "validators": [
+            "EmailAddress"
+          ]
+        }
+      ]
+    },
+    "description": "Enter your PayPal email to start accepting payments by PayPal.",
+    "enabled": true,
+    "test_mode": false,
+    "callback": "http://127.0.0.1:8080/ipn.php?gateway_id=2",
+    "custom_logo_url": null,
+    "custom_logo_avif_url": null
+  },
+  "error": null
+}

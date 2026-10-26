@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "[Semantical Error] line 0, col 323 near 'i WHERE i.clientId': Error: 'i' is already defined.",
+    "code": 9999
+  }
+}

@@ -74,8 +74,20 @@ function dayBoundaries(): Boundaries {
   };
 }
 
+/** node:sqlite rejects named parameters the statement does not use, so
+ * filter a boundary bag down to exactly the names the WHERE clause
+ * references (a full dayBoundaries() bag passed to a two-bound query
+ * otherwise dies with "Unknown named parameter"). */
+function namedParams(sql: string, params: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const m of sql.matchAll(/:([A-Za-z_][A-Za-z0-9_]*)/g)) {
+    if (m[1] in params) out[m[1]] = params[m[1]];
+  }
+  return out;
+}
+
 function countWhere(table: string, where: string, params: Record<string, string>): number {
-  const row = getDb().prepare(`SELECT COUNT(1) AS c FROM ${table} WHERE ${where}`).get(params) as { c: number };
+  const row = getDb().prepare(`SELECT COUNT(1) AS c FROM ${table} WHERE ${where}`).get(namedParams(where, params)) as { c: number };
   return row.c;
 }
 
@@ -140,7 +152,7 @@ register("admin", "stats", "get_summary_income", (ctx) => {
   const b = dayBoundaries();
   const base = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE issued = 1 AND (status = 'paid' OR status = 'refunded')";
   const sum = (where: string, params: Record<string, string>): number => {
-    const row = getDb().prepare(`${base} ${where}`).get(params) as { income: number };
+    const row = getDb().prepare(`${base} ${where}`).get(namedParams(where, params)) as { income: number };
     return row.income;
   };
   return {

@@ -1,0 +1,180 @@
+{
+  "result": {
+    "pages": 1,
+    "page": 1,
+    "per_page": 100,
+    "total": 3,
+    "list": [
+      {
+        "id": 1,
+        "code": "Custom",
+        "title": "Custom",
+        "allow_single": true,
+        "allow_recurrent": true,
+        "accepted_currencies": [
+          "USD"
+        ],
+        "supports_one_time_payments": true,
+        "supports_subscriptions": true,
+        "config": [],
+        "secret_fields": [],
+        "form": {
+          "single": [
+            "textarea",
+            {
+              "label": "Enter Your Text for Single Payment Information"
+            }
+          ],
+          "recurrent": [
+            "textarea",
+            {
+              "label": "Enter Your Text for Subscription Information"
+            }
+          ]
+        },
+        "description": "Custom payment gateway allows you to give instructions how can your client pay invoice. All system, client, order and invoice details can be printed. HTML code is supported.",
+        "enabled": true,
+        "test_mode": false,
+        "callback": "http://127.0.0.1:8080/ipn.php?gateway_id=1",
+        "custom_logo_url": null,
+        "custom_logo_avif_url": null
+      },
+      {
+        "id": 2,
+        "code": "PayPalEmail",
+        "title": "PayPal",
+        "allow_single": true,
+        "allow_recurrent": true,
+        "accepted_currencies": [
+          "USD"
+        ],
+        "supports_one_time_payments": true,
+        "supports_subscriptions": true,
+        "config": {
+          "email": "paypal@example.com"
+        },
+        "secret_fields": [],
+        "form": {
+          "email": [
+            "text",
+            {
+              "label": "PayPal email address for payments",
+              "validators": [
+                "EmailAddress"
+              ]
+            }
+          ]
+        },
+        "description": "Enter your PayPal email to start accepting payments by PayPal.",
+        "enabled": true,
+        "test_mode": false,
+        "callback": "http://127.0.0.1:8080/ipn.php?gateway_id=2",
+        "custom_logo_url": null,
+        "custom_logo_avif_url": null
+      },
+      {
+        "id": 3,
+        "code": "Stripe",
+        "title": "Stripe",
+        "allow_single": true,
+        "allow_recurrent": true,
+        "accepted_currencies": [
+          "USD"
+        ],
+        "supports_one_time_payments": true,
+        "supports_subscriptions": true,
+        "config": {
+          "pub_key": "pk_test_123",
+          "api_key": null,
+          "webhook_secret": null,
+          "test_pub_key": "pk_test_123",
+          "test_api_key": null,
+          "test_webhook_secret": null,
+          "api_key_set": true,
+          "webhook_secret_set": false,
+          "test_api_key_set": true,
+          "test_webhook_secret_set": true
+        },
+        "secret_fields": [
+          "api_key",
+          "webhook_secret",
+          "test_api_key",
+          "test_webhook_secret"
+        ],
+        "form": {
+          "pub_key": [
+            "text",
+            {
+              "label": "Live Publishable Key:",
+              "required_when": {
+                "enabled": true,
+                "test_mode": false
+              }
+            }
+          ],
+          "api_key": [
+            "password",
+            {
+              "label": "Live Secret Key:",
+              "required_when": {
+                "enabled": true,
+                "test_mode": false
+              },
+              "secret": true
+            }
+          ],
+          "webhook_secret": [
+            "password",
+            {
+              "label": "Live Webhook signing secret:",
+              "required_when": {
+                "enabled": true,
+                "test_mode": false
+              },
+              "secret": true
+            }
+          ],
+          "test_pub_key": [
+            "text",
+            {
+              "label": "Test Publishable Key:",
+              "required_when": {
+                "enabled": true,
+                "test_mode": true
+              }
+            }
+          ],
+          "test_api_key": [
+            "password",
+            {
+              "label": "Test Secret Key:",
+              "required_when": {
+                "enabled": true,
+                "test_mode": true
+              },
+              "secret": true
+            }
+          ],
+          "test_webhook_secret": [
+            "password",
+            {
+              "label": "Test Webhook signing secret:",
+              "required_when": {
+                "enabled": true,
+                "test_mode": true
+              },
+              "secret": true
+            }
+          ]
+        },
+        "description": "You authenticate to the Stripe API by providing one of your API keys in the request. You can manage your API keys from your account.",
+        "enabled": true,
+        "test_mode": true,
+        "callback": "http://127.0.0.1:8080/ipn.php?gateway_id=3",
+        "custom_logo_url": null,
+        "custom_logo_avif_url": null
+      }
+    ]
+  },
+  "error": null
+}

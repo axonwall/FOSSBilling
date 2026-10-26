@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Welcome email can only be sent for active clients.",
+    "code": 9999
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Suspension grace days must be a non-negative integer.",
+    "code": 9999
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "This promotion code already exists.",
+    "code": 9999
+  }
+}

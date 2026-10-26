@@ -1,0 +1,40 @@
+{
+  "result": {
+    "id": 11,
+    "product_category_id": null,
+    "type": "custom",
+    "title": "Par20 Addon",
+    "slug": "par20-addon",
+    "description": "addon desc",
+    "unit": "product",
+    "priority": null,
+    "pricing": {
+      "type": "free",
+      "free": {
+        "price": 0,
+        "setup": 0
+      },
+      "once": {
+        "price": 0,
+        "setup": 0
+      },
+      "recurrent": []
+    },
+    "config": [],
+    "addons": [],
+    "price_starting_from": 0,
+    "icon_url": null,
+    "allow_quantity_select": false,
+    "form_id": null,
+    "created_at": "2026-10-25 22:17:53",
+    "updated_at": "2026-10-25 22:17:53",
+    "suspension_grace_days": 0,
+    "quantity_in_stock": 0,
+    "stock_control": false,
+    "upgrades": [],
+    "status": "enabled",
+    "hidden": false,
+    "setup": "after_payment"
+  },
+  "error": null
+}

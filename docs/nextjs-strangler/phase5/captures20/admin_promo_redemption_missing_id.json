@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Promo ID is missing",
+    "code": 9999
+  }
+}

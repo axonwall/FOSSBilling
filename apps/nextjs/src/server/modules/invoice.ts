@@ -41,7 +41,11 @@ import {
   updateInvoiceItemRow,
   updateTaxRow,
   creditNoteIdsFor,
+  findCurrencyByCode,
   findOrderById,
+  findProductById,
+  findProductPayment,
+  listProductPeriods,
   getDbWrite,
   insertInvoiceNote,
   insertInvoiceEvent,
@@ -84,9 +88,11 @@ function isDepositInvoice(invoiceId: number): boolean {
 import { clientSubscriptionArray } from "./client";
 import {
   invoiceTotals,
+  isClientTaxable,
   issueInvoice,
   markInvoicePaid,
   prepareInvoice,
+  resolveTaxForClient,
   round2,
   tryPayWithCredits,
   type InvoiceItemInput,
@@ -270,7 +276,7 @@ export function invoiceArray(
     taxname: inv.taxname,
     taxrate: inv.taxrate,
     currency: inv.currency,
-    currency_rate: formatDecimal(inv.currency_rate ?? 1),
+    currency_rate: Number(inv.currency_rate ?? 1),
     tax,
     subtotal,
     total,
@@ -411,14 +417,24 @@ register("admin", "invoice", "prepare", (ctx: CallContext) => {
   const client = findClientById(Number(clientId));
   if (!client) throw new FbError("Client not found");
   const rawItems = ctx.rawParams["items"];
+  // JSON bodies carry items as an array; form posts carry them as
+  // items[0][title] bracket keys (the admin UI's encoding). The old
+  // code dropped form-posted items entirely.
   const items: InvoiceItemInput[] = Array.isArray(rawItems)
     ? rawItems.map((it) => toItemInput(it as Record<string, unknown>))
-    : [];
+    : formItems(ctx);
   const gatewayId = ctx.params["gateway_id"] ? Number(ctx.params["gateway_id"]) : null;
   return prepareInvoice(client, items, gatewayId);
 });
 
 function toItemInput(raw: Record<string, unknown>): InvoiceItemInput {
+  const relRaw = raw["rel_id"];
+  const relId =
+    typeof relRaw === "number"
+      ? relRaw
+      : typeof relRaw === "string" && /^\d+$/.test(relRaw)
+        ? Number(relRaw)
+        : null;
   return {
     title: String(raw["title"] ?? ""),
     price: Number(raw["price"] ?? 0),
@@ -427,9 +443,24 @@ function toItemInput(raw: Record<string, unknown>): InvoiceItemInput {
     period: typeof raw["period"] === "string" ? raw["period"] : null,
     taxed: raw["taxed"] === true || raw["taxed"] === 1 || raw["taxed"] === "1",
     type: typeof raw["type"] === "string" ? raw["type"] : "custom",
-    rel_id: typeof raw["rel_id"] === "number" ? raw["rel_id"] : null,
+    rel_id: relId,
     task: typeof raw["task"] === "string" ? raw["task"] : "void",
   };
+}
+
+/** Form bracket scan for prepare items: items[0][title], ... */
+function formItems(ctx: CallContext): InvoiceItemInput[] {
+  const byIndex = new Map<number, Record<string, unknown>>();
+  for (const [k, v] of Object.entries(ctx.params)) {
+    const m = /^items\[(\d+)\]\[([^\]]+)\]$/.exec(k);
+    if (!m || v === undefined) continue;
+    const idx = Number(m[1]);
+    if (!byIndex.has(idx)) byIndex.set(idx, {});
+    byIndex.get(idx)![m[2]] = v;
+  }
+  return [...byIndex.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([, raw]) => toItemInput(raw));
 }
 
 register("admin", "invoice", "update", (ctx: CallContext) => {
@@ -758,7 +789,7 @@ register("client", "invoice", "funds_invoice", (ctx: CallContext) => {
   const id = insertInvoice({
     client_id: client.id,
     serie: null,
-    nr: "",
+    nr: null,
     hash,
     hash_expires_at: hashExpiry(),
     currency: client.currency,
@@ -880,33 +911,93 @@ register("admin", "invoice", "transaction_get_list", (ctx: CallContext) => {
   return paginateLocal(items, ctx.params);
 });
 
+/** Recursively key-sorted JSON, matching PHP's normalizeIpn (ksort). */
+function sortedJson(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(sortedJson).join(",")}]`;
+  if (v && typeof v === "object") {
+    const entries = Object.entries(v as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    return `{${entries.map(([k, x]) => `${JSON.stringify(k)}:${sortedJson(x)}`).join(",")}}`;
+  }
+  return JSON.stringify(v) ?? "null";
+}
+
+/** Form bracket scan for a root key (get[foo], post[bar], ...). */
+function bracketObject(params: Record<string, string | undefined>, root: string): Record<string, unknown> | null {
+  const out: Record<string, unknown> = {};
+  const prefix = `${root}[`;
+  let found = false;
+  for (const [k, v] of Object.entries(params)) {
+    if (!k.startsWith(prefix) || v === undefined || !k.endsWith("]")) continue;
+    const key = k.slice(prefix.length, -1);
+    if (!key || key.includes("[")) continue;
+    out[key] = v;
+    found = true;
+  }
+  return found ? out : null;
+}
+
+function nestedObjectParam(ctx: CallContext, root: string): Record<string, unknown> | null {
+  const raw = ctx.rawParams?.[root];
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    return raw as Record<string, unknown>;
+  }
+  return bracketObject(ctx.params, root);
+}
+
 register("admin", "invoice", "transaction_create", (ctx: CallContext) => {
   requireAdmin(ctx);
   const invoiceId = ctx.params["invoice_id"] ? Number(ctx.params["invoice_id"]) : null;
   const gatewayId = ctx.params["gateway_id"] ? Number(ctx.params["gateway_id"]) : null;
-  if (invoiceId !== null && !findInvoiceById(invoiceId)) {
-    throw new FbError("Invoice not found");
-  }
+  // PHP's create validates the gateway FIRST ('Invalid payment
+  // gateway'), then invoice presence, gateway presence, invoice
+  // existence — in that order.
   if (gatewayId !== null && !findGatewayFull(gatewayId)) {
-    throw new FbError("Payment gateway not found");
+    throw new FbError("Invalid payment gateway");
   }
-  // PHP's Transaction::create builds the record from the IPN envelope;
-  // amount/currency stay unset unless the gateway processing fills
-  // them (the admin create capture shows amount 0 / currency null).
-  const ipn = JSON.stringify({
-    source: ctx.params["source"] ?? "admin",
-    get: null,
-    post: null,
+  if (invoiceId === null) throw new FbError("Transaction invoice ID is missing");
+  if (gatewayId === null) throw new FbError("Payment gateway ID is missing");
+  if (!findInvoiceById(invoiceId)) {
+    throw new FbError("Invoice was not found");
+  }
+  // PHP's create IGNORES type/status/txn_status from the caller: a new
+  // row is always status=received with NULL type/txn_status, and
+  // amount/currency stay unset until gateway processing fills them.
+  const get = nestedObjectParam(ctx, "get");
+  const post = nestedObjectParam(ctx, "post");
+  const ipnObj = {
+    source: typeof ctx.params["source"] === "string" ? ctx.params["source"] : "admin",
+    get,
+    post,
     http_raw_post_data: null,
     server: null,
-  });
+  };
+  const ipn = sortedJson(ipnObj);
+  const txnId = ctx.params["txn_id"] ?? post?.["txn_id"] ?? get?.["txn_id"] ?? post?.["payment_intent"] ?? get?.["payment_intent"] ?? null;
+  const db = getDb();
+  // Early duplicate: same (txn_id, gateway) already processed -> its id.
+  if (txnId !== null && txnId !== "" && gatewayId !== null) {
+    const dup = db.prepare(
+      'SELECT id FROM "transaction" WHERE txn_id = ? AND gateway_id = ? AND status = \'processed\' ORDER BY id ASC LIMIT 1',
+    ).get(String(txnId), gatewayId) as { id: number } | undefined;
+    if (dup) return dup.id;
+  }
+  // IPN-hash dedupe: same (gateway, ipn hash) -> its id, any status.
+  if (gatewayId !== null) {
+    try {
+      const hash = createHash("sha256").update(ipn).digest("hex");
+      const dupHash = db.prepare(
+        'SELECT id FROM "transaction" WHERE gateway_id = ? AND ipn_hash = ? ORDER BY id ASC LIMIT 1',
+      ).get(gatewayId, hash) as { id: number } | undefined;
+      if (dupHash) return dupHash.id;
+    } catch { /* transaction table without ipn_hash: no dedupe */ }
+  }
   return insertTransactionFull({
-    txn_id: ctx.params["txn_id"] ?? null,
-    txn_status: ctx.params["txn_status"] ?? null,
+    txn_id: txnId !== null ? String(txnId) : null,
+    txn_status: null,
     amount: null,
     currency: null,
-    type: ctx.params["type"] ?? null,
-    status: ctx.params["status"] ?? "received",
+    type: null,
+    status: "received",
     ip: ctx.ip,
     ipn,
     note: ctx.params["note"] ?? null,
@@ -943,10 +1034,23 @@ register("admin", "invoice", "transaction_update", (ctx: CallContext) => {
   return true;
 });
 
+/** Shared by transaction_delete and batch_delete_transaction. */
+function deleteTransactionById(tx: TransactionRowFull): void {
+  // Processed transactions record moved money and are never deletable.
+  if (tx.status === "processed") {
+    throw new FbError("Processed transactions cannot be deleted because they record money that already moved.");
+  }
+  // Unprocessed deletes drop balance rows referencing the transaction.
+  getDbWrite()
+    .prepare("DELETE FROM client_balance WHERE type = 'transaction' AND rel_id = ?")
+    .run(String(tx.id));
+  deleteTransactionRow(tx.id);
+}
+
 register("admin", "invoice", "transaction_delete", (ctx: CallContext) => {
   requireAdmin(ctx);
   const tx = getTransactionOrThrow(ctx);
-  deleteTransactionRow(tx.id);
+  deleteTransactionById(tx);
   return true;
 });
 
@@ -1018,40 +1122,108 @@ function subscriptionArray(row: SubscriptionRowFull): Record<string, unknown> {
 }
 
 /**
- * The PayGateway API array (adapter metadata included). Form fields
- * and descriptions are adapter-defined; the Custom gateway's are
- * mirrored exactly, other bundled gateways get the generic shape.
+ * The PayGateway API array (ServicePayGateway::toApiArray). The admin
+ * extras are gated on the ADMIN identity, not on the deep flag, so
+ * gateway_get, gateway_get_list and subscription.gateway all share
+ * this shape. Adapter metadata (form, description, supports flags,
+ * secret fields) is snapshotted from the four bundled adapters in
+ * src/library/Payment/Adapter at 0.8.9; unknown adapters fall back
+ * to the generic shape. Secret config values are nulled and exposed
+ * only as `<field>_set` booleans.
  */
-export function gatewayArray(gatewayId: number): Record<string, unknown> | null {
-  const row = getDb()
-    .prepare(
-      "SELECT id, name, gateway, accepted_currencies, enabled, allow_single, allow_recurrent, test_mode, config, custom_logo FROM pay_gateway WHERE id = ?",
-    )
-    .get(gatewayId) as
-    | {
-        id: number; name: string | null; gateway: string; accepted_currencies: string | null;
-        enabled: number; allow_single: number; allow_recurrent: number; test_mode: number;
-        config: string | null; custom_logo: string | null;
-      }
-    | undefined;
-  if (!row) return null;
+export interface GatewayRow {
+  id: number; name: string | null; gateway: string; accepted_currencies: string | null;
+  enabled: number; allow_single: number; allow_recurrent: number; test_mode: number;
+  config: string | null; custom_logo: string | null;
+}
+
+const ADAPTER_META: Record<string, {
+  supports_one_time_payments: boolean; supports_subscriptions: boolean;
+  description: string | null; form: Record<string, unknown> | unknown[];
+}> = {
+  Custom: {
+    supports_one_time_payments: true,
+    supports_subscriptions: true,
+    description: "Custom payment gateway allows you to give instructions how can your client pay invoice. All system, client, order and invoice details can be printed. HTML code is supported.",
+    form: {
+      single: ["textarea", { label: "Enter Your Text for Single Payment Information" }],
+      recurrent: ["textarea", { label: "Enter Your Text for Subscription Information" }],
+    },
+  },
+  PayPalEmail: {
+    supports_one_time_payments: true,
+    supports_subscriptions: true,
+    description: "Enter your PayPal email to start accepting payments by PayPal.",
+    form: {
+      email: ["text", { label: "PayPal email address for payments", validators: ["EmailAddress"] }],
+    },
+  },
+  Stripe: {
+    supports_one_time_payments: true,
+    supports_subscriptions: true,
+    description: "You authenticate to the Stripe API by providing one of your API keys in the request. You can manage your API keys from your account.",
+    form: {
+      pub_key: ["text", { label: "Live Publishable Key:", required_when: { enabled: true, test_mode: false } }],
+      api_key: ["password", { label: "Live Secret Key:", required_when: { enabled: true, test_mode: false }, secret: true }],
+      webhook_secret: ["password", { label: "Live Webhook signing secret:", required_when: { enabled: true, test_mode: false }, secret: true }],
+      test_pub_key: ["text", { label: "Test Publishable Key:", required_when: { enabled: true, test_mode: true } }],
+      test_api_key: ["password", { label: "Test Secret Key:", required_when: { enabled: true, test_mode: true }, secret: true }],
+      test_webhook_secret: ["password", { label: "Test Webhook signing secret:", required_when: { enabled: true, test_mode: true }, secret: true }],
+    },
+  },
+  ClientBalance: {
+    supports_one_time_payments: true,
+    supports_subscriptions: false,
+    description: null,
+    form: [],
+  },
+};
+
+function adapterSecretFields(code: string): string[] {
+  const form = ADAPTER_META[code]?.form;
+  if (!form || Array.isArray(form)) return [];
+  const out: string[] = [];
+  for (const [name, element] of Object.entries(form)) {
+    const options = (element as unknown[])[1] as Record<string, unknown> | undefined;
+    if (options && options["secret"]) out.push(name);
+  }
+  return out;
+}
+
+function gatewayRowToApiArray(row: GatewayRow): Record<string, unknown> {
+  const meta = ADAPTER_META[row.gateway];
   let currencies: string[] = [];
   try {
-    const parsed = JSON.parse(row.accepted_currencies ?? "[]") as unknown;
+    const parsed = JSON.parse(row.accepted_currencies ?? "null") as unknown;
     if (Array.isArray(parsed)) currencies = parsed.map(String);
   } catch { /* keep empty */ }
-  let config: unknown = [];
-  try {
-    config = row.config ? JSON.parse(row.config) : [];
-  } catch { /* keep empty */ }
-  const www = `${(process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080").replace(/\/$/, "")}/`;
   if (currencies.length === 0) {
-    const def = getDb().prepare("SELECT code FROM currency WHERE is_default = 1").get() as
-      | { code: string }
-      | undefined;
-    if (def) currencies = [def.code];
+    // PHP falls back to ALL currency codes, not just the default.
+    currencies = (getDb().prepare("SELECT code FROM currency ORDER BY id").all() as { code: string }[]).map((r) => r.code);
   }
-  const isCustom = row.gateway === "Custom";
+  const www = `${(process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080").replace(/\/$/, "")}/`;
+  let config: Record<string, unknown> | unknown[] = [];
+  try {
+    const parsed = row.config ? (JSON.parse(row.config) as Record<string, unknown>) : {};
+    // PHP's empty decoded config encodes as [] (array), not {}.
+    config = parsed && Object.keys(parsed).length ? parsed : [];
+  } catch { /* keep [] */ }
+  const secrets = adapterSecretFields(row.gateway);
+  if (!Array.isArray(config)) {
+    for (const field of secrets) {
+      const value = config[field] ?? null;
+      config[field] = null;
+      config[`${field}_set`] = value !== null && value !== "";
+    }
+  }
+  let customLogoUrl: string | null = null;
+  let customLogoAvifUrl: string | null = null;
+  if (row.custom_logo && /^[a-f0-9]{64}\.(png|jpg|webp|avif|svg)$/.test(row.custom_logo)) {
+    customLogoUrl = `${www}public/gateways/custom/${row.custom_logo}`;
+    if (row.custom_logo.endsWith(".png")) {
+      customLogoAvifUrl = `${www}public/gateways/custom/${row.custom_logo.slice(0, -4)}.avif`;
+    }
+  }
   return {
     id: row.id,
     code: row.gateway,
@@ -1059,25 +1231,36 @@ export function gatewayArray(gatewayId: number): Record<string, unknown> | null 
     allow_single: !!row.allow_single,
     allow_recurrent: !!row.allow_recurrent,
     accepted_currencies: currencies,
-    supports_one_time_payments: true,
-    supports_subscriptions: true,
+    supports_one_time_payments: meta?.supports_one_time_payments ?? true,
+    supports_subscriptions: meta?.supports_subscriptions ?? true,
     config,
-    secret_fields: [],
-    form: isCustom
-      ? {
-          single: ["textarea", { label: "Enter Your Text for Single Payment Information" }],
-          recurrent: ["textarea", { label: "Enter Your Text for Subscription Information" }],
-        }
-      : { single: [], recurrent: [] },
-    description: isCustom
-      ? "Custom payment gateway allows you to give instructions how can your client pay invoice. All system, client, order and invoice details can be printed. HTML code is supported."
-      : "",
+    secret_fields: secrets,
+    form: meta?.form ?? [],
+    description: meta?.description ?? null,
     enabled: !!row.enabled,
     test_mode: !!row.test_mode,
     callback: `${www}ipn.php?gateway_id=${row.id}`,
-    custom_logo_url: null,
-    custom_logo_avif_url: null,
+    custom_logo_url: customLogoUrl,
+    custom_logo_avif_url: customLogoAvifUrl,
   };
+}
+
+export function gatewayArray(gatewayId: number): Record<string, unknown> | null {
+  const row = getDb()
+    .prepare(
+      "SELECT id, name, gateway, accepted_currencies, enabled, allow_single, allow_recurrent, test_mode, config, custom_logo FROM pay_gateway WHERE id = ?",
+    )
+    .get(gatewayId) as GatewayRow | undefined;
+  if (!row) return null;
+  return gatewayRowToApiArray(row);
+}
+
+function findGatewayRow(id: number): GatewayRow | undefined {
+  return getDb()
+    .prepare(
+      "SELECT id, name, gateway, accepted_currencies, enabled, allow_single, allow_recurrent, test_mode, config, custom_logo FROM pay_gateway WHERE id = ?",
+    )
+    .get(id) as GatewayRow | undefined;
 }
 
 function getSubscriptionOrThrow(ctx: CallContext): SubscriptionRowFull {
@@ -1166,7 +1349,7 @@ function noteRowFrom(
   return {
     client_id: inv.client_id,
     serie: "",
-    nr: "",
+    nr: null,
     hash: randomHex(24),
     currency: inv.currency ?? "USD",
     currency_rate: Number(inv.currency_rate ?? 1),
@@ -1657,3 +1840,866 @@ register("admin", "invoice", "transaction_claim_for_processing", (ctx: CallConte
   updateTransactionRow(tx.id, { status: "processing" });
   return true;
 });
+
+/* ------------------------------------------------------------------ */
+/* Phase 5 R1 invoice leftovers (parity oracle: captures21)            */
+/* ------------------------------------------------------------------ */
+
+import { paginate } from "../util";
+
+/** PHP Tools::normalizeBoolean for filter params. */
+function normalizeBoolParam(v: string | undefined): number | null {
+  if (v === undefined || v === "") return null;
+  if (v === "1" || v.toLowerCase() === "true" || v.toLowerCase() === "yes" || v.toLowerCase() === "on") return 1;
+  return 0;
+}
+
+/** ids[] from a JSON body array or form bracket keys, in index order. */
+function idsParam(ctx: CallContext): unknown[] | undefined {
+  const raw = ctx.rawParams?.["ids"];
+  if (Array.isArray(raw)) return raw;
+  const byIndex = new Map<number, string>();
+  for (const [k, v] of Object.entries(ctx.params)) {
+    const m = /^ids\[(\d+)\]$/.exec(k);
+    if (m && v !== undefined) byIndex.set(Number(m[1]), v);
+  }
+  if (byIndex.size) {
+    return [...byIndex.entries()].sort(([a], [b]) => a - b).map(([, v]) => v);
+  }
+  return undefined;
+}
+
+/* ------------------------- statuses / failed items ------------------------- */
+
+register("admin", "invoice", "get_statuses", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const rows = getDb().prepare("SELECT status, COUNT(1) AS c FROM invoice GROUP BY status").all() as { status: string; c: number }[];
+  const counts: Record<string, number> = {};
+  let total = 0;
+  for (const r of rows) {
+    counts[r.status] = r.c;
+    total += r.c;
+  }
+  return {
+    total,
+    paid: counts["paid"] ?? 0,
+    unpaid: counts["unpaid"] ?? 0,
+    refunded: counts["refunded"] ?? 0,
+    canceled: counts["canceled"] ?? 0,
+  };
+});
+
+/** InvoiceItem entity toApiArray (NOT the invoice-lines shape). */
+function failedItemArray(it: {
+  id: number; invoice_id: number | null; type: string | null; rel_id: string | number | null;
+  task: string | null; status: string | null; title: string | null; period: string | null;
+  quantity: number; unit: string | null; price: number | string | null; charged: number;
+  taxed: number; attempts: number; created_at: string | null; updated_at: string | null;
+}): Record<string, unknown> {
+  return {
+    id: it.id,
+    invoice_id: it.invoice_id,
+    type: it.type,
+    rel_id: it.rel_id,
+    task: it.task,
+    status: it.status,
+    title: it.title,
+    period: it.period,
+    quantity: it.quantity,
+    unit: it.unit,
+    price: it.price === null ? null : Number(it.price),
+    charged: Number(it.charged),
+    taxed: Number(it.taxed),
+    attempts: it.attempts,
+    created_at: it.created_at,
+    updated_at: it.updated_at,
+  };
+}
+
+register("admin", "invoice", "get_failed_items", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const rows = getDb()
+    .prepare("SELECT id, invoice_id, type, rel_id, task, status, title, period, quantity, unit, price, charged, taxed, attempts, created_at, updated_at FROM invoice_item WHERE status = 'failed' ORDER BY id DESC")
+    .all() as Parameters<typeof failedItemArray>[0][];
+  return rows.map(failedItemArray);
+});
+
+register("admin", "invoice", "item_requeue", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const idRaw = ctx.params["id"];
+  if (!idRaw) throw new FbError("Invoice item ID was not passed");
+  const item = findInvoiceItemRow(Number(idRaw));
+  if (!item) throw new FbError("Invoice item was not found");
+  const full = getDb().prepare("SELECT status FROM invoice_item WHERE id = ?").get(Number(idRaw)) as { status: string } | undefined;
+  if (full?.status !== "failed") throw new FbError("Invoice item is not in a failed state");
+  getDbWrite()
+    .prepare("UPDATE invoice_item SET status = 'pending_setup', attempts = 0, updated_at = ? WHERE id = ?")
+    .run(nowTimestamp(), Number(idRaw));
+  return true;
+});
+
+/* -------------------------------- gateways -------------------------------- */
+
+const KNOWN_ADAPTERS = ["ClientBalance", "Custom", "PayPalEmail", "Stripe"];
+
+function installedGatewayCodes(): string[] {
+  return (getDb().prepare("SELECT gateway FROM pay_gateway").all() as { gateway: string }[]).map((r) => r.gateway);
+}
+
+register("admin", "invoice", "gateway_get_pairs", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const out: Record<string, string> = {};
+  for (const r of getDb().prepare("SELECT id, name FROM pay_gateway ORDER BY id ASC").all() as { id: number; name: string }[]) {
+    out[String(r.id)] = r.name;
+  }
+  return out;
+});
+
+register("admin", "invoice", "gateway_get_available", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const installed = new Set(installedGatewayCodes());
+  return KNOWN_ADAPTERS.filter((code) => !installed.has(code));
+});
+
+register("admin", "invoice", "gateway_get_list", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  let rows = getDb().prepare("SELECT id, name, gateway, accepted_currencies, enabled, allow_single, allow_recurrent, test_mode, config, custom_logo FROM pay_gateway").all() as unknown as GatewayRow[];
+  const p = ctx.params;
+  if (p["search"]) {
+    const q = p["search"].toLowerCase();
+    rows = rows.filter((r) => (r.name ?? "").toLowerCase().includes(q) || (r.gateway ?? "").toLowerCase().includes(q));
+  }
+  for (const [param, col] of [["enabled", "enabled"], ["allow_single", "allow_single"], ["allow_recurrent", "allow_recurrent"], ["test_mode", "test_mode"]] as const) {
+    const want = normalizeBoolParam(p[param]);
+    if (want !== null) rows = rows.filter((r) => (r[col] ? 1 : 0) === want);
+  }
+  const sortKey = p["sort"] ?? "id";
+  const dir = (p["dir"] ?? "asc").toLowerCase() === "desc" ? -1 : 1;
+  const keyOf = (r: GatewayRow): string | number =>
+    sortKey === "title" ? (r.name ?? "") : sortKey === "code" ? r.gateway : r.id;
+  rows = [...rows].sort((a, b) => {
+    const ka = keyOf(a);
+    const kb = keyOf(b);
+    if (ka < kb) return -1 * dir;
+    if (ka > kb) return 1 * dir;
+    return (a.id - b.id) * dir;
+  });
+  return paginate(rows.map(gatewayRowToApiArray), p);
+});
+
+register("admin", "invoice", "gateway_install", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const code = ctx.params["code"];
+  if (!code) throw new FbError("Payment gateway code is missing");
+  const installed = new Set(installedGatewayCodes());
+  if (installed.has(code) || !KNOWN_ADAPTERS.includes(code)) {
+    throw new FbError("Payment gateway is not available for installation.");
+  }
+  getDbWrite()
+    .prepare("INSERT INTO pay_gateway (name, gateway, accepted_currencies, enabled, allow_single, allow_recurrent, test_mode, config, custom_logo) VALUES (?, ?, NULL, 0, 1, 1, 0, NULL, NULL)")
+    .run(code, code);
+  return true;
+});
+
+register("admin", "invoice", "gateway_get", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const idRaw = ctx.params["id"];
+  if (!idRaw) throw new FbError("Gateway ID was not passed");
+  const row = findGatewayRow(Number(idRaw));
+  if (!row) throw new FbError("Gateway not found");
+  return gatewayRowToApiArray(row);
+});
+
+register("admin", "invoice", "gateway_copy", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const idRaw = ctx.params["id"];
+  if (!idRaw) throw new FbError("Gateway ID was not passed");
+  const row = findGatewayRow(Number(idRaw));
+  if (!row) throw new FbError("Gateway not found");
+  // Copy does NOT carry allow_single/allow_recurrent: entity defaults
+  // (true/true) apply to the new row.
+  const info = getDbWrite()
+    .prepare("INSERT INTO pay_gateway (name, gateway, accepted_currencies, enabled, allow_single, allow_recurrent, test_mode, config, custom_logo) VALUES (?, ?, ?, 0, 1, 1, ?, ?, ?)")
+    .run(`${row.name} (Copy)`, row.gateway, row.accepted_currencies, row.test_mode ? 1 : 0, row.config, row.custom_logo);
+  return Number(info.lastInsertRowid);
+});
+
+function validateGatewayConfigOnEnable(row: GatewayRow, mergedConfig: Record<string, unknown>, testMode: boolean): void {
+  const fail = (missing: string, adapter: string): never => {
+    throw new FbError(`The "${adapter}" payment gateway is not fully configured. Please configure the ${missing}`, 819);
+  };
+  if (row.gateway === "Stripe") {
+    if (testMode) {
+      if (mergedConfig["test_api_key"] === undefined || mergedConfig["test_api_key"] === null) fail("Test API Key", "Stripe");
+      if (mergedConfig["test_pub_key"] === undefined || mergedConfig["test_pub_key"] === null) fail("Test publishable key", "Stripe");
+    } else {
+      if (mergedConfig["api_key"] === undefined || mergedConfig["api_key"] === null) fail("API key", "Stripe");
+      if (mergedConfig["pub_key"] === undefined || mergedConfig["pub_key"] === null) fail("Publishable key", "Stripe");
+    }
+  } else if (row.gateway === "PayPalEmail") {
+    if (mergedConfig["email"] === undefined || mergedConfig["email"] === null) fail("PayPal Email address", "PayPal");
+  }
+  // Custom, ClientBalance and unknown adapters impose no requirements.
+}
+
+register("admin", "invoice", "gateway_update", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const idRaw = ctx.params["id"];
+  if (!idRaw) throw new FbError("Gateway ID was not passed");
+  const row = findGatewayRow(Number(idRaw));
+  if (!row) throw new FbError("Gateway not found");
+  const p = ctx.params;
+  const newEnabled = p["enabled"] !== undefined ? toBoolParam(p["enabled"]) : !!row.enabled;
+  const newTestMode = p["test_mode"] !== undefined ? toBoolParam(p["test_mode"]) : !!row.test_mode;
+  let config: Record<string, unknown> = {};
+  try {
+    config = row.config ? (JSON.parse(row.config) as Record<string, unknown>) : {};
+  } catch { /* keep {} */ }
+  const submittedConfig = nestedObjectParam(ctx, "config");
+  if (submittedConfig) {
+    const secrets = adapterSecretFields(row.gateway);
+    for (const [key, value] of Object.entries(submittedConfig)) {
+      if (secrets.includes(key)) {
+        // Blank, whitespace-only or __KEEP__ preserves the stored value.
+        if (value === null || typeof value !== "string" || value.trim() === "" || value === "__KEEP__") continue;
+      }
+      config[key] = value;
+    }
+  }
+  if (newEnabled) validateGatewayConfigOnEnable(row, config, newTestMode);
+  const db = getDbWrite();
+  const sets: string[] = [];
+  const vals: (string | number | null)[] = [];
+  const set = (col: string, v: string | number | null) => {
+    sets.push(`${col} = ?`);
+    vals.push(v);
+  };
+  if (p["title"] !== undefined) set("name", p["title"]);
+  if (p["remove_custom_logo"] !== undefined && toBoolParam(p["remove_custom_logo"])) set("custom_logo", null);
+  // logo_url download and logo_file upload are file/network work the TS
+  // seam does not perform (documented gap); other fields update normally.
+  if (submittedConfig) set("config", JSON.stringify(config));
+  const currencies = (() => {
+    const raw = ctx.rawParams?.["accepted_currencies"];
+    if (Array.isArray(raw)) return raw;
+    const scanned = bracketObject(ctx.params, "accepted_currencies");
+    if (scanned) {
+      const idx = Object.keys(scanned).filter((k) => /^\d+$/.test(k)).sort((a, b) => Number(a) - Number(b));
+      if (idx.length) return idx.map((k) => scanned[k]);
+    }
+    return undefined;
+  })();
+  if (currencies !== undefined) set("accepted_currencies", JSON.stringify(currencies));
+  set("enabled", newEnabled ? 1 : 0);
+  if (p["allow_single"] !== undefined) set("allow_single", toBoolParam(p["allow_single"]) ? 1 : 0);
+  if (p["allow_recurrent"] !== undefined) set("allow_recurrent", toBoolParam(p["allow_recurrent"]) ? 1 : 0);
+  set("test_mode", newTestMode ? 1 : 0);
+  db.prepare(`UPDATE pay_gateway SET ${sets.join(", ")} WHERE id = ?`).run(...vals, row.id);
+  return true;
+});
+
+/** PHP (bool) cast for form/JSON flags ("0" false, "false" TRUE). */
+function toBoolParam(v: string | number | boolean): boolean {
+  if (v === true || v === 1 || v === "1" || v === "true" || v === "false") return true;
+  if (v === false || v === 0 || v === "0" || v === "") return false;
+  return true;
+}
+
+register("admin", "invoice", "gateway_delete", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const idRaw = ctx.params["id"];
+  if (!idRaw) throw new FbError("Gateway ID was not passed");
+  const row = findGatewayRow(Number(idRaw));
+  if (!row) throw new FbError("Gateway not found");
+  const db = getDb();
+  const hasInvoices = (db.prepare("SELECT COUNT(1) AS c FROM invoice WHERE gateway_id = ?").get(row.id) as { c: number }).c > 0;
+  if (hasInvoices) throw new FbError("Cannot remove payment gateway with existing invoices");
+  const hasSubs = (db.prepare("SELECT COUNT(1) AS c FROM subscription WHERE pay_gateway_id = ?").get(row.id) as { c: number }).c > 0;
+  if (hasSubs) throw new FbError("Cannot remove payment gateway with existing subscriptions");
+  const hasTx = (db.prepare('SELECT COUNT(1) AS c FROM "transaction" WHERE gateway_id = ?').get(row.id) as { c: number }).c > 0;
+  if (hasTx) throw new FbError("Cannot remove payment gateway with existing transactions");
+  getDbWrite().prepare("DELETE FROM pay_gateway WHERE id = ?").run(row.id);
+  return true;
+});
+
+/* ------------------------------- batch deletes ------------------------------- */
+
+function deleteInvoiceAdminById(id: number): void {
+  const inv = findInvoiceById(id);
+  if (!inv) throw new FbError("Invoice not found");
+  if (!isDeletable(inv)) {
+    throw new FbError(
+      "Only unissued, unpaid invoices (drafts) can be deleted. Cancel (void) an issued unpaid invoice, or reissue/refund it instead. Relax invoice immutability to delete issued invoices for cleanup.",
+    );
+  }
+  deleteInvoiceCascade(inv.id);
+}
+
+register("admin", "invoice", "batch_delete", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const ids = idsParam(ctx);
+  if (!ids) throw new FbError("IDs were not passed");
+  for (const id of ids) deleteInvoiceAdminById(Number(id));
+  return true;
+});
+
+register("admin", "invoice", "batch_delete_subscription", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const ids = idsParam(ctx);
+  if (!ids) throw new FbError("IDs were not passed");
+  for (const id of ids) {
+    const sub = findSubscriptionById(Number(id));
+    if (!sub) throw new FbError("Subscription not found");
+    deleteSubscriptionRow(sub.id);
+  }
+  return true;
+});
+
+register("admin", "invoice", "batch_delete_transaction", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const ids = idsParam(ctx);
+  if (!ids) throw new FbError("IDs were not passed");
+  for (const id of ids) {
+    const tx = findTransactionById(Number(id));
+    if (!tx) throw new FbError("Transaction not found");
+    deleteTransactionById(tx);
+  }
+  return true;
+});
+
+register("admin", "invoice", "batch_delete_tax", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const ids = idsParam(ctx);
+  if (!ids) throw new FbError("IDs were not passed");
+  for (const id of ids) {
+    const tax = findTaxById(Number(id));
+    if (!tax) throw new FbError("Tax rule not found");
+    deleteTaxRow(tax.id);
+  }
+  return true;
+});
+
+/* ------------------------------ promo engine ------------------------------ */
+
+interface PromoRowFull {
+  id: number; code: string | null; description: string | null; type: string | null;
+  value: number | null; maxuses: number | null; used: number | null; freesetup: number;
+  once_per_client: number; recurring: number; active: number; products: string | null;
+  periods: string | null; client_groups: string | null; requires_products: string | null;
+  start_at: string | null; end_at: string | null; auto_apply: number; priority: number | null;
+  stackable: number; created_at: string | null; updated_at: string | null;
+}
+
+const PROMO_COLS_FULL = "id, code, description, type, value, maxuses, used, freesetup, once_per_client, recurring, active, products, periods, client_groups, requires_products, start_at, end_at, auto_apply, priority, stackable, created_at, updated_at";
+
+function findPromoRow(id: number): PromoRowFull | undefined {
+  return getDb().prepare(`SELECT ${PROMO_COLS_FULL} FROM promo WHERE id = ?`).get(id) as PromoRowFull | undefined;
+}
+
+function decodePromoSelection(raw: string | null): unknown[] {
+  if (!raw) return [];
+  try {
+    const v = JSON.parse(raw) as unknown;
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
+/** PHP strtotime for Y-m-d H:i:s values (server-local time, UTC here). */
+function promoTime(s: string | null): number | null {
+  if (!s) return null;
+  const t = Date.parse(s.replace(" ", "T") + "Z");
+  return Number.isNaN(t) ? null : t;
+}
+
+function promoCanBeApplied(promo: PromoRowFull): boolean {
+  if (!promo.active) return false;
+  const maxUses = promo.maxuses ?? 0;
+  const used = promo.used ?? 0;
+  if (maxUses > 0 && maxUses <= used) return false;
+  const now = Date.now();
+  const start = promoTime(promo.start_at);
+  if (start !== null && start - now > 0) return false;
+  const end = promoTime(promo.end_at);
+  if (end !== null && end - now < 0) return false;
+  return true;
+}
+
+function clientGroupIds(clientId: number): number[] {
+  return (getDb().prepare("SELECT client_group_id FROM client_group_members WHERE client_id = ?").all(clientId) as { client_group_id: number }[]).map((r) => r.client_group_id);
+}
+
+function isPromoAvailableForClientGroup(promo: PromoRowFull, clientId: number | null): boolean {
+  const groups = decodePromoSelection(promo.client_groups);
+  if (groups.length === 0) return true;
+  if (clientId === null) return false;
+  const owned = clientGroupIds(clientId);
+  if (owned.length === 0) return false;
+  return owned.some((g) => groups.map(Number).includes(g));
+}
+
+function clientHasActivePromoApplication(clientId: number, promoId: number): boolean {
+  const row = getDb()
+    .prepare("SELECT COUNT(1) AS c FROM promo_redemption WHERE promo_id = ? AND client_id = ? AND phase = 'checkout' AND status IN ('reserved', 'committed')")
+    .get(promoId, clientId) as { c: number };
+  return row.c > 0;
+}
+
+function canClientUsePromo(clientId: number, promo: PromoRowFull): boolean {
+  if (!promoCanBeApplied(promo)) return false;
+  if (!promo.once_per_client) return true;
+  return !clientHasActivePromoApplication(clientId, promo.id);
+}
+
+function usePromo(promo: PromoRowFull): void {
+  const info = getDbWrite()
+    .prepare("UPDATE promo SET used = COALESCE(used, 0) + 1, updated_at = ? WHERE id = ? AND (maxuses = 0 OR maxuses IS NULL OR maxuses > COALESCE(used, 0))")
+    .run(nowTimestamp(), promo.id);
+  if (info.changes === 0) {
+    throw new FbError("This promo code has reached its maximum number of uses.");
+  }
+}
+
+function isPromoLinkedToProduct(promo: PromoRowFull, product: { id: number; is_addon: number }): boolean {
+  if (product.is_addon) return false;
+  const products = decodePromoSelection(promo.products);
+  if (products.length === 0) return true;
+  return products.map(Number).includes(product.id);
+}
+
+function isPromoApplicableToProduct(promo: PromoRowFull, product: { id: number; is_addon: number }, config: Record<string, unknown>): boolean {
+  if (!isPromoLinkedToProduct(promo, product)) return false;
+  if (config["period"] !== undefined) {
+    const periods = decodePromoSelection(promo.periods);
+    if (periods.length > 0 && !periods.map(String).includes(String(config["period"]))) return false;
+  }
+  return true;
+}
+
+function getProductPriceForPromo(product: { id: number; type: string | null; product_payment_id: number | null }, config: Record<string, unknown>): number {
+  if (product.type === "domain") {
+    // Domain renewal/catalog pricing lives in the TLD tables; the
+    // percentage path never calls this, and absolute promos on domain
+    // products are a documented gap (parity pins custom products).
+    throw new FbError("Absolute promos on domain products are not supported by the TS port");
+  }
+  const payment = product.product_payment_id ? findProductPayment(product.product_payment_id) : undefined;
+  if (!payment) throw new FbError("Product not found");
+  if (payment.type === "free") return 0;
+  if (payment.type === "once") return payment.once_price ?? 0;
+  if (payment.type === "recurrent") {
+    const period = config["period"];
+    if (period === undefined) {
+      throw new FbError(`Product ${product.id} payment type is recurrent, but period was not selected`);
+    }
+    const row = listProductPeriods(payment.id).find((p) => p.code === String(period));
+    if (!row || !row.enabled) {
+      throw new FbError("Selected billing period is not available for this product");
+    }
+    return row.price;
+  }
+  throw new FbError(`Product ${product.id} has an invalid pricing type. Please contact the administrator.`);
+}
+
+function getProductDiscountForPromo(
+  product: { id: number; type: string | null; product_payment_id: number | null; is_addon: number },
+  promo: PromoRowFull,
+  config: Record<string, unknown>,
+): number {
+  if (!isPromoApplicableToProduct(promo, product, config)) return 0;
+  const price = getProductPriceForPromo(product, config);
+  const quantity = Math.max(1, parseInt(String(config["quantity"] ?? 1), 10) || 1);
+  const total = price * quantity;
+  if (total === 0) return 0;
+  if (promo.type === "absolute") return Number(promo.value ?? 0);
+  if (promo.type === "percentage") return round2((total * Number(promo.value ?? 0)) / 100);
+  return 0;
+}
+
+function resolvePromoReference(code: string | undefined, id: number | undefined): PromoRowFull | null {
+  if (code !== undefined && code.trim() !== "") {
+    const promo = getDb()
+      .prepare(`SELECT ${PROMO_COLS_FULL} FROM promo WHERE code = ? AND active = 1 ORDER BY id ASC LIMIT 1`)
+      .get(code.trim()) as PromoRowFull | undefined;
+    if (!promo) throw new FbError("The promo code has expired or does not exist");
+    return promo;
+  }
+  if (id !== undefined && id > 0) {
+    const promo = findPromoRow(id);
+    if (!promo) throw new FbError("Promo not found");
+    if (!promoCanBeApplied(promo)) throw new FbError("The promo code has expired or does not exist");
+    return promo;
+  }
+  return null;
+}
+
+function orderBelongsToInvoice(invoiceId: number, orderId: number): boolean {
+  const order = findOrderById(orderId);
+  if (order && order.unpaid_invoice_id === invoiceId) return true;
+  return listInvoiceItems(invoiceId).some((it) => it.rel_id !== null && Number(it.rel_id) === orderId);
+}
+
+function findPromoTargetOrder(invoiceId: number, orderOpt: { id: number } | null): import("../db").OrderRowFull {
+  if (orderOpt) {
+    if (orderBelongsToInvoice(invoiceId, orderOpt.id)) {
+      const found = findOrderById(orderOpt.id);
+      if (found) return found;
+    }
+    throw new FbError("The selected order is not on this invoice");
+  }
+  const ids = new Set<number>();
+  for (const it of listInvoiceItems(invoiceId)) {
+    if (it.type === "order" && it.rel_id !== null && /^\d+$/.test(String(it.rel_id))) ids.add(Number(it.rel_id));
+  }
+  for (const o of listOrders({})) {
+    if (o.unpaid_invoice_id === invoiceId) ids.add(o.id);
+  }
+  const list = [...ids];
+  if (list.length === 0) throw new FbError("This invoice has no orders to apply the promotion to");
+  if (list.length > 1) throw new FbError("This invoice covers several orders; select which order to apply the promotion to");
+  const order = findOrderById(list[0]);
+  if (!order) throw new FbError("This invoice has no orders to apply the promotion to");
+  return order;
+}
+
+function getOrderLineTotal(invoiceId: number, order: { id: number; price: number; quantity: number }): number {
+  for (const it of listInvoiceItems(invoiceId)) {
+    if (it.type === "order" && it.rel_id !== null && Number(it.rel_id) === order.id) {
+      return Number(it.price) * (Number(it.quantity) || 1);
+    }
+  }
+  return Number(order.price) * (Number(order.quantity) || 1);
+}
+
+function findOrderDiscountLine(invoiceId: number, orderId: number): { id: number; price: number } | undefined {
+  return listInvoiceItems(invoiceId)
+    .filter((it) => it.unit === "discount" && it.rel_id !== null && Number(it.rel_id) === orderId)
+    .map((it) => ({ id: it.id, price: Number(it.price) }))[0];
+}
+
+/** PHP isInvoiceEditable: paid/refunded/canceled never; unissued always;
+ * issued only when invoice immutability is relaxed (setting, or the
+ * retired per-action keys as fallback). */
+function isInvoiceEditablePHP(inv: InvoiceRowFull): boolean {
+  if (["paid", "refunded", "canceled"].includes(inv.status)) return false;
+  if (!inv.issued) return true;
+  const mode = getSetting("invoice_immutability");
+  if (mode === null || mode === "") {
+    const editUnpaid = getSetting("invoice_allow_edit_unpaid");
+    const deleteApproved = getSetting("invoice_allow_delete_approved");
+    const phpBool = (v: string | null): boolean => v !== null && v !== "" && v !== "0";
+    return phpBool(editUnpaid) || phpBool(deleteApproved);
+  }
+  return mode === "relaxed";
+}
+
+function insertDiscountLine(invoiceId: number, order: { id: number; title: string | null }, amount: number, taxed: boolean): void {
+  insertInvoiceItem({
+    invoice_id: invoiceId,
+    type: "custom",
+    rel_id: order.id,
+    task: "void",
+    status: "pending_payment",
+    title: `Discount: ${order.title ?? ""}`,
+    period: null,
+    quantity: 1,
+    unit: "discount",
+    price: -amount,
+    taxed: taxed ? 1 : 0,
+  });
+}
+
+function createPromoRedemption(
+  promoId: number, clientId: number, orderId: number, invoiceId: number,
+  phase: string, amount: number, currency: string | null, createdAt: string | null, status: string,
+): void {
+  const now = nowTimestamp();
+  getDbWrite()
+    .prepare("INSERT INTO promo_redemption (promo_id, client_id, client_order_id, invoice_id, phase, status, discount_amount, currency, committed_at, released_at, release_reason, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, ?, ?)")
+    .run(promoId, clientId, orderId, invoiceId, phase, status, amount, currency, createdAt ?? now, now);
+}
+
+function releaseCheckoutPromoRedemptions(orderId: number, promoId: number, reason: string, invoiceId: number): number {
+  const db = getDb();
+  const rows = db.prepare(
+    "SELECT id FROM promo_redemption WHERE client_order_id = ? AND promo_id = ? AND phase = 'checkout' AND status = 'reserved' AND invoice_id = ?",
+  ).all(orderId, promoId, invoiceId) as { id: number }[];
+  if (rows.length === 0) return 0;
+  const now = nowTimestamp();
+  const w = getDbWrite();
+  for (const r of rows) {
+    w.prepare("UPDATE promo_redemption SET status = 'released', released_at = ?, release_reason = ?, updated_at = ? WHERE id = ?").run(now, reason, now, r.id);
+  }
+  w.prepare("UPDATE promo SET used = MAX(COALESCE(used, 0) - ?, 0), updated_at = ? WHERE id = ?").run(rows.length, now, promoId);
+  return rows.length;
+}
+
+function resolvePromoAndOrder(ctx: CallContext): [PromoRowFull, { id: number } | null] {
+  const code = ctx.params["promo_code"];
+  const promoIdRaw = ctx.params["promo_id"];
+  const promo = resolvePromoReference(
+    code !== undefined ? code : undefined,
+    promoIdRaw !== undefined ? Number(promoIdRaw) : undefined,
+  );
+  if (!promo) throw new FbError("Promo code or promo ID was not passed");
+  let order: { id: number } | null = null;
+  if (ctx.params["order_id"]) {
+    order = findOrderById(Number(ctx.params["order_id"])) as unknown as { id: number } | null;
+  }
+  return [promo, order];
+}
+
+register("admin", "invoice", "promo_add", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const idRaw = ctx.params["id"];
+  if (!idRaw) throw new FbError("Invoice ID is missing");
+  const inv = findInvoiceById(Number(idRaw));
+  if (!inv) throw new FbError("Invoice was not found");
+  const [promo, orderOpt] = resolvePromoAndOrder(ctx);
+  if (inv.status !== "unpaid") throw new FbError("Promotions can only be applied to unpaid invoices");
+  if (!isInvoiceEditablePHP(inv)) {
+    throw new FbError("This invoice can no longer be edited. Issued invoices are immutable; correct them with a credit note or a replacement invoice.");
+  }
+  const order = findPromoTargetOrder(inv.id, orderOpt);
+  const client = findClientById(inv.client_id);
+  if (!client) throw new FbError("Client not found");
+  if (!promoCanBeApplied(promo)) throw new FbError("The promo code has expired or does not exist");
+  if (!isPromoAvailableForClientGroup(promo, client.id)) throw new FbError("Promo code cannot be applied to this client");
+  if (!canClientUsePromo(client.id, promo)) throw new FbError("This client has already used this promo code");
+  const product = order.product_id ? findProductById(order.product_id) : undefined;
+  if (!product) throw new FbError("Product not found");
+  let promoConfig: Record<string, unknown> = {};
+  try {
+    promoConfig = order.config ? (JSON.parse(order.config) as Record<string, unknown>) : {};
+  } catch { /* keep {} */ }
+  if (product.type !== "domain" && promoConfig["period"] === undefined && order.period) {
+    promoConfig["period"] = order.period;
+  }
+  if (!isPromoApplicableToProduct(promo, product, promoConfig)) {
+    throw new FbError("This promo code does not apply to the selected product or billing period");
+  }
+  const rateRow = order.currency ? findCurrencyByCode(order.currency) : undefined;
+  if (!rateRow) throw new FbError(`Currency rate for '${order.currency}' is not configured`);
+  const rate = rateRow.conversion_rate ?? 1;
+  let discountBase: number;
+  if (promo.type === "percentage") {
+    discountBase = round2((getOrderLineTotal(inv.id, order) * Number(promo.value ?? 0)) / 100);
+  } else {
+    discountBase = getProductDiscountForPromo(product, promo, promoConfig) * rate;
+  }
+  if (discountBase <= 0) throw new FbError("This promo code gives no discount on the selected order");
+  // Re-checks under the (single-writer) sequence, mirroring PHP's
+  // in-transaction re-checks.
+  const invNow = findInvoiceById(inv.id)!;
+  if (invNow.status !== "unpaid") throw new FbError("Promotions can only be applied to unpaid invoices");
+  if (!isInvoiceEditablePHP(invNow)) {
+    throw new FbError("This invoice can no longer be edited. Issued invoices are immutable; correct them with a credit note or a replacement invoice.");
+  }
+  if (promo.once_per_client && clientHasActivePromoApplication(client.id, promo.id)) {
+    throw new FbError("This client has already used this promo code");
+  }
+  usePromo(promo);
+  const orderNow = findOrderById(order.id)!;
+  const remaining = getOrderLineTotal(inv.id, orderNow) - (Number(orderNow.discount) || 0);
+  const amount = Math.min(discountBase, remaining);
+  if (amount <= 0) throw new FbError("This promo code gives no discount on the selected order");
+  const db = getDbWrite();
+  const prevPromoId = orderNow.promo_id;
+  if (prevPromoId === null) {
+    db.prepare("UPDATE client_order SET discount = ?, promo_id = ?, promo_recurring = ?, promo_used = 1, updated_at = ? WHERE id = ?").run(
+      (Number(orderNow.discount) || 0) + amount, promo.id, promo.recurring ? 1 : 0, nowTimestamp(), order.id,
+    );
+  } else {
+    const primary = findPromoRow(prevPromoId);
+    db.prepare("UPDATE client_order SET discount = ?, promo_recurring = ?, promo_used = 1, updated_at = ? WHERE id = ?").run(
+      (Number(orderNow.discount) || 0) + amount, primary ? (primary.recurring ? 1 : 0) : (orderNow.promo_recurring ?? 0), nowTimestamp(), order.id,
+    );
+  }
+  const line = findOrderDiscountLine(inv.id, order.id);
+  if (line) {
+    db.prepare("UPDATE invoice_item SET price = ?, updated_at = ? WHERE id = ?").run(String(line.price - amount), nowTimestamp(), line.id);
+  } else {
+    insertDiscountLine(inv.id, orderNow, amount, isClientTaxable(client));
+  }
+  createPromoRedemption(promo.id, client.id, order.id, inv.id, "checkout", amount, order.currency, orderNow.created_at, "reserved");
+  return amount;
+});
+
+register("admin", "invoice", "promo_remove", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const idRaw = ctx.params["id"];
+  if (!idRaw) throw new FbError("Invoice ID is missing");
+  const inv = findInvoiceById(Number(idRaw));
+  if (!inv) throw new FbError("Invoice was not found");
+  const [promo, orderOpt] = resolvePromoAndOrder(ctx);
+  if (inv.status !== "unpaid") throw new FbError("Promotions can only be removed from unpaid invoices");
+  if (!isInvoiceEditablePHP(inv)) {
+    throw new FbError("This invoice can no longer be edited. Issued invoices are immutable; correct them with a credit note or a replacement invoice.");
+  }
+  const order = findPromoTargetOrder(inv.id, orderOpt);
+  const reserved = getDb().prepare(
+    "SELECT id, discount_amount FROM promo_redemption WHERE client_order_id = ? AND promo_id = ? AND phase = 'checkout' AND status = 'reserved'",
+  ).all(order.id, promo.id) as { id: number; discount_amount: number }[];
+  if (reserved.length === 0) throw new FbError("This promotion is not applied to the selected order");
+  let amount = 0;
+  for (const r of reserved) amount += Number(r.discount_amount) || 0;
+  if (amount <= 0) throw new FbError("This promotion has no discount recorded on the selected order");
+  const released = releaseCheckoutPromoRedemptions(order.id, promo.id, "admin_removed", inv.id);
+  if (released === 0) throw new FbError("This promotion is not applied to the selected order");
+  const orderNow = findOrderById(order.id)!;
+  const db = getDbWrite();
+  db.prepare("UPDATE client_order SET discount = ?, updated_at = ? WHERE id = ?").run(
+    Math.max(0, (Number(orderNow.discount) || 0) - amount), nowTimestamp(), order.id,
+  );
+  const remaining = getDb().prepare(
+    "SELECT promo_id FROM promo_redemption WHERE client_order_id = ? AND phase = 'checkout' AND status IN ('reserved', 'committed') ORDER BY id ASC",
+  ).all(order.id) as { promo_id: number }[];
+  const remainingIds = [...new Set(remaining.map((r) => r.promo_id))];
+  if (remainingIds.length === 0) {
+    db.prepare("UPDATE client_order SET promo_id = NULL, promo_recurring = 0, promo_used = 0, updated_at = ? WHERE id = ?").run(nowTimestamp(), order.id);
+  } else {
+    let primaryId = orderNow.promo_id;
+    if (primaryId === null || !remainingIds.includes(primaryId)) primaryId = remainingIds[0];
+    const primary = findPromoRow(primaryId)!;
+    db.prepare("UPDATE client_order SET promo_id = ?, promo_recurring = ?, promo_used = 1, updated_at = ? WHERE id = ?").run(
+      primaryId, primary.recurring ? 1 : 0, nowTimestamp(), order.id,
+    );
+  }
+  const line = findOrderDiscountLine(inv.id, order.id);
+  if (line) {
+    const newPrice = line.price + amount;
+    if (newPrice >= 0) {
+      db.prepare("DELETE FROM invoice_item WHERE id = ?").run(line.id);
+    } else {
+      db.prepare("UPDATE invoice_item SET price = ?, updated_at = ? WHERE id = ?").run(String(newPrice), nowTimestamp(), line.id);
+    }
+  }
+  return amount;
+});
+
+/* ------------------------------ client / guest ------------------------------ */
+
+register("client", "invoice", "get_tax_rate", (ctx: CallContext) => {
+  requireClient(ctx);
+  const client = findClientById(ctx.session!.client!.id);
+  if (!client) throw new FbError("Client not found");
+  if (!isClientTaxable(client)) return 0;
+  return resolveTaxForClient(client).rate;
+});
+
+register("client", "invoice", "renewal_invoice", (ctx: CallContext) => {
+  requireClient(ctx);
+  const orderIdRaw = ctx.params["order_id"];
+  if (!orderIdRaw) throw new FbError("Order ID (order_id) was not passed");
+  const order = findOrderById(Number(orderIdRaw));
+  if (!order || order.client_id !== ctx.session!.client!.id) throw new FbError("Order not found");
+  const client = findClientById(order.client_id);
+  if (!client) throw new FbError("Client not found");
+  let invoiceId: number | null = null;
+  const existing = order.unpaid_invoice_id ? findInvoiceById(order.unpaid_invoice_id) : undefined;
+  if (existing && existing.status === "unpaid") {
+    invoiceId = existing.id;
+  } else {
+    if (existing) updateOrderRow(order.id, { unpaid_invoice_id: null });
+    const price = Number(order.price) || 0;
+    const quantity = Number(order.quantity) || 1;
+    if (price * quantity < 0) throw new FbError("Invoices are not generated for negative amount orders.");
+    // Non-domain renewal lines price from the order itself; domain
+    // renewal repricing (TLD price x rate) is a documented gap.
+    invoiceId = prepareInvoice(client, [{
+      title: order.title ?? "",
+      price,
+      quantity,
+      unit: order.unit,
+      period: order.period,
+      taxed: isClientTaxable(client),
+      type: "order",
+      rel_id: order.id,
+      task: "renew",
+    }], null);
+    // PHP generateForOrder dues the renewal at the order's expiry, not
+    // at now + invoice_due_days (prepareInvoice's default).
+    if (order.expires_at) {
+      getDbWrite().prepare("UPDATE invoice SET due_at = ? WHERE id = ?").run(order.expires_at, invoiceId);
+    }
+    updateOrderRow(order.id, { unpaid_invoice_id: invoiceId });
+  }
+  issueInvoice(invoiceId, client, { useCredits: true });
+  return findInvoiceById(invoiceId)!.hash;
+});
+
+register("client", "invoice", "transaction_get_list", (ctx: CallContext) => {
+  requireClient(ctx);
+  const clientId = ctx.session!.client!.id;
+  const p = ctx.params;
+  let rows = getDb().prepare('SELECT * FROM "transaction"').all() as unknown as TransactionRowFull[];
+  rows = rows.filter((t) => {
+    const inv = t.invoice_id ? findInvoiceById(t.invoice_id) : undefined;
+    if (!inv || inv.client_id !== clientId) return false;
+    if (t.status !== "processed") return false;
+    return true;
+  });
+  if (p["invoice_hash"]) {
+    const inv = findInvoiceByHash(p["invoice_hash"]);
+    rows = rows.filter((t) => inv !== undefined && t.invoice_id === inv.id);
+  }
+  if (p["gateway_id"]) rows = rows.filter((t) => t.gateway_id === Number(p["gateway_id"]));
+  if (p["currency"]) rows = rows.filter((t) => t.currency === p["currency"]);
+  if (p["type"]) rows = rows.filter((t) => t.type === p["type"]);
+  if (p["txn_id"]) rows = rows.filter((t) => t.txn_id === p["txn_id"]);
+  if (p["date_from"]) {
+    const from = new Date(`${p["date_from"]}T00:00:00Z`).getTime();
+    if (!Number.isNaN(from)) rows = rows.filter((t) => t.created_at !== null && Date.parse(t.created_at.replace(" ", "T") + "Z") >= from);
+  }
+  if (p["date_to"]) {
+    const to = new Date(`${p["date_to"]}T23:59:59Z`).getTime();
+    if (!Number.isNaN(to)) rows = rows.filter((t) => t.created_at !== null && Date.parse(t.created_at.replace(" ", "T") + "Z") <= to);
+  }
+  if (p["search"]) {
+    const q = p["search"];
+    rows = rows.filter((t) =>
+      (t.note ?? "").includes(q) || String(t.invoice_id ?? "").includes(q) || (t.txn_id ?? "").includes(q) || (t.ipn ?? "").includes(q),
+    );
+  }
+  const sortKey = p["sort"] ?? "id";
+  const dir = (p["dir"] ?? "desc").toLowerCase() === "asc" ? 1 : -1;
+  const keyOf = (t: TransactionRowFull): string | number => {
+    switch (sortKey) {
+      case "status": return t.status ?? "";
+      case "currency": return t.currency ?? "";
+      case "type": return t.type ?? "";
+      case "txn_id": return t.txn_id ?? "";
+      case "amount": return Number(t.amount) || 0;
+      case "created_at": return t.created_at ?? "";
+      case "updated_at": return t.updated_at ?? "";
+      default: return t.id;
+    }
+  };
+  rows = [...rows].sort((a, b) => {
+    const ka = keyOf(a);
+    const kb = keyOf(b);
+    if (ka < kb) return -1 * dir;
+    if (ka > kb) return 1 * dir;
+    return (a.id - b.id) * dir;
+  });
+  const items = rows.map((t) => {
+    const a = transactionArray(t);
+    delete a["ipn"];
+    return a;
+  });
+  return paginate(items, p);
+});
+
+register("guest", "invoice", "funds_enabled", () => {
+  const v = getSetting("funds_enabled");
+  // PHP (bool) of the stored value, default true when unset.
+  if (v === null) return true;
+  return v !== "" && v !== "0";
+});
+
+// NOTE (deliberate, documented): guest invoice payment and pdf are NOT
+// registered here. payment returns adapter-generated HTML/payment data
+// (Stripe/PayPal/Custom/ClientBalance adapter PHP code) that the TS
+// seam cannot reproduce, and pdf is a binary Response; both stay
+// PHP-served through the proxy (binary-safe since the arrayBuffer fix).

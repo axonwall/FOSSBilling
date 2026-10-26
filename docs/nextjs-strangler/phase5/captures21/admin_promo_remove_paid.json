@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Promotions can only be removed from unpaid invoices",
+    "code": 9999
+  }
+}

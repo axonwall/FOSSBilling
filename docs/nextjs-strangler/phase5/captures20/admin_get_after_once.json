@@ -1,0 +1,40 @@
+{
+  "result": {
+    "id": 10,
+    "product_category_id": null,
+    "type": "custom",
+    "title": "Par20 Widget",
+    "slug": "par20-widget",
+    "description": null,
+    "unit": "product",
+    "priority": 81,
+    "pricing": {
+      "type": "once",
+      "free": {
+        "price": 0,
+        "setup": 0
+      },
+      "once": {
+        "price": 42,
+        "setup": 7
+      },
+      "recurrent": []
+    },
+    "config": [],
+    "addons": [],
+    "price_starting_from": 42,
+    "icon_url": null,
+    "allow_quantity_select": false,
+    "form_id": null,
+    "created_at": "2026-10-25 22:17:47",
+    "updated_at": "2026-10-25 22:17:49",
+    "suspension_grace_days": 0,
+    "quantity_in_stock": 0,
+    "stock_control": false,
+    "upgrades": [],
+    "status": "disabled",
+    "hidden": false,
+    "setup": "after_payment"
+  },
+  "error": null
+}

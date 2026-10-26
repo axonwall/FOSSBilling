@@ -1,0 +1,50 @@
+{
+  "result": {
+    "id": 9,
+    "code": "PAR21SAVE",
+    "description": "cap21 promo",
+    "type": "percentage",
+    "value": 10,
+    "maxuses": 0,
+    "used": 0,
+    "freesetup": false,
+    "once_per_client": false,
+    "recurring": false,
+    "active": true,
+    "products": [
+      "6"
+    ],
+    "periods": [],
+    "client_groups": [],
+    "requires_products": [],
+    "start_at": null,
+    "end_at": null,
+    "auto_apply": false,
+    "priority": 0,
+    "stackable": false,
+    "created_at": "2026-10-25 22:43:11",
+    "updated_at": "2026-10-25 22:43:13",
+    "applies_to": {
+      "6": "Phase0 Widget Hosting"
+    },
+    "requires": null,
+    "cgroups": null,
+    "redemption_count": 2,
+    "can_be_deleted": false,
+    "usage_stats": {
+      "operational_use_count": 0,
+      "max_uses": 0,
+      "remaining_operational_uses": 0,
+      "recorded_applications": 2,
+      "checkout_applications": 2,
+      "renewal_applications": 0,
+      "active_checkout_applications": 0,
+      "reserved_applications": 0,
+      "committed_applications": 0,
+      "released_applications": 2,
+      "distinct_clients": 1,
+      "orders_using_promo": 1
+    }
+  },
+  "error": null
+}

@@ -1,0 +1,10 @@
+{
+  "result": {
+    "custom": "Custom",
+    "license": "License",
+    "downloadable": "Downloadable",
+    "hosting": "Hosting",
+    "domain": "Domain"
+  },
+  "error": null
+}

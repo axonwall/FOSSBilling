@@ -1,0 +1,105 @@
+{
+  "result": {
+    "id": 12,
+    "code": "Stripe",
+    "title": "Stripe (Copy)",
+    "allow_single": true,
+    "allow_recurrent": true,
+    "accepted_currencies": [
+      "USD"
+    ],
+    "supports_one_time_payments": true,
+    "supports_subscriptions": true,
+    "config": {
+      "pub_key": "pk_test_123",
+      "api_key": null,
+      "webhook_secret": null,
+      "test_pub_key": "pk_test_123",
+      "test_api_key": null,
+      "test_webhook_secret": null,
+      "api_key_set": true,
+      "webhook_secret_set": false,
+      "test_api_key_set": true,
+      "test_webhook_secret_set": true
+    },
+    "secret_fields": [
+      "api_key",
+      "webhook_secret",
+      "test_api_key",
+      "test_webhook_secret"
+    ],
+    "form": {
+      "pub_key": [
+        "text",
+        {
+          "label": "Live Publishable Key:",
+          "required_when": {
+            "enabled": true,
+            "test_mode": false
+          }
+        }
+      ],
+      "api_key": [
+        "password",
+        {
+          "label": "Live Secret Key:",
+          "required_when": {
+            "enabled": true,
+            "test_mode": false
+          },
+          "secret": true
+        }
+      ],
+      "webhook_secret": [
+        "password",
+        {
+          "label": "Live Webhook signing secret:",
+          "required_when": {
+            "enabled": true,
+            "test_mode": false
+          },
+          "secret": true
+        }
+      ],
+      "test_pub_key": [
+        "text",
+        {
+          "label": "Test Publishable Key:",
+          "required_when": {
+            "enabled": true,
+            "test_mode": true
+          }
+        }
+      ],
+      "test_api_key": [
+        "password",
+        {
+          "label": "Test Secret Key:",
+          "required_when": {
+            "enabled": true,
+            "test_mode": true
+          },
+          "secret": true
+        }
+      ],
+      "test_webhook_secret": [
+        "password",
+        {
+          "label": "Test Webhook signing secret:",
+          "required_when": {
+            "enabled": true,
+            "test_mode": true
+          },
+          "secret": true
+        }
+      ]
+    },
+    "description": "You authenticate to the Stripe API by providing one of your API keys in the request. You can manage your API keys from your account.",
+    "enabled": false,
+    "test_mode": true,
+    "callback": "http://127.0.0.1:8080/ipn.php?gateway_id=12",
+    "custom_logo_url": null,
+    "custom_logo_avif_url": null
+  },
+  "error": null
+}

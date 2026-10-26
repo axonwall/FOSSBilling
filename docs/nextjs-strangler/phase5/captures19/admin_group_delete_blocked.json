@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Group has clients assigned. Please reassign them first.",
+    "code": 9999
+  }
+}

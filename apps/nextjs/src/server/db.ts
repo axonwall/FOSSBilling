@@ -45,10 +45,12 @@ export function getDb(): DatabaseSync {
   if (db && stamp !== null && dbStamp !== null && stamp !== dbStamp) {
     try { db.close(); } catch { /* already closed */ }
     db = null;
-    if (dbWrite) {
-      try { dbWrite.close(); } catch { /* already closed */ }
-      dbWrite = null;
-    }
+    // NOTE: the write connection is NOT closed here. A read that
+    // follows a write in the same request changes the stamp (the
+    // handler's own write), and closing dbWrite there invalidated
+    // handles already handed out ("database is not open" on the next
+    // write of a read-write-read loop, e.g. update_priority). The
+    // write connection validates its own stamp in getDbWrite().
   }
   if (db) return db;
   // timeout = SQLite busy timeout: PHP writes session rows concurrently,
@@ -116,12 +118,23 @@ export function findDefaultCurrency(): CurrencyRow | undefined {
 }
 
 let dbWrite: DatabaseSync | null = null;
+let dbWriteStamp: string | null = null;
 
-/** Write connection (mutations). Opened lazily — reads never touch it. */
+/** Write connection (mutations). Opened lazily — reads never touch it.
+ * Stamp-checked on every acquisition so an externally replaced DB
+ * (fixture snapshot restore) never receives writes on a stale inode,
+ * without invalidating handles a handler already holds: only a fresh
+ * getDbWrite() call after a stamp change reopens. */
 export function getDbWrite(): DatabaseSync {
   getDb(); // keeps both connections on the same file generation
+  const stamp = fileStamp(dbPath());
+  if (dbWrite && stamp !== null && dbWriteStamp !== null && stamp !== dbWriteStamp) {
+    try { dbWrite.close(); } catch { /* already closed */ }
+    dbWrite = null;
+  }
   if (dbWrite) return dbWrite;
   dbWrite = new DatabaseSync(dbPath(), { timeout: 5000 });
+  dbWriteStamp = stamp;
   return dbWrite;
 }
 
@@ -1128,7 +1141,7 @@ export function insertOrder(row: {
   quantity: number | null;
   unit: string | null;
   price: number;
-  discount: number;
+  discount: number | null;
   status: string;
   notes: string | null;
   config: string;
@@ -1144,7 +1157,9 @@ export function insertOrder(row: {
       row.client_id, row.product_id, row.form_id, row.promo_id, row.promo_recurring ?? null,
       row.promo_used ?? null, row.group_id, row.group_master,
       row.invoice_option, row.title, row.currency, row.unpaid_invoice_id, row.service_type,
-      row.period, row.quantity, row.unit, String(row.price), String(row.discount), row.status, row.notes,
+      row.period, row.quantity, row.unit, String(row.price),
+      row.discount === null || row.discount === undefined ? null : String(row.discount),
+      row.status, row.notes,
       row.config, row.suspension_grace_days, now, now,
     );
   return Number(info.lastInsertRowid);
@@ -1166,7 +1181,7 @@ export function insertOrderStatus(orderId: number, status: string, notes: string
 export function insertInvoice(row: {
   client_id: number;
   serie: string | null;
-  nr: string;
+  nr: string | null;
   hash: string;
   hash_expires_at: string;
   currency: string;
@@ -1214,7 +1229,9 @@ export function insertInvoiceItem(row: {
       `INSERT INTO invoice_item (type, rel_id, refunded_item_id, task, status, title, period, quantity, unit, price, charged, taxed, attempts, created_at, updated_at, invoice_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`,
     )
-    .run(row.type, row.rel_id, row.refunded_item_id ?? null, row.task, row.status, row.title, row.period, row.quantity, row.unit, String(row.price), row.charged ?? 0, row.taxed, now, now, row.invoice_id);
+    // rel_id is VARCHAR: PHP stores it as a string, so bind text here
+    // (same node:sqlite float-formatting trap as client_balance.rel_id).
+    .run(row.type, row.rel_id === null || row.rel_id === undefined ? null : String(row.rel_id), row.refunded_item_id ?? null, row.task, row.status, row.title, row.period, row.quantity, row.unit, String(row.price), row.charged ?? 0, row.taxed, now, now, row.invoice_id);
   return Number(info.lastInsertRowid);
 }
 
@@ -1569,17 +1586,53 @@ export function ordersForInvoice(invoiceId: number): {
     .all(invoiceId) as never[];
 }
 
+/** Invoice\\Service::getInvoicePromoApplications: checkout-phase
+ * redemptions grouped by promo:order, with the discount title. */
 export function promoApplicationsForInvoice(invoiceId: number): Record<string, unknown>[] {
+  const inv = getDb().prepare("SELECT status FROM invoice WHERE id = ?").get(invoiceId) as { status: string } | undefined;
   const rows = getDb()
     .prepare(
-      `SELECT pr.id, pr.promo_id, p.code AS promo_code, pr.client_order_id, pr.status,
-              pr.discount_amount, pr.currency, pr.phase
+      `SELECT pr.promo_id, pr.client_order_id, pr.status, pr.discount_amount,
+              p.code AS promo_code, p.type AS promo_type, p.value AS promo_value
        FROM promo_redemption pr
        LEFT JOIN promo p ON p.id = pr.promo_id
-       WHERE pr.invoice_id = ? ORDER BY pr.id ASC`,
+       WHERE pr.invoice_id = ? AND pr.phase = 'checkout' ORDER BY pr.id ASC`,
     )
-    .all(invoiceId) as unknown as Record<string, unknown>[];
-  return rows;
+    .all(invoiceId) as unknown as {
+      promo_id: number; client_order_id: number | null; status: string; discount_amount: number;
+      promo_code: string | null; promo_type: string | null; promo_value: number | null;
+    }[];
+  const grouped = new Map<string, Record<string, unknown>>();
+  for (const r of rows) {
+    if (r.promo_code === null) continue; // promo row deleted: skipped
+    const key = `${r.promo_id}:${r.client_order_id ?? 0}`;
+    const existing = grouped.get(key);
+    if (existing) {
+      existing["discount_amount"] = Math.round(((existing["discount_amount"] as number) + (Number(r.discount_amount) || 0)) * 100) / 100;
+      if (r.status === "reserved") existing["removable"] = true;
+    } else {
+      const title =
+        r.promo_type === "percentage"
+          ? `Promotional Code: ${r.promo_code} - ${r.promo_value ?? 0}%`
+          : r.promo_type === "absolute"
+            ? `Promotional Code: ${r.promo_code} - ${r.promo_value ?? 0} Discount`
+            : `Promotional Code: ${r.promo_code}`;
+      grouped.set(key, {
+        promo_id: r.promo_id,
+        code: r.promo_code,
+        title,
+        order_id: r.client_order_id,
+        discount_amount: Math.round((Number(r.discount_amount) || 0) * 100) / 100,
+        status: r.status,
+        removable: r.status === "reserved",
+      });
+    }
+  }
+  const unpaid = inv?.status === "unpaid";
+  for (const entry of grouped.values()) {
+    entry["removable"] = (entry["removable"] as boolean) && unpaid;
+  }
+  return [...grouped.values()];
 }
 
 // ---------------------------------------------------------------------------
@@ -1606,7 +1659,7 @@ export interface OrderRowFull {
   quantity: number;
   unit: string | null;
   price: number;
-  discount: number;
+  discount: number | null;
   status: string;
   reason: string | null;
   notes: string | null;
@@ -1932,7 +1985,7 @@ export function listInvoiceEvents(invoiceId: number): InvoiceEventRow[] {
 export function insertInvoiceNote(row: {
   client_id: number;
   serie: string;
-  nr: string;
+  nr: string | null;
   hash: string;
   currency: string;
   currency_rate: number;

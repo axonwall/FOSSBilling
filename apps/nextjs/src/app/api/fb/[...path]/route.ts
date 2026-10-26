@@ -145,7 +145,11 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
 
   const out = new Headers({ "content-type": res.headers.get("content-type") ?? "application/json" });
   forwardCookies(res, out);
-  return new Response(await res.text(), { status: res.status, headers: out });
+  // Binary passthrough (invoice PDFs, CSV exports) must not go through
+  // res.text(), which mangles non-UTF-8 bytes; JSON is unchanged.
+  const ct = res.headers.get("content-type") ?? "";
+  const body = ct.includes("application/json") ? await res.text() : await res.arrayBuffer();
+  return new Response(body, { status: res.status, headers: out });
 }
 
 export { proxy as GET, proxy as POST };

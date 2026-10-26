@@ -1,0 +1,24 @@
+{
+  "result": {
+    "id": 10,
+    "code": "ClientBalance",
+    "title": "ClientBalance",
+    "allow_single": true,
+    "allow_recurrent": true,
+    "accepted_currencies": [
+      "USD"
+    ],
+    "supports_one_time_payments": true,
+    "supports_subscriptions": false,
+    "config": [],
+    "secret_fields": [],
+    "form": [],
+    "description": null,
+    "enabled": false,
+    "test_mode": false,
+    "callback": "http://127.0.0.1:8080/ipn.php?gateway_id=10",
+    "custom_logo_url": null,
+    "custom_logo_avif_url": null
+  },
+  "error": null
+}

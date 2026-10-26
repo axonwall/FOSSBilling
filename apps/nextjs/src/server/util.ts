@@ -14,5 +14,7 @@ export function paginate<T>(items: T[], params: Record<string, string | undefine
   const page = parseInt(params["page"] ?? "1", 10) || 1;
   const total = items.length;
   const list = items.slice((page - 1) * perPage, page * perPage);
-  return { pages: Math.max(1, Math.ceil(total / perPage)), page, per_page: perPage, total, list };
+  // PHP's pager gives pages = ceil(total/per_page), i.e. 0 for an empty
+  // list (pinned by the empty promo_redemption list, captures20).
+  return { pages: Math.ceil(total / perPage), page, per_page: perPage, total, list };
 }

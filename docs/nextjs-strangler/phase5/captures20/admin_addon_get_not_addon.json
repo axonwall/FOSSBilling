@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Addon not found",
+    "code": 9999
+  }
+}

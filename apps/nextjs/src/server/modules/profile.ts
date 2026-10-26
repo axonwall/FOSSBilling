@@ -41,7 +41,7 @@ function generateToken(length = 32): string {
   return out;
 }
 
-function assertPasswordStrong(pwd: string | undefined): void {
+export function assertPasswordStrong(pwd: string | undefined): void {
   if (!pwd) throw new FbError("Password is required.");
   if (pwd.length < 8) throw new FbError("Minimum password length is 8 characters.");
   if (pwd.length > 256) throw new FbError("Maximum password length is 256 characters.");
@@ -50,7 +50,7 @@ function assertPasswordStrong(pwd: string | undefined): void {
   if (!/[A-Z]/.test(pwd)) throw new FbError("Password must include at least one uppercase letter.");
 }
 
-function validateTimezone(tz: string): void {
+export function validateTimezone(tz: string): void {
   try {
     new Intl.DateTimeFormat("en-US", { timeZone: tz });
   } catch {
@@ -58,7 +58,7 @@ function validateTimezone(tz: string): void {
   }
 }
 
-function validateEmail(email: string): string {
+export function validateEmail(email: string): string {
   const clean = email.trim();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) throw new FbError("Email address is invalid");
   return clean;
@@ -68,7 +68,7 @@ function deleteSessionRow(id: string): void {
   getDbWrite().prepare("DELETE FROM session WHERE id = ?").run(id);
 }
 
-function invalidateSessions(type: "admin" | "client", id: number): void {
+export function invalidateSessions(type: "admin" | "client", id: number): void {
   const rows = getDb().prepare("SELECT id, content FROM session").all() as unknown as { id: string; content: string | Uint8Array }[];
   for (const row of rows) {
     const content = typeof row.content === "string" ? row.content : new TextDecoder().decode(row.content);

@@ -126,10 +126,17 @@ txn_now = call("admin", "invoice", "transaction_get", {"id": tx_id})["result"]
 check("approve_txn_processed", txn_now["status"] == "processed"
       and float(txn_now["amount"]) == 40 and txn_now["currency"] == "USD")
 # --- admin-created received txn -> approve ---
+# NOTE (2026-10-25, CRUD-block regression): a bare admin create (no
+# get/post payload) has a canonical IPN, so PHP's IPN-hash dedupe
+# returns the FIRST such transaction ever created (verified live
+# against PHP: two distinct txn_ids both returned id 95). The create
+# below therefore carries a unique post payload so it mints a fresh
+# row on both stacks; without it this case dedupes to a stale row.
 inv2 = issued_invoice(40)
 created = call("admin", "invoice", "transaction_create",
                {"invoice_id": inv2, "gateway_id": 1, "txn_id": f"ADM-P10-{int(time.time())}",
-                "txn_status": "pending", "type": "payment", "status": "received"})
+                "txn_status": "pending", "type": "payment", "status": "received",
+                "post": {"probe": f"ADM-P10-{int(time.time())}"}})
 tx2 = created.get("result")
 call("admin", "invoice", "transaction_approve", {"id": tx2})
 inv2_now = call("admin", "invoice", "get", {"id": inv2})["result"]

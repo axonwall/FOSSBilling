@@ -1,0 +1,302 @@
+[
+  {
+    "name": "tmp_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_client_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_invoice_options",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_service_missing",
+    "ok": false,
+    "error": "Order ID was not passed"
+  },
+  {
+    "name": "admin_service_notfound",
+    "ok": false,
+    "error": "Order Not Found"
+  },
+  {
+    "name": "admin_service_order1",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_service_null",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_addons_order1_empty",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_addons_missing",
+    "ok": false,
+    "error": "Order ID was not passed"
+  },
+  {
+    "name": "admin_addons_notfound",
+    "ok": false,
+    "error": "Order Not Found"
+  },
+  {
+    "name": "admin_can_cancel_order1",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_can_cancel_missing",
+    "ok": false,
+    "error": "Order ID was not passed"
+  },
+  {
+    "name": "admin_can_cancel_notfound",
+    "ok": false,
+    "error": "Order Not Found"
+  },
+  {
+    "name": "admin_renew_missing",
+    "ok": false,
+    "error": "Order ID was not passed"
+  },
+  {
+    "name": "admin_renew_notfound",
+    "ok": false,
+    "error": "Order Not Found"
+  },
+  {
+    "name": "admin_update_config_missing",
+    "ok": false,
+    "error": "Order config not passed"
+  },
+  {
+    "name": "admin_update_config_notfound",
+    "ok": false,
+    "error": "Order Not Found"
+  },
+  {
+    "name": "admin_update_config_no_config",
+    "ok": false,
+    "error": "Order config not passed"
+  },
+  {
+    "name": "admin_update_config_scalar",
+    "ok": false,
+    "error": "Order config not passed"
+  },
+  {
+    "name": "admin_batch_delete_missing",
+    "ok": false,
+    "error": "Order IDs were not passed"
+  },
+  {
+    "name": "client_addons_missing",
+    "ok": false,
+    "error": "Order id required"
+  },
+  {
+    "name": "client_addons_notfound",
+    "ok": false,
+    "error": "Order not found"
+  },
+  {
+    "name": "client_addons_order1_empty",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_service_notactive",
+    "ok": false,
+    "error": "Order is not active"
+  },
+  {
+    "name": "client_service_order1",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_service_missing",
+    "ok": false,
+    "error": "Order id required"
+  },
+  {
+    "name": "client_service_notfound",
+    "ok": false,
+    "error": "Order not found"
+  },
+  {
+    "name": "client_upgradables_order1",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_upgradables_missing",
+    "ok": false,
+    "error": "Order id required"
+  },
+  {
+    "name": "client_delete_active",
+    "ok": false,
+    "error": "Only pending and failed setup orders can be deleted."
+  },
+  {
+    "name": "client_delete_missing",
+    "ok": false,
+    "error": "Order id required"
+  },
+  {
+    "name": "client_delete_notfound",
+    "ok": false,
+    "error": "Order not found"
+  },
+  {
+    "name": "admin_addons_order1_one",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_addons_order1_one",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_create_config_order",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_update_config_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_config_order",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_delete_config_order",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_create_clientdel_order",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_delete_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_get_deleted_gone",
+    "ok": false,
+    "error": "Order not found"
+  },
+  {
+    "name": "admin_create_renew_pending",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_renew_pending",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_renewed_pending",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_delete_renewed_pending",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_renew_active",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_renewed_active",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_create_batch1",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_create_batch2",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_batch_delete_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_batch1_gone",
+    "ok": false,
+    "error": "Order Not Found"
+  },
+  {
+    "name": "admin_get_batch2_gone",
+    "ok": false,
+    "error": "Order Not Found"
+  },
+  {
+    "name": "admin_create_batch_master",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_batch_delete_addons",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_batch_master_gone",
+    "ok": false,
+    "error": "Order Not Found"
+  },
+  {
+    "name": "admin_get_batch_addon_gone",
+    "ok": false,
+    "error": "Order Not Found"
+  },
+  {
+    "name": "admin_create_batch_master2",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_batch_delete_noflag",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_batch_master2_gone",
+    "ok": false,
+    "error": "Order Not Found"
+  },
+  {
+    "name": "admin_get_batch_addon2_alive",
+    "ok": true,
+    "error": null
+  }
+]

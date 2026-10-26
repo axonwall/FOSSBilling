@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Payment gateway code is missing",
+    "code": 9999
+  }
+}

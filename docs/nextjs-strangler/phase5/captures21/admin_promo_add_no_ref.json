@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Promo code or promo ID was not passed",
+    "code": 9999
+  }
+}

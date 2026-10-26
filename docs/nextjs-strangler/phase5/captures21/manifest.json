@@ -1,0 +1,577 @@
+[
+  {
+    "name": "tmp_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_statuses",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_failed_items_empty",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_item_requeue_missing",
+    "ok": false,
+    "error": "Invoice item ID was not passed"
+  },
+  {
+    "name": "admin_item_requeue_missing_item",
+    "ok": false,
+    "error": "Invoice item was not found"
+  },
+  {
+    "name": "admin_item_requeue_not_failed",
+    "ok": false,
+    "error": "Invoice item is not in a failed state"
+  },
+  {
+    "name": "admin_get_failed_items_one",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_item_requeue_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_failed_items_after",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_pairs",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_available_before",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_list_search",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_list_enabled",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_custom",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_stripe",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_paypal",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_missing",
+    "ok": false,
+    "error": "Gateway ID was not passed"
+  },
+  {
+    "name": "admin_gateway_get_notfound",
+    "ok": false,
+    "error": "Gateway not found"
+  },
+  {
+    "name": "admin_gateway_install_missing",
+    "ok": false,
+    "error": "Payment gateway code is missing"
+  },
+  {
+    "name": "admin_gateway_install_taken",
+    "ok": false,
+    "error": "Payment gateway is not available for installation."
+  },
+  {
+    "name": "admin_gateway_install_unknown",
+    "ok": false,
+    "error": "Payment gateway is not available for installation."
+  },
+  {
+    "name": "admin_gateway_copy_missing",
+    "ok": false,
+    "error": "Gateway ID was not passed"
+  },
+  {
+    "name": "admin_gateway_copy_notfound",
+    "ok": false,
+    "error": "Gateway not found"
+  },
+  {
+    "name": "admin_gateway_update_missing",
+    "ok": false,
+    "error": "Gateway ID was not passed"
+  },
+  {
+    "name": "admin_gateway_update_notfound",
+    "ok": false,
+    "error": "Gateway not found"
+  },
+  {
+    "name": "admin_gateway_delete_missing",
+    "ok": false,
+    "error": "Gateway ID was not passed"
+  },
+  {
+    "name": "admin_gateway_delete_notfound",
+    "ok": false,
+    "error": "Gateway not found"
+  },
+  {
+    "name": "admin_gateway_install_cb",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_available_after",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_cb",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_update_cb",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_cb_after",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_update_cb_disable",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_client_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_payment_paid",
+    "ok": false,
+    "error": "This invoice is already paid"
+  },
+  {
+    "name": "client_payment_canceled",
+    "ok": false,
+    "error": "This invoice was canceled and cannot be paid"
+  },
+  {
+    "name": "client_payment_unknown_gateway",
+    "ok": false,
+    "error": "Payment method not found"
+  },
+  {
+    "name": "client_payment_disabled",
+    "ok": false,
+    "error": "Payment method not enabled"
+  },
+  {
+    "name": "guest_payment_missing_hash",
+    "ok": false,
+    "error": "Invoice hash not passed. Missing param hash"
+  },
+  {
+    "name": "guest_payment_bad_hash",
+    "ok": false,
+    "error": "Invalid invoice hash"
+  },
+  {
+    "name": "guest_payment_missing_gateway",
+    "ok": false,
+    "error": "Payment method not found. Missing param gateway_id"
+  },
+  {
+    "name": "guest_payment_unknown_invoice",
+    "ok": false,
+    "error": "Invoice not found"
+  },
+  {
+    "name": "guest_payment_no_permission",
+    "ok": false,
+    "error": "You do not have permission to perform this action"
+  },
+  {
+    "name": "guest_funds_enabled",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_pdf_no_permission",
+    "ok": false,
+    "error": "You do not have permission to perform this action"
+  },
+  {
+    "name": "guest_pdf_missing_hash",
+    "ok": false,
+    "error": "Invoice hash was not passed"
+  },
+  {
+    "name": "guest_pdf_bad_hash",
+    "ok": false,
+    "error": "Invalid invoice hash"
+  },
+  {
+    "name": "admin_gateway_copy_custom",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_copy_custom",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_update_copy",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_copy_custom_after",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_delete_copy_custom",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_copy_custom_gone",
+    "ok": false,
+    "error": "Gateway not found"
+  },
+  {
+    "name": "admin_gateway_copy_stripe",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_update_stripe_copy_rotate",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_stripe_copy_rotated",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_update_stripe_copy_keep",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_delete_copy_stripe",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_delete_blocked_custom",
+    "ok": false,
+    "error": "Cannot remove payment gateway with existing invoices"
+  },
+  {
+    "name": "admin_gateway_delete_cb",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_available_restored",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_pairs_restored",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_gateway_get_list_restored",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_batch_delete_missing",
+    "ok": false,
+    "error": "IDs were not passed"
+  },
+  {
+    "name": "admin_prepare_draft1",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_prepare_draft2",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_batch_delete_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_draft1_gone",
+    "ok": false,
+    "error": "Invoice was not found"
+  },
+  {
+    "name": "admin_get_draft2_gone",
+    "ok": false,
+    "error": "Invoice was not found"
+  },
+  {
+    "name": "admin_batch_delete_subscription_missing",
+    "ok": false,
+    "error": "IDs were not passed"
+  },
+  {
+    "name": "admin_subscription_create_cap21a",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_subscription_create_cap21b",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_batch_delete_subscription_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_subscription_get_cap21a_gone",
+    "ok": false,
+    "error": "Subscription not found"
+  },
+  {
+    "name": "admin_subscription_get_cap21b_gone",
+    "ok": false,
+    "error": "Subscription not found"
+  },
+  {
+    "name": "admin_batch_delete_transaction_missing",
+    "ok": false,
+    "error": "IDs were not passed"
+  },
+  {
+    "name": "admin_transaction_create_cap21a",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_transaction_create_cap21b",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_batch_delete_transaction_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_transaction_get_cap21a_gone",
+    "ok": false,
+    "error": "Transaction not found"
+  },
+  {
+    "name": "admin_transaction_get_cap21b_gone",
+    "ok": false,
+    "error": "Transaction not found"
+  },
+  {
+    "name": "admin_batch_delete_tax_missing",
+    "ok": false,
+    "error": "IDs were not passed"
+  },
+  {
+    "name": "admin_tax_create_tmp",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_tax_create_tmp",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_batch_delete_tax_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_tax_get_gone1",
+    "ok": false,
+    "error": "Tax rule not found"
+  },
+  {
+    "name": "admin_tax_get_gone2",
+    "ok": false,
+    "error": "Tax rule not found"
+  },
+  {
+    "name": "client_get_tax_rate",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_transaction_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_transaction_get_list_hash",
+    "ok": false,
+    "error": "[Semantical Error] line 0, col 323 near 'i WHERE i.clientId': Error: 'i' is already defined."
+  },
+  {
+    "name": "client_transaction_get_list_gateway",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_transaction_get_list_currency",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_transaction_get_list_dates",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_renewal_missing_order",
+    "ok": false,
+    "error": "Order ID (order_id) was not passed"
+  },
+  {
+    "name": "client_renewal_notfound",
+    "ok": false,
+    "error": "Order not found"
+  },
+  {
+    "name": "admin_prepare_promo_draft",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_create_cap21",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_add_missing_id",
+    "ok": false,
+    "error": "Invoice ID is missing"
+  },
+  {
+    "name": "admin_promo_add_bad_code",
+    "ok": false,
+    "error": "The promo code has expired or does not exist"
+  },
+  {
+    "name": "admin_promo_add_paid",
+    "ok": false,
+    "error": "Promotions can only be applied to unpaid invoices"
+  },
+  {
+    "name": "admin_promo_add_no_ref",
+    "ok": false,
+    "error": "Promo code or promo ID was not passed"
+  },
+  {
+    "name": "admin_promo_add_bad_id",
+    "ok": false,
+    "error": "Promo not found"
+  },
+  {
+    "name": "admin_promo_add_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_draft_after_add",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_get_after_add",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_add_again",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_draft_after_add2",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_remove_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_get_draft_after_remove",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_get_after_remove",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_promo_remove_again",
+    "ok": false,
+    "error": "This promotion is not applied to the selected order"
+  },
+  {
+    "name": "admin_promo_remove_paid",
+    "ok": false,
+    "error": "Promotions can only be removed from unpaid invoices"
+  },
+  {
+    "name": "admin_delete_promo_draft",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_renewal_ok",
+    "ok": true,
+    "error": null
+  }
+]

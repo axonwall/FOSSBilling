@@ -1,0 +1,37 @@
+{
+  "result": {
+    "id": 11,
+    "code": "Custom",
+    "title": "Custom (Copy)",
+    "allow_single": true,
+    "allow_recurrent": true,
+    "accepted_currencies": [
+      "USD"
+    ],
+    "supports_one_time_payments": true,
+    "supports_subscriptions": true,
+    "config": [],
+    "secret_fields": [],
+    "form": {
+      "single": [
+        "textarea",
+        {
+          "label": "Enter Your Text for Single Payment Information"
+        }
+      ],
+      "recurrent": [
+        "textarea",
+        {
+          "label": "Enter Your Text for Subscription Information"
+        }
+      ]
+    },
+    "description": "Custom payment gateway allows you to give instructions how can your client pay invoice. All system, client, order and invoice details can be printed. HTML code is supported.",
+    "enabled": false,
+    "test_mode": false,
+    "callback": "http://127.0.0.1:8080/ipn.php?gateway_id=11",
+    "custom_logo_url": null,
+    "custom_logo_avif_url": null
+  },
+  "error": null
+}

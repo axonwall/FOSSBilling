@@ -1,0 +1,15 @@
+{
+  "result": [
+    {
+      "id": 2,
+      "title": "Par20 Category Renamed",
+      "priority": 5
+    },
+    {
+      "id": 1,
+      "title": "Default category",
+      "priority": 10
+    }
+  ],
+  "error": null
+}

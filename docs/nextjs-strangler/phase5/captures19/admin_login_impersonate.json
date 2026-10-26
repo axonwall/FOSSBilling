@@ -1,0 +1,9 @@
+{
+  "result": {
+    "id": 10,
+    "email": "cap19a@example.com",
+    "name": "Cap",
+    "role": "client"
+  },
+  "error": null
+}

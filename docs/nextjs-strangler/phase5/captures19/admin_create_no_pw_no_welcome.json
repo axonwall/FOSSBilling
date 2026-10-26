@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "A password is required when the welcome email is disabled.",
+    "code": 9999
+  }
+}

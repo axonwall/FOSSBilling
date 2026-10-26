@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Invoice hash not passed. Missing param hash",
+    "code": 810
+  }
+}

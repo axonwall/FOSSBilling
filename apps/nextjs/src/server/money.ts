@@ -131,7 +131,7 @@ export function prepareInvoice(
   const id = insertInvoice({
     client_id: client.id,
     serie,
-    nr: "",
+    nr: null,
     hash: randomBytes(24).toString("hex"),
     hash_expires_at: hashExpires,
     currency,

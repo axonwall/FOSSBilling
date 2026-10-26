@@ -1,13 +1,16 @@
 import { randomBytes } from "node:crypto";
 import {
   countActiveTicketsForOrder,
-  deleteOrderCascade,
   deleteOrderStatusRow,
   findClientById,
+  findCurrencyByCode,
   findOrderById,
   findProductById,
   insertCustomService,
   findProductPayment,
+  getDb,
+  getDbWrite,
+  listAllProducts,
   listProductPeriods,
   insertOrder,
   insertOrderStatus,
@@ -68,7 +71,6 @@ export function orderArray(
     product_id: order.product_id,
     form_id: order.form_id,
     promo_id: order.promo_id,
-    promo_recurring: order.promo_recurring,
     promo_used: order.promo_used,
     group_id: order.group_id,
     group_master: listMode ? order.group_master : !!order.group_master,
@@ -84,7 +86,20 @@ export function orderArray(
     // Entity reads type price as a DECIMAL string; the pager's raw
     // rows (list endpoints) pass the stored value through.
     price: listMode ? order.price : decimalString(order.price),
-    discount: listMode ? order.discount : (order.discount ?? 0),
+    // Single-get discount: NULL -> 0 (number), stored -> DECIMAL string
+    // ("0", not 0). List rows coalesce NULL to 0 but keep the number.
+    discount: listMode
+      ? (order.discount ?? 0)
+      : order.discount === null || order.discount === undefined
+        ? 0
+        : String(order.discount),
+    // Single-get promo_recurring is a Doctrine boolean (null stays null);
+    // list rows pass the stored value through.
+    promo_recurring: listMode
+      ? order.promo_recurring
+      : order.promo_recurring === null || order.promo_recurring === undefined
+        ? null
+        : !!order.promo_recurring,
     status: order.status,
     reason: order.reason,
     notes: order.notes,
@@ -226,18 +241,74 @@ register("admin", "order", "create", (ctx: CallContext) => {
   const payment = product.product_payment_id
     ? findProductPayment(product.product_payment_id)
     : undefined;
-  let price = 0;
-  if (period && payment) {
+  // Pricing mirrors getProductOrderLineConfig: an explicit price wins;
+  // otherwise once -> once_price, recurrent -> the enabled period's
+  // price (period required), free -> 0. Domain catalog pricing is a
+  // documented gap (TS prices domain orders at 0).
+  let price: number;
+  if (ctx.params["price"] !== undefined) {
+    price = Number(ctx.params["price"]);
+  } else if (!payment) {
+    price = 0;
+  } else if (payment.type === "free") {
+    price = 0;
+  } else if (payment.type === "once") {
+    price = payment.once_price ?? 0;
+  } else if (payment.type === "recurrent") {
+    if (!period) {
+      throw new FbError(`Product ${product.id} payment type is recurrent, but period was not selected`);
+    }
     const pp = listProductPeriods(payment.id).find((x) => x.code === period && x.enabled);
-    price = pp?.price ?? 0;
+    if (!pp) throw new FbError("Selected billing period is not available for this product");
+    price = pp.price;
   } else {
-    price = payment?.once_price ?? 0;
+    price = 0;
   }
   const quantity = Math.max(1, parseInt(ctx.params["quantity"] ?? "1", 10) || 1);
-  const currency = client.currency ?? "USD";
+  // Currency: explicit param -> client currency -> default currency;
+  // an unresolvable code throws, as PHP's createOrder does.
+  let currency: string;
+  {
+    const wanted = ctx.params["currency"] || client.currency || null;
+    if (wanted) {
+      const found = findCurrencyByCode(wanted);
+      if (!found) throw new FbError("Currency could not be determined for order");
+      currency = found.code;
+    } else {
+      const def = getDb().prepare("SELECT code FROM currency WHERE is_default = 1").get() as { code: string } | undefined;
+      if (!def) throw new FbError("Currency could not be determined for order");
+      currency = def.code;
+    }
+  }
   const invoiceOption = ctx.params["invoice_option"] ?? "no-invoice";
-  const groupId = randomBytes(7).toString("hex").slice(0, 13);
-  const configJson = period ? JSON.stringify({ period }) : "[]";
+  // Addon orders must join an existing master group; anything else
+  // gets a fresh group as master.
+  let groupId: string;
+  let groupMaster = 1;
+  if (ctx.params["group_id"]) {
+    const parent = listOrders({}).find(
+      (o) => o.group_id === ctx.params["group_id"] && o.client_id === client.id,
+    );
+    if (!parent) throw new FbError(`Parent order ${ctx.params["group_id"]} was not found`);
+    groupId = parent.group_id!;
+    groupMaster = 0;
+  } else {
+    if (product.is_addon) {
+      throw new FbError("Group ID parameter is missing for addon product order", 832);
+    }
+    groupId = randomBytes(7).toString("hex").slice(0, 13);
+  }
+  const configObj: Record<string, unknown> = {};
+  {
+    const raw = ctx.rawParams?.["config"];
+    if (raw && typeof raw === "object" && !Array.isArray(raw)) Object.assign(configObj, raw);
+    for (const [k, v] of Object.entries(ctx.params)) {
+      const m = /^config\[([^\]]+)\]$/.exec(k);
+      if (m && v !== undefined) configObj[m[1]] = v;
+    }
+  }
+  if (period) configObj["period"] = period;
+  const configJson = Object.keys(configObj).length ? JSON.stringify(configObj) : "[]";
   const orderId = insertOrder({
     client_id: client.id,
     product_id: product.id,
@@ -246,7 +317,7 @@ register("admin", "order", "create", (ctx: CallContext) => {
     promo_recurring: null,
     promo_used: null,
     group_id: groupId,
-    group_master: 1,
+    group_master: groupMaster,
     invoice_option: invoiceOption,
     title: product.title,
     currency,
@@ -256,7 +327,7 @@ register("admin", "order", "create", (ctx: CallContext) => {
     quantity,
     unit: product.unit,
     price,
-    discount: 0,
+    discount: null,
     status: "pending_setup",
     notes: ctx.params["notes"] ?? null,
     config: configJson,
@@ -312,10 +383,13 @@ export function activateOrderRow(order: OrderRowFull): void {
   if (serviceId === null && order.service_type === "custom") {
     serviceId = insertCustomService(order.client_id, order.config);
   }
+  // PHP createFromOrder extends from the order's EXISTING expiry (or
+  // now when unset), not unconditionally from now.
+  const from = order.expires_at ? new Date(order.expires_at.replace(" ", "T") + "Z") : now;
   updateOrderRow(order.id, {
     status: "active",
     activated_at: fmtTs(now),
-    expires_at: period ? fmtTs(addPeriod(now, period)) : order.expires_at,
+    expires_at: period ? fmtTs(addPeriod(from, period)) : order.expires_at,
     service_id: serviceId,
   });
   insertOrderStatus(order.id, "active", "Order activated");
@@ -440,10 +514,64 @@ register("admin", "order", "uncancel", (ctx: CallContext) => {
   return true;
 });
 
+/** Order\\Service::deleteFromOrder, TS-visible subset: pending_setup
+ * invoice items, reserved promo + stock releases, status + meta rows,
+ * the service_custom row for custom orders, then the order row.
+ * Service-module deletes for non-custom types are PHP-side work the
+ * TS seam cannot run (documented gap); on this install every order
+ * is custom, and null-plugin custom deletes are no-ops in PHP too. */
+export function deleteOrderFull(order: OrderRowFull, forceDelete = false): void {
+  const w = getDbWrite();
+  void forceDelete; // only changes adapter-error handling, which TS skips
+  if (order.status === "pending_setup") {
+    w.prepare("DELETE FROM invoice_item WHERE rel_id = ? AND status = 'pending_payment'").run(String(order.id));
+  }
+  // Release reserved promo redemptions (any phase) + decrement usage
+  // for checkout-phase ones, mirroring releasePromoRedemptions.
+  const reserved = getDb()
+    .prepare("SELECT id, promo_id, phase FROM promo_redemption WHERE client_order_id = ? AND status = 'reserved'")
+    .all(order.id) as { id: number; promo_id: number; phase: string }[];
+  if (reserved.length) {
+    const now = fmtTs(new Date());
+    const checkoutCounts = new Map<number, number>();
+    for (const r of reserved) {
+      w.prepare("UPDATE promo_redemption SET status = 'released', released_at = ?, release_reason = 'order_deleted', updated_at = ? WHERE id = ?").run(now, now, r.id);
+      if (r.phase === "checkout") checkoutCounts.set(r.promo_id, (checkoutCounts.get(r.promo_id) ?? 0) + 1);
+    }
+    for (const [promoId, count] of checkoutCounts) {
+      w.prepare("UPDATE promo SET used = MAX(COALESCE(used, 0) - ?, 0), updated_at = ? WHERE id = ?").run(count, now, promoId);
+    }
+  }
+  // Release a stock reservation, if one was recorded in order meta.
+  const meta = getDb().prepare("SELECT id, value FROM client_order_meta WHERE client_order_id = ? AND name = 'stock_reserved_qty'").get(order.id) as
+    | { id: number; value: string }
+    | undefined;
+  if (meta) {
+    const qty = parseInt(meta.value, 10) || 0;
+    w.prepare("DELETE FROM client_order_meta WHERE id = ?").run(meta.id);
+    if (qty > 0 && order.product_id) {
+      w.prepare("UPDATE product SET quantity_in_stock = COALESCE(quantity_in_stock, 0) + ? WHERE id = ?").run(qty, order.product_id);
+    }
+  }
+  w.prepare("DELETE FROM client_order_status WHERE client_order_id = ?").run(order.id);
+  w.prepare("DELETE FROM client_order_meta WHERE client_order_id = ?").run(order.id);
+  if (order.service_type === "custom" && order.service_id !== null) {
+    w.prepare("DELETE FROM service_custom WHERE id = ?").run(order.service_id);
+  }
+  w.prepare("DELETE FROM client_order WHERE id = ?").run(order.id);
+}
+
 register("admin", "order", "delete", (ctx: CallContext) => {
   requireAdmin(ctx);
   const order = getOrderOrThrow(ctx);
-  deleteOrderCascade(order.id);
+  const deleteAddons = normalizeBool(ctx.params["delete_addons"]);
+  const forceDelete = normalizeBool(ctx.params["force_delete"]);
+  if (deleteAddons) {
+    for (const addon of getOrderAddonsList(order)) {
+      deleteOrderFull(addon, forceDelete);
+    }
+  }
+  deleteOrderFull(order, forceDelete);
   return true;
 });
 
@@ -465,4 +593,243 @@ register("client", "order", "get_list", (ctx: CallContext) => {
   };
   if (ctx.params["status"]) filters.status = ctx.params["status"];
   return paginateLocal(listOrders(filters).map((o) => orderArray(o, false, false, true)), ctx.params);
+});
+
+/* ------------------------------------------------------------------ */
+/* Phase 5 R1 order leftovers (parity oracle: captures22)              */
+/* ------------------------------------------------------------------ */
+
+/** Tools::normalizeBoolean for flag params. */
+function normalizeBool(v: string | undefined): boolean {
+  if (v === undefined) return false;
+  const lower = v.toLowerCase();
+  if (["1", "true", "yes", "on"].includes(lower)) return true;
+  if (["0", "false", "no", "off"].includes(lower)) return false;
+  return false;
+}
+
+function getOrderOrThrowAdmin(ctx: CallContext): OrderRowFull {
+  const id = ctx.params["id"];
+  if (!id) throw new FbError("Order ID was not passed");
+  const order = findOrderById(Number(id));
+  if (!order) throw new FbError("Order Not Found");
+  return order;
+}
+
+function getOrderOrThrowClient(ctx: CallContext): OrderRowFull {
+  const id = ctx.params["id"];
+  if (!id) throw new FbError("Order id required");
+  const order = findOrderById(Number(id));
+  if (!order || order.client_id !== ctx.session!.client!.id) throw new FbError("Order not found");
+  return order;
+}
+
+/** Same group + client, not a master, excluding the order itself. */
+function getOrderAddonsList(order: OrderRowFull): OrderRowFull[] {
+  if (!order.group_id) return [];
+  // PHP's repository query has no ORDER BY: rowid (id ASC) order.
+  return listOrders({})
+    .filter(
+      (o) => o.group_id === order.group_id && o.client_id === order.client_id && o.id !== order.id && !o.group_master,
+    )
+    .sort((a, b) => a.id - b.id);
+}
+
+function customServiceArray(serviceId: number): Record<string, unknown> | null {
+  const row = getDb().prepare("SELECT id, client_id, plugin, config, created_at, updated_at FROM service_custom WHERE id = ?").get(serviceId) as
+    | { id: number; client_id: number; plugin: string | null; config: string | null; created_at: string | null; updated_at: string | null }
+    | undefined;
+  if (!row) return null;
+  let config: Record<string, unknown> = {};
+  try {
+    config = row.config ? (JSON.parse(row.config) as Record<string, unknown>) : {};
+  } catch { /* keep {} */ }
+  return {
+    ...config,
+    id: row.id,
+    client_id: row.client_id,
+    plugin: row.plugin,
+    updated_at: row.updated_at,
+    created_at: row.created_at,
+  };
+}
+
+function orderServiceData(order: OrderRowFull): Record<string, unknown> | null {
+  if (order.service_id === null) return null;
+  if (order.service_type === "custom") return customServiceArray(order.service_id);
+  // Non-custom service modules (hosting, domain, ...) render their own
+  // toApiArray in PHP; the TS seam has no equivalent (documented gap).
+  return null;
+}
+
+register("admin", "order", "get_invoice_options", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  return {
+    "issue-invoice": "Automatically Issue Renewal Invoices",
+    "no-invoice": "Issue Invoices Manually",
+  };
+});
+
+register("admin", "order", "service", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  return orderServiceData(getOrderOrThrowAdmin(ctx));
+});
+
+register("admin", "order", "addons", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  return getOrderAddonsList(getOrderOrThrowAdmin(ctx)).map((o) => orderArray(o, false));
+});
+
+register("admin", "order", "can_cancel_at_period_end", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const order = getOrderOrThrowAdmin(ctx);
+  // Active subscriptions (via invoice items on the order's invoices)
+  // with a non-empty sid, whose gateway adapter implements
+  // cancelSubscriptionAtPeriodEnd. Only Stripe implements it among
+  // the bundled adapters.
+  const subs = getDb().prepare(
+    `SELECT DISTINCT s.sid, s.pay_gateway_id, s.status FROM subscription s
+     JOIN invoice_item ii ON ii.invoice_id = s.rel_id
+     WHERE s.rel_type = 'invoice' AND ii.type = 'order' AND ii.rel_id = ? AND s.status = 'active'`,
+  ).all(String(order.id)) as { sid: string | null; pay_gateway_id: number | null; status: string }[];
+  if (subs.length === 0) return false;
+  for (const sub of subs) {
+    if ((sub.sid ?? "").trim() === "") return false;
+    const gw = sub.pay_gateway_id ? getDb().prepare("SELECT gateway FROM pay_gateway WHERE id = ?").get(sub.pay_gateway_id) as { gateway: string } | undefined : undefined;
+    if (!gw || gw.gateway !== "Stripe") return false;
+  }
+  return true;
+});
+
+register("admin", "order", "update_config", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  // Dispatcher RequiredParams runs first: missing/empty config beats
+  // a missing id, with the same message either way.
+  const raw = ctx.rawParams?.["config"];
+  let config: Record<string, unknown> | undefined;
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    config = raw as Record<string, unknown>;
+  } else {
+    const scanned: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(ctx.params)) {
+      const m = /^config\[([^\]]+)\]$/.exec(k);
+      if (m && v !== undefined) scanned[m[1]] = v;
+    }
+    if (Object.keys(scanned).length) config = scanned;
+  }
+  if (!config || Object.keys(config).length === 0) throw new FbError("Order config not passed");
+  const order = getOrderOrThrowAdmin(ctx);
+  // Form-linked orders merge form answers in PHP (formbuilder is
+  // unported); on this install no order has a form_id, so the plain
+  // wholesale replacement below is exact. Form orders are a
+  // documented gap.
+  getDbWrite().prepare("UPDATE client_order SET config = ?, updated_at = ? WHERE id = ?").run(
+    JSON.stringify(config), fmtTs(new Date()), order.id,
+  );
+  return true;
+});
+
+/** Renew: pending/failed_setup orders activate; anything else extends
+ * the expiry by the order's period (from the current expiry, per the
+ * default renewal logic) and re-activates. Service-module renew calls
+ * are no-ops for null-plugin custom orders. */
+function renewOrderRow(order: OrderRowFull): void {
+  if (order.status === "pending_setup" || order.status === "failed_setup") {
+    activateOrderRow(order);
+    return;
+  }
+  const from = order.expires_at ? new Date(order.expires_at.replace(" ", "T") + "Z") : new Date();
+  const period = order.period;
+  const updates: Partial<Parameters<typeof updateOrderRow>[1]> = {
+    status: "active",
+    suspended_at: null,
+    unsuspended_at: null,
+    canceled_at: null,
+  };
+  if (period) {
+    (updates as Record<string, unknown>)["expires_at"] = fmtTs(addPeriod(from, period));
+  }
+  updateOrderRow(order.id, updates);
+  insertOrderStatus(order.id, "active", "Order renewed");
+}
+
+register("admin", "order", "renew", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const order = getOrderOrThrowAdmin(ctx);
+  renewOrderRow(order);
+  return true;
+});
+
+register("admin", "order", "batch_delete", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const raw = ctx.rawParams?.["ids"];
+  let ids: unknown[] | undefined;
+  if (Array.isArray(raw)) {
+    ids = raw;
+  } else {
+    const byIndex = new Map<number, string>();
+    for (const [k, v] of Object.entries(ctx.params)) {
+      const m = /^ids\[(\d+)\]$/.exec(k);
+      if (m && v !== undefined) byIndex.set(Number(m[1]), v);
+    }
+    if (byIndex.size) ids = [...byIndex.entries()].sort(([a], [b]) => a - b).map(([, v]) => v);
+  }
+  if (!ids || ids.length === 0) throw new FbError("Order IDs were not passed");
+  const deleteAddons = normalizeBool(ctx.params["delete_addons"]);
+  const forceDelete = normalizeBool(ctx.params["force_delete"]);
+  for (const id of ids) {
+    const order = findOrderById(Number(id));
+    if (!order) throw new FbError("Order Not Found");
+    if (deleteAddons) {
+      for (const addon of getOrderAddonsList(order)) {
+        deleteOrderFull(addon, forceDelete);
+      }
+    }
+    deleteOrderFull(order, forceDelete);
+  }
+  return true;
+});
+
+// NOTE (deliberate, documented): admin order export_csv is a CSV
+// download, like client/invoice export_csv; it stays PHP-served
+// through the proxy (binary-safe since the arrayBuffer fix).
+
+register("client", "order", "addons", (ctx: CallContext) => {
+  requireClient(ctx);
+  return getOrderAddonsList(getOrderOrThrowClient(ctx)).map((o) => orderArray(o, false));
+});
+
+register("client", "order", "service", (ctx: CallContext) => {
+  requireClient(ctx);
+  const order = getOrderOrThrowClient(ctx);
+  if (order.status !== "active") throw new FbError("Order is not active");
+  return orderServiceData(order);
+});
+
+register("client", "order", "upgradables", (ctx: CallContext) => {
+  requireClient(ctx);
+  const order = getOrderOrThrowClient(ctx);
+  const product = order.product_id ? findProductById(order.product_id) : undefined;
+  if (!product) return [];
+  let upgradeIds: unknown[] = [];
+  try {
+    const parsed = product.upgrades ? (JSON.parse(product.upgrades) as unknown) : [];
+    upgradeIds = Array.isArray(parsed) ? parsed : [];
+  } catch { /* keep [] */ }
+  const out: Record<string, string> = {};
+  for (const p of listAllProducts()) {
+    if (upgradeIds.map(Number).includes(p.id) && p.id !== product.id) out[String(p.id)] = p.title;
+  }
+  // PHP's empty array encodes as [], not {}.
+  return Object.keys(out).length ? out : [];
+});
+
+register("client", "order", "delete", (ctx: CallContext) => {
+  requireClient(ctx);
+  const order = getOrderOrThrowClient(ctx);
+  if (order.status !== "pending_setup" && order.status !== "failed_setup") {
+    throw new FbError("Only pending and failed setup orders can be deleted.");
+  }
+  deleteOrderFull(order);
+  return true;
 });

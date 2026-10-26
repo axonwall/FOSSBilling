@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Group not found",
+    "code": 9999
+  }
+}

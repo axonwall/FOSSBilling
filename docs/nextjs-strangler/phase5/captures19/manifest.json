@@ -1,0 +1,373 @@
+[
+  {
+    "name": "tmp_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_antispam_disable",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_required",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_custom_fields",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_is_email_validation_required",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_create_missing",
+    "ok": false,
+    "error": "Email required"
+  },
+  {
+    "name": "guest_create_mismatch",
+    "ok": false,
+    "error": "Passwords do not match."
+  },
+  {
+    "name": "guest_create_weak",
+    "ok": false,
+    "error": "Minimum password length is 8 characters."
+  },
+  {
+    "name": "guest_create_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_create_autologin_profile",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_create_duplicate",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_create_duplicate_profile",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_login_wrong_pw",
+    "ok": false,
+    "error": "Please check your login details."
+  },
+  {
+    "name": "guest_login_unknown",
+    "ok": false,
+    "error": "Please check your login details."
+  },
+  {
+    "name": "admin_create_missing",
+    "ok": false,
+    "error": "Email required"
+  },
+  {
+    "name": "admin_create_dup",
+    "ok": false,
+    "error": "This email address is already registered."
+  },
+  {
+    "name": "admin_create_no_pw_no_welcome",
+    "ok": false,
+    "error": "A password is required when the welcome email is disabled."
+  },
+  {
+    "name": "admin_create_welcome_nonactive",
+    "ok": false,
+    "error": "Welcome email can only be sent for active clients."
+  },
+  {
+    "name": "admin_create_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_update_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_update_dup_email",
+    "ok": false,
+    "error": "This email address is already registered."
+  },
+  {
+    "name": "admin_update_bad_country",
+    "ok": false,
+    "error": "Invalid country code: XX"
+  },
+  {
+    "name": "admin_update_bad_lang",
+    "ok": false,
+    "error": "Invalid locale code: xx_XX"
+  },
+  {
+    "name": "admin_update_bad_tz",
+    "ok": false,
+    "error": "Invalid timezone: Not/AZone"
+  },
+  {
+    "name": "admin_update_missing",
+    "ok": false,
+    "error": "Client not found"
+  },
+  {
+    "name": "admin_get_statuses",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_group_create",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_group_get",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_group_update",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_group_get_pairs",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_update_assign_group",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_group_delete_blocked",
+    "ok": false,
+    "error": "Group has clients assigned. Please reassign them first."
+  },
+  {
+    "name": "admin_update_unassign_group",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_group_delete_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_group_get_missing",
+    "ok": false,
+    "error": "Group not found"
+  },
+  {
+    "name": "admin_change_pw_missing",
+    "ok": false,
+    "error": "Password required"
+  },
+  {
+    "name": "admin_change_pw_mismatch",
+    "ok": false,
+    "error": "Passwords do not match."
+  },
+  {
+    "name": "admin_change_pw_weak",
+    "ok": false,
+    "error": "Minimum password length is 8 characters."
+  },
+  {
+    "name": "admin_change_pw_missing_client",
+    "ok": false,
+    "error": "Client not found"
+  },
+  {
+    "name": "admin_change_pw_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_client_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_change_pw_back",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_login_impersonate",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_impersonated_profile",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_login_impersonate_strip",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_after_strip",
+    "ok": false,
+    "error": "Authentication Failed"
+  },
+  {
+    "name": "admin_stripped_client_profile",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_staff_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_balance_add_funds_nocurrency",
+    "ok": false,
+    "error": "You must define the client's currency before adding funds."
+  },
+  {
+    "name": "admin_balance_add_funds_missing",
+    "ok": false,
+    "error": "Amount is required"
+  },
+  {
+    "name": "admin_balance_add_funds_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_balance_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_client_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_balance_get_list",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_balance_get_total",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_is_taxable",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "client_resend_email_verification",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_balance_delete_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_balance_delete_missing",
+    "ok": false,
+    "error": "Balance line not found"
+  },
+  {
+    "name": "admin_login_history",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_batch_expire_pw_reminders",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_delete_invalid",
+    "ok": false,
+    "error": "Invalid client ID"
+  },
+  {
+    "name": "admin_delete_missing",
+    "ok": false,
+    "error": "Client not found"
+  },
+  {
+    "name": "admin_delete_blocked_services",
+    "ok": false,
+    "error": "Client cannot be deleted while they have service records (custom). Delete their services or orders first, then delete the client."
+  },
+  {
+    "name": "admin_export_csv",
+    "ok": true,
+    "error": null,
+    "raw": true
+  },
+  {
+    "name": "guest_reset_unknown",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_reset_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_update_pw_mismatch",
+    "ok": false,
+    "error": "Passwords do not match."
+  },
+  {
+    "name": "guest_update_pw_bad_hash",
+    "ok": false,
+    "error": "The link has expired or you have already reset your password."
+  },
+  {
+    "name": "guest_update_pw_ok",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "tmp_client_login",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "guest_update_pw_replay",
+    "ok": false,
+    "error": "The link has expired or you have already reset your password."
+  },
+  {
+    "name": "admin_change_pw_restore_throwaway",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "admin_batch_delete",
+    "ok": true,
+    "error": null
+  }
+]

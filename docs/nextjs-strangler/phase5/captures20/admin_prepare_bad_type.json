@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Product type nope is not registered.",
+    "code": 413
+  }
+}

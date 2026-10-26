@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Invalid billing period 99Z",
+    "code": 9999
+  }
+}

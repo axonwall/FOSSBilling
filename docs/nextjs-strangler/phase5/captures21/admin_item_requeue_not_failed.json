@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Invoice item is not in a failed state",
+    "code": 9999
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Only pending and failed setup orders can be deleted.",
+    "code": 9999
+  }
+}

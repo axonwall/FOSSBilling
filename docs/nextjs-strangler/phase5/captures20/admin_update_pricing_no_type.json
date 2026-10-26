@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Pricing type is required",
+    "code": 9999
+  }
+}

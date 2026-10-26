@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Cannot remove product category with products",
+    "code": 9999
+  }
+}

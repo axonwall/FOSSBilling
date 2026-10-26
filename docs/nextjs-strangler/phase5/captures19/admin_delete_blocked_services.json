@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Client cannot be deleted while they have service records (custom). Delete their services or orders first, then delete the client.",
+    "code": 9999
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Invoice item ID was not passed",
+    "code": 9999
+  }
+}

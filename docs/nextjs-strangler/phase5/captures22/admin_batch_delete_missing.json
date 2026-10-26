@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Order IDs were not passed",
+    "code": 9999
+  }
+}

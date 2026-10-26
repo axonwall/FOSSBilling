@@ -1,0 +1,1111 @@
+{
+  "result": {
+    "pages": 2,
+    "page": 1,
+    "per_page": 100,
+    "total": 157,
+    "list": [
+      {
+        "id": 171,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 22:05:37",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 166,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 22:04:51",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 161,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 22:03:59",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 156,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:50:36",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 155,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:50:32",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 154,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:49:32",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 153,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:49:23",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 152,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:48:57",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 151,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:48:51",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 150,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:48:47",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 149,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:48:46",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 148,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:48:45",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 147,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:48:41",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 146,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:48:38",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 145,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:48:37",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 144,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:48:31",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 143,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:48:21",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 142,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:41:08",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 141,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:40:39",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 140,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:40:32",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 139,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:36:14",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 138,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:36:13",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 137,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:36:11",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 136,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:36:08",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 135,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:36:05",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 134,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:36:04",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 133,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:35:58",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 132,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:35:49",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 131,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:35:39",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 130,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:35:38",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 129,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:35:37",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 128,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:35:34",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 127,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:35:31",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 126,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:35:30",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 125,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:35:25",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 124,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:35:15",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 123,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:35:07",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 122,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:35:06",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 121,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:35:04",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 120,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:35:01",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 119,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:34:57",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 118,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:34:56",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 117,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:34:50",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 116,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:34:42",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 115,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:34:23",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 114,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:34:21",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 113,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:34:20",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 112,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:34:17",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 111,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:34:14",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 110,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:34:09",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 109,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:33:59",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 108,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:33:39",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 107,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:33:28",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 106,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:29:52",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 105,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:29:50",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 104,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:29:49",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 103,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:29:47",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 102,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:29:44",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 101,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:29:36",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 100,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:29:25",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 99,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:27:18",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 98,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:27:07",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 97,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:26:49",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 96,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:26:47",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 95,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:26:46",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 94,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:26:43",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 93,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:26:41",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 92,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-25 21:26:21",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 91,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 15:32:37",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 90,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 15:32:15",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 89,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 15:29:59",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 88,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 15:28:51",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 87,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 15:27:35",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 86,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 15:23:41",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 85,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 15:23:06",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 84,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 15:21:58",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 83,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 15:21:23",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 82,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 12:48:18",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 81,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 12:36:13",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 80,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 12:35:03",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 79,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 12:34:04",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 78,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 12:34:00",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 77,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 12:28:30",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 76,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 12:28:01",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 75,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 06:02:48",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 74,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 05:53:20",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 73,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 05:53:11",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 72,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 05:51:46",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 71,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 05:51:39",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 70,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 05:51:29",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 69,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 05:49:19",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 68,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 05:49:09",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 67,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 05:48:58",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 66,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 05:48:09",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 65,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 05:47:20",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 64,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 05:47:15",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 63,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 05:46:53",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 62,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 05:46:41",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 61,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 05:46:31",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      },
+      {
+        "id": 60,
+        "ip": "127.0.0.1",
+        "created_at": "2026-10-24 05:46:19",
+        "client": {
+          "id": 1,
+          "first_name": "Phase",
+          "last_name": "Zero",
+          "email": "phase0.client@example.com"
+        }
+      }
+    ]
+  },
+  "error": null
+}
