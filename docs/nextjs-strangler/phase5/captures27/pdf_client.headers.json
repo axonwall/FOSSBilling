@@ -1,0 +1,9 @@
+{
+  "Host": "127.0.0.1:8080",
+  "Connection": "close",
+  "X-Powered-By": "PHP/8.3.28",
+  "Cache-Control": "no-cache, private",
+  "Date": "Mon, 26 Oct 2026 15:40:36 GMT",
+  "Content-Type": "application/pdf",
+  "Content-Disposition": "inline; filename=FOSS09001.pdf"
+}

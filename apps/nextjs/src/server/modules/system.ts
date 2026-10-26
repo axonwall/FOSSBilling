@@ -184,6 +184,114 @@ register("guest", "system", "get_pending_messages", (ctx: CallContext) => {
   return messages;
 });
 
+// --- Phase 5 R1 decisions batch (D2): system remainder. ---
+//
+// PORTED: guest paginator (pure port of FOSSBilling\Paginator +
+// Guest::paginator; page_param defaults to 'page', per_page to 20,
+// total to 0; PHP (int) casts truncate floats and map non-numeric
+// strings to 0) and guest current_url (the request URI, which the
+// seam route supplies as ctx.requestUri, NOT the /api/fb/... path).
+//
+// DELETED (19): these handlers exist ONLY to throw the removal error.
+// A registered handler's throw becomes the error envelope, never a
+// proxy — proxying would defeat the deletion. No auth check runs
+// first: the endpoint no longer exists in any role, so unauthenticated
+// callers see the removal error rather than PHP's 201. The four
+// mutating update endpoints (update_core, finalize_update,
+// complete_update_finalization, manual_update) were never called live
+// against the reference install — they download/apply updates — so
+// their PHP behavior is documented from source in findings-r1i.md.
+//
+// DEFERRED (7, intentionally NOT registered — they stay PHP-proxied):
+// localization_settings + update_localization_settings (config.php
+// writes; home: R5 installer/config ownership),
+// error_reporting_enabled + toggle_error_reporting +
+// last_error_reporting_change (config.php + Sentry; home: R5),
+// is_allowed (needs the permission model TS does not have; home: R2),
+// instance_id (install identity; home: R5 installer).
+
+/** PHP (int) cast for API params: leading integer, else 0. */
+function phpInt(v: string | undefined, dflt: number): number {
+  if (v === undefined) return dflt;
+  const n = parseInt(v, 10);
+  return Number.isNaN(n) ? 0 : n;
+}
+
+function paginatorArray(total: number, page: number, perPage: number) {
+  const currentPage = page < 1 ? 1 : page;
+  const limit = perPage < 1 ? 0 : perPage;
+  const midrange = 7;
+  let numPages: number;
+  if (limit < 1 || limit > total) {
+    numPages = 1;
+  } else {
+    const rest = total % limit;
+    numPages = rest > 0 ? Math.floor(total / limit) + 1 : Math.floor(total / limit);
+  }
+  let startRange = currentPage - Math.floor(midrange / 2);
+  let endRange = currentPage + Math.floor(midrange / 2);
+  if (startRange <= 0) {
+    endRange += Math.abs(startRange) + 1;
+    startRange = 1;
+  }
+  if (endRange > numPages) {
+    endRange = numPages;
+    startRange = Math.max(1, endRange - midrange + 1);
+  }
+  const range: number[] = [];
+  for (let i = startRange; i <= endRange; i++) range.push(i);
+  return {
+    currentpage: currentPage,
+    numpages: numPages,
+    midrange,
+    range,
+    start: range[0],
+    end: range[range.length - 1],
+  };
+}
+
+register("guest", "system", "paginator", (ctx: CallContext) => {
+  const pageParam = ctx.params["page_param"] ?? "page";
+  return paginatorArray(
+    phpInt(ctx.params["total"], 0),
+    phpInt(ctx.params[pageParam], 1),
+    phpInt(ctx.params["per_page"], 20),
+  );
+});
+
+register("guest", "system", "current_url", (ctx: CallContext) => ctx.requestUri);
+
+const REMOVED_SYSTEM_ADMIN = [
+  "update_available",
+  "update_info",
+  "recheck_update",
+  "update_core",
+  "update_finalization_status",
+  "finalize_update",
+  "complete_update_finalization",
+  "manual_update",
+  "is_behind_on_patches",
+  "cache_settings",
+  "update_cache_settings",
+  "clear_cache",
+  "template_exists",
+  "env",
+  "get_interface_ips",
+  "set_interface_ip",
+  "messages",
+  "cas_messages",
+];
+
+for (const m of REMOVED_SYSTEM_ADMIN) {
+  register("admin", "system", m, () => {
+    throw new FbError(`Endpoint admin/system/${m} was removed in the Next.js port.`);
+  });
+}
+
+register("guest", "system", "template_exists", () => {
+  throw new FbError("Endpoint guest/system/template_exists was removed in the Next.js port.");
+});
+
 register("admin", "system", "get_params", (ctx: CallContext) => {
   requireAdmin(ctx);
   const out: Record<string, string | null> = {};

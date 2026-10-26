@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "TLS connect error: error:0A00010B:SSL routines::wrong version number for \"https://open.er-api.com/v6/latest/USD\".",
+    "code": 9999
+  }
+}

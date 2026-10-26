@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Failed to download the latest version information. Further details are available in the error log.",
+    "code": 9999
+  }
+}

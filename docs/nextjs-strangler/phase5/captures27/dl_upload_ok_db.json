@@ -1,0 +1,5 @@
+[
+  {
+    "config": "{\"files\":[{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"filename\":\"manual.txt\",\"stored_filename\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"label\":\"Manual\",\"description\":\"Docs\"},{\"id\":\"cccccccccccccccccccccccccccccccc\",\"filename\":\"ghost.txt\",\"stored_filename\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"label\":\"Ghost\",\"description\":null},{\"id\":\"e5fad41724e912994d7b2e4edc8a73ff\",\"filename\":\"notes.txt\",\"stored_filename\":\"75f44c2035c6608bf024bced26457c5bc5d84d22541ba5c919fbf6b2e5c07893\",\"label\":\"Notes\",\"description\":\"Release notes\"}]}"
+  }
+]

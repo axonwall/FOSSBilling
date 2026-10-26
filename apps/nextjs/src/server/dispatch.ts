@@ -29,12 +29,25 @@ export interface CallContext {
   session: SessionInfo | null;
   /** Whether any session cookie was presented (drives CSRF enforcement). */
   hasSessionCookie: boolean;
+  /** Uploaded files for multipart/form-data calls, keyed by field name
+   * (the $_FILES equivalent; only populated for multipart requests). */
+  files?: Record<string, { name: string; type: string; bytes: Buffer }>;
+  /** The PHP-equivalent request URI: /api/<role>/<module>/<method> plus
+   * the raw query string, as PHP's Request::getRequestUri() returns it
+   * for API calls (NOT the /api/fb/... seam path). */
+  requestUri: string;
   /** Set-Cookie header values the handler wants on the response (e.g. a
    * freshly created session cookie). The route appends them verbatim. */
   setCookies: string[];
 }
 
-export type Handler = (ctx: CallContext) => unknown | Promise<unknown>;
+/**
+ * A handler returns either a JSON-serializable value (wrapped in the
+ * envelope by the route) or a full Response for binary/text endpoints
+ * (CSV exports, invoice PDFs, file downloads), which the route returns
+ * verbatim with the handler's setCookies appended.
+ */
+export type Handler = (ctx: CallContext) => unknown | Response | Promise<unknown | Response>;
 
 const registry = new Map<string, Handler>();
 

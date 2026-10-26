@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "One-time payments are not enabled for the selected payment gateway",
+    "code": 815
+  }
+}

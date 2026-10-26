@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "You must configure your API key to use Currency Data API as an exchange rate data source.",
+    "code": 9999
+  }
+}

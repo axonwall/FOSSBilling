@@ -1,0 +1,493 @@
+id,client_id,nr,currency,credit,base_income,base_refund,refund,notes,status,buyer_first_name,buyer_last_name,buyer_company,buyer_company_vat,buyer_company_number,buyer_address,buyer_city,buyer_state,buyer_country,buyer_zip,buyer_phone,buyer_email,issued,taxname,taxrate,due_at,reminded_at,paid_at
+1,1,1,USD,,100,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-28 20:41:12",,"2026-10-23 20:41:23"
+2,1,2,USD,,,,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 02:09:17","2026-10-26 04:19:22",
+3,1,3,USD,,,,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 02:09:35",,
+4,1,4,USD,,,,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 02:09:48",,
+5,1,5,USD,,,,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 02:10:04",,
+6,1,6,USD,,,,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 02:10:27",,
+7,1,7,USD,,85,,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 03:50:39",,"2026-10-24 03:50:42"
+9,1,,USD,,,,,,unpaid,,,,,,,,,,,,,0,,,,,
+10,1,8,USD,,,,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 03:53:04",,
+12,1,9,USD,,85,,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 03:54:11",,"2026-10-24 03:54:14"
+14,1,10,USD,0,0,0,0,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,15125550100,phase0.client@example.com,1,,0,"2026-10-29 03:58:38",,"2026-10-24 03:58:39"
+16,1,11,USD,0,0,0,0,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,15125550100,phase0.client@example.com,1,,0,"2026-10-29 03:59:46",,"2026-10-24 03:59:46"
+18,1,12,USD,0,0,0,0,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,15125550100,phase0.client@example.com,1,,0,"2026-10-29 04:01:03",,"2026-10-24 04:01:04"
+20,1,13,USD,0,0,0,0,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,15125550100,phase0.client@example.com,1,,0,"2026-10-29 04:01:23",,"2026-10-24 04:01:24"
+22,1,14,USD,,,,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:03:18",,
+23,1,15,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,15125550100,phase0.client@example.com,1,,0,"2026-10-29 04:03:21",,
+24,1,16,USD,0,0,0,0,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:04:20",,"2026-10-24 04:04:21"
+26,1,17,USD,0,0,0,0,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:04:38",,"2026-10-24 04:04:39"
+28,1,18,USD,0,85,0,0,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:07:46",,"2026-10-24 04:07:47"
+30,1,19,USD,0,85,0,0,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:08:01",,"2026-10-24 04:08:02"
+32,1,20,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:08:27",,
+33,1,21,USD,0,85,0,0,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:09:44",,"2026-10-24 04:09:45"
+35,1,22,USD,0,85,0,0,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:09:58",,"2026-10-24 04:09:59"
+37,1,23,USD,0,85,0,0,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:10:49",,"2026-10-24 04:10:50"
+39,1,24,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:14:01",,
+40,1,25,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:14:05",,
+41,1,26,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:14:08",,
+42,1,27,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:14:10",,
+43,1,28,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:14:13",,
+44,1,29,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:14:16",,
+45,1,30,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:14:19",,
+46,1,31,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:14:22",,
+47,1,32,USD,0,25,0,0,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:14:24",,"2026-10-24 04:14:24"
+48,1,33,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:14:27",,
+49,1,34,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:16:35",,
+50,1,35,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:16:39",,
+51,1,36,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:16:42",,
+52,1,37,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:16:44",,
+53,1,38,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:16:45",,
+54,1,39,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:16:47",,
+55,1,40,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:16:50",,
+56,1,41,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:16:52",,
+57,1,42,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:16:53",,
+58,1,43,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:16:55",,
+59,1,44,USD,0,85,0,0,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 04:24:07",,"2026-10-24 04:24:08"
+61,1,45,USD,0,85,0,0,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:23:03",,"2026-10-24 05:23:04"
+63,1,46,USD,,30,30,30,"2026-10-24 05:31:08: Refund invoice #64 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:31:05",,"2026-10-24 05:31:07"
+64,1,1,USD,,,,,"2026-10-24 05:31:08: Refund for #63 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:31:08"
+66,1,47,USD,,30,,,"2026-10-24 05:31:13: Debit invoice #67 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:31:10",,"2026-10-24 05:31:12"
+67,1,1,USD,,15,,,"2026-10-24 05:31:13: Debit for #66 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:31:13",,
+68,1,48,USD,,,,,"2026-10-24 05:31:17: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:31:15",,
+69,1,49,USD,,,,,"2026-10-24 05:31:19: Reissued as invoice #70.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:31:17",,
+70,1,50,USD,,,,,"2026-10-24 05:31:19: Replacement for invoice #69.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:31:17",,
+71,1,51,USD,,,,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-11-23 20:41:11",,
+72,1,52,USD,0,30,0,30,,refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:37:25",,"2026-10-24 05:37:25"
+73,1,3,USD,0,0,0,0,,refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:37:25"
+74,1,53,USD,0,30,0,0,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:37:26",,"2026-10-24 05:37:26"
+75,1,2,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,
+76,1,54,USD,0,0,0,0,,canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:37:27",,
+77,1,55,USD,0,0,0,0,,canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:37:28",,
+78,1,56,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:37:28",,
+79,1,57,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:37:29",,
+80,1,58,USD,0,30,0,30,,refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:37:38",,"2026-10-24 05:37:39"
+81,1,4,USD,0,0,0,0,,refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:37:39"
+82,1,59,USD,0,30,0,0,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:37:40",,"2026-10-24 05:37:40"
+83,1,3,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,
+84,1,60,USD,0,0,0,0,,canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:37:41",,
+85,1,61,USD,0,0,0,0,,canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:37:41",,
+86,1,62,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:37:42",,
+87,1,63,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:37:42",,
+88,1,64,USD,0,30,0,30,"2026-10-24 05:39:05: Refund invoice #89 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:39:04",,"2026-10-24 05:39:04"
+89,1,5,USD,0,0,0,0,"2026-10-24 05:39:04: Refund for #88 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:39:04"
+90,1,65,USD,0,30,0,0,"2026-10-24 05:39:06: Debit invoice #91 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:39:05",,"2026-10-24 05:39:05"
+91,1,4,USD,0,0,0,0,"2026-10-24 05:39:06: Debit for #90 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,
+92,1,66,USD,0,0,0,0,"2026-10-24 05:39:06: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:39:06",,
+93,1,67,USD,0,0,0,0,"2026-10-24 05:39:08: Reissued as invoice #94.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:39:06",,
+94,1,68,USD,0,0,0,0,"2026-10-24 05:39:07: Replacement for invoice #93.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:39:07",,
+95,1,69,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:39:08",,
+96,1,70,USD,0,30,0,30,"2026-10-24 05:39:17: Refund invoice #97 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:39:16",,"2026-10-24 05:39:16"
+97,1,6,USD,0,0,0,0,"2026-10-24 05:39:17: Refund for #96 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:39:17"
+98,1,71,USD,0,30,30,30,"2026-10-24 05:40:43: Refund invoice #99 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:40:42",,"2026-10-24 05:40:42"
+99,1,7,USD,0,0,0,0,"2026-10-24 05:40:43: Refund for #98 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:40:43"
+100,1,72,USD,0,30,0,0,"2026-10-24 05:40:44: Debit invoice #101 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:40:43",,"2026-10-24 05:40:44"
+101,1,5,USD,0,0,0,0,"2026-10-24 05:40:44: Debit for #100 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,
+102,1,73,USD,0,0,0,0,"2026-10-24 05:40:45: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:40:44",,
+103,1,74,USD,0,0,0,0,"2026-10-24 05:40:46: Reissued as invoice #104.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:40:45",,
+104,1,75,USD,0,0,0,0,"2026-10-24 05:40:46: Replacement for invoice #103.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:40:46",,
+105,1,76,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:40:46",,
+106,1,77,USD,0,30,30,30,"2026-10-24 05:40:56: Refund invoice #107 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:40:55",,"2026-10-24 05:40:56"
+107,1,8,USD,0,0,0,0,"2026-10-24 05:40:56: Refund for #106 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:40:56"
+108,1,78,USD,0,30,0,0,"2026-10-24 05:40:57: Debit invoice #109 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:40:56",,"2026-10-24 05:40:57"
+109,1,6,USD,0,0,0,0,"2026-10-24 05:40:57: Debit for #108 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,
+110,1,79,USD,0,30,30,30,"2026-10-24 05:42:08: Refund invoice #111 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:42:07",,"2026-10-24 05:42:08"
+111,1,9,USD,0,0,0,0,"2026-10-24 05:42:08: Refund for #110 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:42:08"
+112,1,80,USD,0,30,0,0,"2026-10-24 05:42:09: Debit invoice #113 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:42:08",,"2026-10-24 05:42:09"
+113,1,7,USD,0,15,0,0,"2026-10-24 05:42:09: Debit for #112 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,
+114,1,81,USD,0,0,0,0,"2026-10-24 05:42:10: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:42:09",,
+115,1,82,USD,0,0,0,0,"2026-10-24 05:42:11: Reissued as invoice #116.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:42:10",,
+116,1,83,USD,0,0,0,0,"2026-10-24 05:42:11: Replacement for invoice #115.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:42:11",,
+117,1,84,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:42:11",,
+118,1,85,USD,0,85,0,0,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:42:13",,"2026-10-24 05:42:14"
+120,1,86,USD,0,85,0,0,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:42:24",,"2026-10-24 05:42:24"
+122,1,87,USD,0,30,30,30,"2026-10-24 05:42:36: Refund invoice #123 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:42:35",,"2026-10-24 05:42:36"
+123,1,10,USD,0,0,0,0,"2026-10-24 05:42:36: Refund for #122 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:42:36"
+124,1,88,USD,0,30,0,0,"2026-10-24 05:42:37: Debit invoice #125 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:42:36",,"2026-10-24 05:42:37"
+125,1,8,USD,0,15,0,0,"2026-10-24 05:42:37: Debit for #124 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,
+126,1,89,USD,0,0,0,0,"2026-10-24 05:42:38: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:42:38",,
+127,1,90,USD,0,0,0,0,"2026-10-24 05:42:40: Reissued as invoice #128.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:42:38",,
+128,1,91,USD,0,0,0,0,"2026-10-24 05:42:39: Replacement for invoice #127.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:42:39",,
+129,1,92,USD,0,0,0,0,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:42:40",,
+130,1,93,USD,0,0,0,0,"2026-10-24 05:42:51: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:42:50",,
+131,1,94,USD,,30,30,30,"2026-10-24 05:44:16: Refund invoice #132 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:44:15",,"2026-10-24 05:44:16"
+132,1,11,USD,0,0,0,0,"2026-10-24 05:44:16: Refund for #131 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:44:16"
+133,1,95,USD,,30,0,,"2026-10-24 05:44:17: Debit invoice #134 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:44:16",,"2026-10-24 05:44:16"
+134,1,9,USD,0,15,0,0,"2026-10-24 05:44:17: Debit for #133 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,
+135,1,96,USD,,0,0,,"2026-10-24 05:44:17: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:44:17",,
+136,1,97,USD,,0,0,,"2026-10-24 05:44:18: Reissued as invoice #137.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:44:17",,
+137,1,98,USD,,0,0,,"2026-10-24 05:44:18: Replacement for invoice #136.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:44:18",,
+138,1,99,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:44:18",,
+139,1,100,USD,,30,30,30,"2026-10-24 05:44:32: Refund invoice #140 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:44:31",,"2026-10-24 05:44:32"
+140,1,12,USD,0,0,0,0,"2026-10-24 05:44:32: Refund for #139 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:44:32"
+141,1,101,USD,,30,0,,"2026-10-24 05:44:34: Debit invoice #142 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:44:32",,"2026-10-24 05:44:33"
+142,1,10,USD,0,15,0,0,"2026-10-24 05:44:34: Debit for #141 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,
+143,1,102,USD,,0,0,,"2026-10-24 05:44:34: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:44:34",,
+144,1,103,USD,,0,0,,"2026-10-24 05:44:36: Reissued as invoice #145.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:44:35",,
+145,1,104,USD,,0,0,,"2026-10-24 05:44:36: Replacement for invoice #144.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:44:35",,
+146,1,105,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:44:36",,
+147,1,106,USD,,30,30,30,"2026-10-24 05:44:56: Refund invoice #148 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:44:55",,"2026-10-24 05:44:56"
+148,1,13,USD,0,0,0,0,"2026-10-24 05:44:56: Refund for #147 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:44:56"
+149,1,107,USD,,30,0,,"2026-10-24 05:44:57: Debit invoice #150 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:44:56",,"2026-10-24 05:44:56"
+150,1,11,USD,0,15,0,0,"2026-10-24 05:44:57: Debit for #149 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,
+151,1,108,USD,,30,30,30,"2026-10-24 05:45:52: Refund invoice #152 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:45:51",,"2026-10-24 05:45:51"
+152,1,14,USD,,0,0,,"2026-10-24 05:45:51: Refund for #151 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:45:51"
+153,1,109,USD,,30,0,,"2026-10-24 05:45:53: Debit invoice #154 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:45:52",,"2026-10-24 05:45:52"
+154,1,12,USD,,15,0,,"2026-10-24 05:45:53: Debit for #153 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,
+155,1,110,USD,,0,0,,"2026-10-24 05:45:53: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:45:53",,
+156,1,111,USD,,0,0,,"2026-10-24 05:45:55: Reissued as invoice #157.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:45:54",,
+157,1,112,USD,,0,0,,"2026-10-24 05:45:55: Replacement for invoice #156.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:45:54",,
+158,1,113,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:45:55",,
+159,1,114,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:45:57",,"2026-10-24 05:45:58"
+161,1,115,USD,,30,30,30,"2026-10-24 05:46:06: Refund invoice #162 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:46:05",,"2026-10-24 05:46:05"
+162,1,15,USD,,0,0,,"2026-10-24 05:46:05: Refund for #161 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:46:05"
+163,1,116,USD,,30,0,,"2026-10-24 05:46:06: Debit invoice #164 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:46:06",,"2026-10-24 05:46:06"
+164,1,13,USD,,15,0,,"2026-10-24 05:46:06: Debit for #163 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,
+165,1,117,USD,,0,0,,"2026-10-24 05:46:07: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:46:06",,
+166,1,118,USD,,0,0,,"2026-10-24 05:46:08: Reissued as invoice #167.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:46:07",,
+167,1,119,USD,,0,0,,"2026-10-24 05:46:08: Replacement for invoice #166.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:46:07",,
+168,1,120,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:46:08",,
+169,1,121,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:46:10",,"2026-10-24 05:46:10"
+171,1,122,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:46:16",,"2026-10-24 05:46:17"
+173,1,123,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:46:29",,"2026-10-24 05:46:30"
+175,1,124,USD,,30,30,30,"2026-10-24 05:46:33: Refund invoice #176 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:46:32",,"2026-10-24 05:46:33"
+176,1,16,USD,,0,0,,"2026-10-24 05:46:33: Refund for #175 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:46:33"
+177,1,125,USD,,30,0,,"2026-10-24 05:46:34: Debit invoice #178 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:46:33",,"2026-10-24 05:46:34"
+178,1,14,USD,,15,0,,"2026-10-24 05:46:34: Debit for #177 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,
+179,1,126,USD,,0,0,,"2026-10-24 05:46:34: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:46:34",,
+180,1,127,USD,,0,0,,"2026-10-24 05:46:35: Reissued as invoice #181.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:46:34",,
+181,1,128,USD,,0,0,,"2026-10-24 05:46:35: Replacement for invoice #180.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:46:35",,
+182,1,129,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:46:35",,
+183,1,130,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:46:40",,"2026-10-24 05:46:40"
+185,1,131,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:46:51",,"2026-10-24 05:46:51"
+187,1,132,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:47:12",,"2026-10-24 05:47:13"
+189,1,133,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:47:18",,"2026-10-24 05:47:19"
+191,1,134,USD,,85,,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:48:03",,"2026-10-24 05:48:05"
+193,1,135,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:48:56",,"2026-10-24 05:48:56"
+195,1,136,USD,,30,30,30,"2026-10-24 05:49:00: Refund invoice #196 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:48:59",,"2026-10-24 05:49:00"
+196,1,17,USD,,0,0,,"2026-10-24 05:49:00: Refund for #195 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:49:00"
+197,1,137,USD,,30,0,,"2026-10-24 05:49:01: Debit invoice #198 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:49:00",,"2026-10-24 05:49:01"
+198,1,15,USD,,15,0,,"2026-10-24 05:49:01: Debit for #197 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,
+199,1,138,USD,,0,0,,"2026-10-24 05:49:01: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:49:01",,
+200,1,139,USD,,0,0,,"2026-10-24 05:49:02: Reissued as invoice #201.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:49:01",,
+201,1,140,USD,,0,0,,"2026-10-24 05:49:02: Replacement for invoice #200.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:49:02",,
+202,1,141,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:49:03",,
+203,1,142,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:49:17",,"2026-10-24 05:49:17"
+205,1,143,USD,,30,30,30,"2026-10-24 05:49:22: Refund invoice #206 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:49:21",,"2026-10-24 05:49:21"
+206,1,18,USD,,0,0,,"2026-10-24 05:49:22: Refund for #205 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:49:22"
+207,1,144,USD,,30,0,,"2026-10-24 05:49:23: Debit invoice #208 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:49:22",,"2026-10-24 05:49:23"
+208,1,16,USD,,15,0,,"2026-10-24 05:49:23: Debit for #207 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,
+209,1,145,USD,,0,0,,"2026-10-24 05:49:24: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:49:23",,
+210,1,146,USD,,0,0,,"2026-10-24 05:49:25: Reissued as invoice #211.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:49:24",,
+211,1,147,USD,,0,0,,"2026-10-24 05:49:25: Replacement for invoice #210.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:49:25",,
+212,1,148,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:49:25",,
+213,1,149,USD,,11,,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:50:03",,"2026-10-24 05:50:06"
+214,1,150,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:51:27",,"2026-10-24 05:51:27"
+216,1,151,USD,,30,30,30,"2026-10-24 05:51:32: Refund invoice #217 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:51:31",,"2026-10-24 05:51:31"
+217,1,19,USD,,0,0,,"2026-10-24 05:51:32: Refund for #216 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:51:32"
+218,1,152,USD,,30,0,,"2026-10-24 05:51:33: Debit invoice #219 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:51:32",,"2026-10-24 05:51:33"
+219,1,17,USD,,15,0,,"2026-10-24 05:51:33: Debit for #218 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,
+220,1,153,USD,,0,0,,"2026-10-24 05:51:33: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:51:33",,
+221,1,154,USD,,0,0,,"2026-10-24 05:51:34: Reissued as invoice #222.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:51:34",,
+222,1,155,USD,,0,0,,"2026-10-24 05:51:34: Replacement for invoice #221.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:51:34",,
+223,1,156,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:51:34",,
+224,1,157,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:51:44",,"2026-10-24 05:51:45"
+226,1,158,USD,,30,30,30,"2026-10-24 05:51:49: Refund invoice #227 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:51:48",,"2026-10-24 05:51:49"
+227,1,20,USD,,0,0,,"2026-10-24 05:51:49: Refund for #226 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:51:49"
+228,1,159,USD,,30,0,,"2026-10-24 05:51:50: Debit invoice #229 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:51:49",,"2026-10-24 05:51:49"
+229,1,18,USD,,15,0,,"2026-10-24 05:51:50: Debit for #228 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,
+230,1,160,USD,,0,0,,"2026-10-24 05:51:51: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:51:50",,
+231,1,161,USD,,0,0,,"2026-10-24 05:51:52: Reissued as invoice #232.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:51:51",,
+232,1,162,USD,,0,0,,"2026-10-24 05:51:52: Replacement for invoice #231.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:51:51",,
+233,1,163,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:51:52",,
+234,1,164,USD,,30,0,,"2026-10-24 05:52:01: Debit invoice #235 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:52:00",,"2026-10-24 05:52:01"
+235,1,19,USD,,15,0,,"2026-10-24 05:52:01: Debit for #234 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,
+236,1,165,USD,,30,30,30,"2026-10-24 05:53:05: Refund invoice #237 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:53:04",,"2026-10-24 05:53:05"
+237,1,21,USD,,0,0,,"2026-10-24 05:53:05: Refund for #236 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 05:53:05"
+238,1,166,USD,,30,0,,"2026-10-24 05:53:06: Debit invoice #239 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:53:05",,"2026-10-24 05:53:06"
+239,1,20,USD,,15,0,,"2026-10-24 05:53:06: Debit for #238 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:53:06",,
+240,1,167,USD,,0,0,,"2026-10-24 05:53:06: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:53:06",,
+241,1,168,USD,,0,0,,"2026-10-24 05:53:07: Reissued as invoice #242.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:53:07",,
+242,1,169,USD,,0,0,,"2026-10-24 05:53:07: Replacement for invoice #241.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:53:07",,
+243,1,170,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:53:08",,
+244,1,171,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:53:09",,"2026-10-24 05:53:10"
+246,1,172,USD,,,,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:58:42",,
+247,1,173,USD,,40,,,"2026-10-24 05:59:10: Charged clients balance with 40 USD for IPN line       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:59:06",,"2026-10-24 05:59:10"
+248,1,174,USD,,40,,,"2026-10-24 05:59:14: Charged clients balance with 40 USD for IPN line       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:59:11",,"2026-10-24 05:59:14"
+249,1,175,USD,,,,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 05:59:47",,
+250,1,176,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 06:02:38",,"2026-10-24 06:02:39"
+251,1,177,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 06:02:39",,"2026-10-24 06:02:40"
+252,1,178,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 06:02:41",,"2026-10-24 06:02:41"
+253,1,179,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 06:02:47",,"2026-10-24 06:02:47"
+255,1,,USD,,0,0,,,unpaid,,,,,,,,,,,,,0,,0,"2026-10-29 06:12:11",,
+272,1,196,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 12:48:04",,"2026-10-24 12:48:05"
+273,1,197,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 12:48:05",,"2026-10-24 12:48:06"
+274,1,198,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 12:48:07",,"2026-10-24 12:48:07"
+275,1,199,USD,,30,30,30,"2026-10-24 12:48:10: Refund invoice #276 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 12:48:09",,"2026-10-24 12:48:09"
+276,1,22,USD,,0,0,,"2026-10-24 12:48:10: Refund for #275 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 12:48:10"
+277,1,200,USD,,30,0,,"2026-10-24 12:48:11: Debit invoice #278 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 12:48:10",,"2026-10-24 12:48:11"
+278,1,21,USD,,15,0,,"2026-10-24 12:48:11: Debit for #277 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 12:48:11",,
+279,1,201,USD,,0,0,,"2026-10-24 12:48:12: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 12:48:12",,
+280,1,202,USD,,0,0,,"2026-10-24 12:48:14: Reissued as invoice #281.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 12:48:13",,
+281,1,203,USD,,0,0,,"2026-10-24 12:48:14: Replacement for invoice #280.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 12:48:13",,
+282,1,204,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 12:48:14",,
+283,1,205,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 12:48:16",,"2026-10-24 12:48:17"
+289,1,210,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 15:32:27",,"2026-10-24 15:32:27"
+290,1,211,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 15:32:28",,"2026-10-24 15:32:28"
+291,1,212,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 15:32:29",,"2026-10-24 15:32:29"
+292,1,213,USD,,30,30,30,"2026-10-24 15:32:31: Refund invoice #293 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 15:32:30",,"2026-10-24 15:32:31"
+293,1,23,USD,,0,0,,"2026-10-24 15:32:31: Refund for #292 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-24 15:32:31"
+294,1,214,USD,,30,0,,"2026-10-24 15:32:32: Debit invoice #295 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 15:32:31",,"2026-10-24 15:32:32"
+295,1,22,USD,,15,0,,"2026-10-24 15:32:32: Debit for #294 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 15:32:32",,
+296,1,215,USD,,0,0,,"2026-10-24 15:32:33: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 15:32:32",,
+297,1,216,USD,,0,0,,"2026-10-24 15:32:34: Reissued as invoice #298.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 15:32:33",,
+298,1,217,USD,,0,0,,"2026-10-24 15:32:33: Replacement for invoice #297.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 15:32:33",,
+299,1,218,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 15:32:34",,
+300,1,219,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-29 15:32:35",,"2026-10-24 15:32:36"
+306,1,224,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:40:55",,"2026-10-25 21:40:56"
+307,1,225,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:40:56",,"2026-10-25 21:40:57"
+308,1,226,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:40:57",,"2026-10-25 21:40:58"
+309,1,227,USD,,30,30,30,"2026-10-25 21:41:01: Refund invoice #310 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:41:00",,"2026-10-25 21:41:00"
+310,1,24,USD,,0,0,,"2026-10-25 21:41:01: Refund for #309 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-25 21:41:01"
+311,1,228,USD,,30,0,,"2026-10-25 21:41:02: Debit invoice #312 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:41:01",,"2026-10-25 21:41:02"
+312,1,23,USD,,15,0,,"2026-10-25 21:41:02: Debit for #311 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:41:02",,
+313,1,229,USD,,0,0,,"2026-10-25 21:41:03: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:41:02",,
+314,1,230,USD,,0,0,,"2026-10-25 21:41:04: Reissued as invoice #315.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:41:03",,
+315,1,231,USD,,0,0,,"2026-10-25 21:41:04: Replacement for invoice #314.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:41:03",,
+316,1,232,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:41:04",,
+317,1,233,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:41:06",,"2026-10-25 21:41:07"
+323,1,238,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:49:09",,"2026-10-25 21:49:10"
+324,1,239,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:49:10",,"2026-10-25 21:49:11"
+325,1,240,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:49:11",,"2026-10-25 21:49:12"
+326,1,241,USD,,30,30,30,"2026-10-25 21:49:15: Refund invoice #327 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:49:14",,"2026-10-25 21:49:15"
+327,1,25,USD,,0,0,,"2026-10-25 21:49:15: Refund for #326 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-25 21:49:15"
+328,1,242,USD,,30,0,,"2026-10-25 21:49:17: Debit invoice #329 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:49:16",,"2026-10-25 21:49:16"
+329,1,24,USD,,15,0,,"2026-10-25 21:49:17: Debit for #328 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:49:17",,
+330,1,243,USD,,0,0,,"2026-10-25 21:49:18: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:49:17",,
+331,1,244,USD,,0,0,,"2026-10-25 21:49:19: Reissued as invoice #332.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:49:18",,
+332,1,245,USD,,0,0,,"2026-10-25 21:49:19: Replacement for invoice #331.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:49:19",,
+333,1,246,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:49:19",,
+334,1,247,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:49:21",,"2026-10-25 21:49:22"
+336,1,248,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:49:30",,"2026-10-25 21:49:31"
+338,1,249,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 21:50:34",,"2026-10-25 21:50:34"
+340,1,,USD,,,,,,unpaid,,,,,,,,,,,,,0,,0,"2026-10-30 22:39:50",,
+341,1,,USD,,,,,,unpaid,,,,,,,,,,,,,0,,0,"2026-10-30 22:39:50",,
+342,1,,USD,,,,,,unpaid,,,,,,,,,,,,,0,,0,"2026-10-30 22:39:56",,
+386,1,275,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:56:47",,"2026-10-25 23:56:47"
+387,1,276,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:56:48",,
+388,1,277,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:56:49",,"2026-10-25 23:56:50"
+389,1,278,USD,,30,30,30,"2026-10-25 23:56:52: Refund invoice #390 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:56:51",,"2026-10-25 23:56:52"
+390,1,26,USD,,0,0,,"2026-10-25 23:56:52: Refund for #389 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-25 23:56:52"
+391,1,279,USD,,30,0,,"2026-10-25 23:56:53: Debit invoice #392 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:56:52",,"2026-10-25 23:56:53"
+392,1,25,USD,,15,0,,"2026-10-25 23:56:53: Debit for #391 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:56:53",,
+393,1,280,USD,,0,0,,"2026-10-25 23:56:54: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:56:53",,
+394,1,281,USD,,0,0,,"2026-10-25 23:56:55: Reissued as invoice #395.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:56:54",,
+395,1,282,USD,,0,0,,"2026-10-25 23:56:54: Replacement for invoice #394.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:56:54",,
+396,1,283,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:56:55",,
+397,1,284,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:56:58",,"2026-10-25 23:56:59"
+398,1,285,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:56:59",,
+399,1,286,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:57:00",,"2026-10-25 23:57:01"
+400,1,287,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:57:04",,"2026-10-25 23:57:05"
+401,1,288,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:57:05",,
+402,1,289,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:57:06",,"2026-10-25 23:57:06"
+404,1,291,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:58:29",,"2026-10-25 23:58:30"
+405,1,292,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:58:30",,"2026-10-25 23:58:31"
+406,1,293,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:58:31",,"2026-10-25 23:58:32"
+407,1,294,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:58:33",,"2026-10-25 23:58:34"
+408,1,295,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:58:34",,"2026-10-25 23:58:35"
+409,1,296,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:58:35",,"2026-10-25 23:58:36"
+410,1,297,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:58:41",,"2026-10-25 23:58:42"
+416,1,299,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-30 23:59:55",,"2026-10-25 23:59:56"
+430,1,303,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 03:12:09",,"2026-10-26 03:12:10"
+432,1,304,USD,,30,30,30,"2026-10-26 03:12:13: Refund invoice #433 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 03:12:12",,"2026-10-26 03:12:13"
+433,1,27,USD,,0,0,,"2026-10-26 03:12:13: Refund for #432 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-26 03:12:13"
+434,1,305,USD,,30,0,,"2026-10-26 03:12:15: Debit invoice #435 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 03:12:14",,"2026-10-26 03:12:14"
+435,1,26,USD,,15,0,,"2026-10-26 03:12:15: Debit for #434 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 03:12:15",,
+436,1,306,USD,,0,0,,"2026-10-26 03:12:15: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 03:12:15",,
+437,1,307,USD,,0,0,,"2026-10-26 03:12:16: Reissued as invoice #438.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 03:12:15",,
+438,1,308,USD,,0,0,,"2026-10-26 03:12:16: Replacement for invoice #437.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 03:12:16",,
+439,1,309,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 03:12:16",,
+440,1,310,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 03:12:18",,"2026-10-26 03:12:19"
+441,1,311,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 03:12:19",,"2026-10-26 03:12:20"
+442,1,312,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 03:12:21",,"2026-10-26 03:12:21"
+463,1,321,USD,,85,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 04:19:04",,"2026-10-26 04:19:05"
+465,1,322,USD,,30,30,30,"2026-10-26 04:19:10: Refund invoice #466 generated.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 04:19:08",,"2026-10-26 04:19:09"
+466,1,28,USD,,0,0,,"2026-10-26 04:19:09: Refund for #465 invoice.       
+",refunded,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,,,"2026-10-26 04:19:09"
+467,1,323,USD,,30,0,,"2026-10-26 04:19:11: Debit invoice #468 generated.       
+",paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 04:19:10",,"2026-10-26 04:19:11"
+468,1,27,USD,,15,0,,"2026-10-26 04:19:11: Debit for #467 invoice.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 04:19:11",,
+469,1,324,USD,,0,0,,"2026-10-26 04:19:12: Invoice canceled (voided) without replacement.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 04:19:11",,
+470,1,325,USD,,0,0,,"2026-10-26 04:19:13: Reissued as invoice #471.       
+",canceled,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 04:19:12",,
+471,1,326,USD,,0,0,,"2026-10-26 04:19:13: Replacement for invoice #470.       
+",unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 04:19:13",,
+472,1,327,USD,,0,0,,,unpaid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 04:19:13",,
+473,1,328,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 04:19:15",,"2026-10-26 04:19:16"
+474,1,329,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 04:19:16",,"2026-10-26 04:19:16"
+475,1,330,USD,,40,0,,,paid,Phase,Zero,,,,"1 Phase Way",Austin,Texas,US,78701,"1 5125550100",phase0.client@example.com,1,,0,"2026-10-31 04:19:17",,"2026-10-26 04:19:17"

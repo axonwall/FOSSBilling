@@ -1,0 +1,4 @@
+{
+  "result": "/api/guest/system/current_url?foo=bar&baz=2",
+  "error": null
+}

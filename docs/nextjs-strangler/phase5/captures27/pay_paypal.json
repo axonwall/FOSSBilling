@@ -1,0 +1,10 @@
+{
+  "result": {
+    "iframe": false,
+    "type": "html",
+    "service_url": "",
+    "subscription": false,
+    "result": "<form name=\"payment_form\" action=\"https://www.paypal.com/cgi-bin/webscr\" method=\"post\">\n<input type=\"hidden\" name=\"item_name\" value=\"Payment for invoice FOSS09001 [Capture Widget]\" />\n<input type=\"hidden\" name=\"item_number\" value=\"9001\" />\n<input type=\"hidden\" name=\"no_shipping\" value=\"1\" />\n<input type=\"hidden\" name=\"no_note\" value=\"1\" />\n<input type=\"hidden\" name=\"currency_code\" value=\"USD\" />\n<input type=\"hidden\" name=\"rm\" value=\"1\" />\n<input type=\"hidden\" name=\"return\" value=\"http://127.0.0.1:8080/invoice/payment-return?status=thankyou&amp;hash=ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12\" />\n<input type=\"hidden\" name=\"cancel_return\" value=\"http://127.0.0.1:8080/invoice/payment-return?status=cancel&amp;hash=ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12\" />\n<input type=\"hidden\" name=\"notify_url\" value=\"http://127.0.0.1:8080/ipn.php?gateway_id=2&amp;invoice_id=495&amp;sig=b8346bb78a8c0cb4540ead920853b8ba8992f0bb24d493cb0527f4678318601f\" />\n<input type=\"hidden\" name=\"business\" value=\"paypal@example.com\" />\n<input type=\"hidden\" name=\"cmd\" value=\"_xclick\" />\n<input type=\"hidden\" name=\"amount\" value=\"25.00\" />\n<input type=\"hidden\" name=\"tax\" value=\"0.00\" />\n<input type=\"hidden\" name=\"bn\" value=\"FOSSBilling_SP\" />\n<input type=\"hidden\" name=\"charset\" value=\"utf-8\" />\n<input class=\"btn btn-primary\" type=\"submit\" value=\"Pay with PayPal\" id=\"payment_button\"/>\n</form>\n\n"
+  },
+  "error": null
+}

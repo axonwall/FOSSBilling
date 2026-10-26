@@ -1,0 +1,4 @@
+id,email,status,first_name,last_name,phone_cc,phone,company,company_vat,company_number,address_1,address_2,city,state,postcode,country,currency
+1,phase0.client@example.com,active,Phase,Zero,1,5125550100,,,,"1 Phase Way",,Austin,Texas,78701,US,USD
+2,phase1.diag@example.com,active,Diag,One,,,,,,,,,,,,
+3,phase1.e2e@example.com,active,Phase,One,,,,,,,,,,,,

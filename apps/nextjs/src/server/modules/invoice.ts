@@ -23,6 +23,7 @@ import {
   getSetting,
   findInvoiceByHash,
   findInvoiceById,
+  findPayGatewayRow,
   findInvoiceItemRow,
   findTaxById,
   findTransactionByTxnId,
@@ -98,6 +99,12 @@ import {
   type InvoiceItemInput,
 } from "../money";
 import { queueInvoiceEmail } from "../emailer";
+import { invoicePdfByHash } from "../pdf";
+import {
+  getPaymentHtml,
+  type PaymentInvoiceView,
+} from "../payment-adapters";
+import { exportCsvResponse, requestedCsvHeaders } from "../csv";
 
 /**
  * Invoice module (Phase 3 batch 2) — TS port of
@@ -110,7 +117,7 @@ import { queueInvoiceEmail } from "../emailer";
  * Parity oracle: capture10.py corpus + the fixture gate.
  */
 
-function serieNr(inv: InvoiceRowFull): string {
+export function serieNr(inv: InvoiceRowFull): string {
   const padding = 5;
   const nr = inv.nr && /^\d+$/.test(inv.nr) ? inv.nr : String(inv.id);
   return `${inv.serie ?? ""}${nr.padStart(padding, "0")}`;
@@ -844,6 +851,181 @@ register("guest", "invoice", "get", (ctx: CallContext) => {
     }
   }
   return invoiceArray(inv, { guestDetail: true });
+});
+
+// --- Phase 5 R1 decisions batch (D3): guest payment + pdf, admin export_csv. ---
+
+/** Invoice Service::checkInvoiceAuth, shared by guest get/payment/pdf:
+ * admins and the owning client pass; anyone else needs the
+ * invoice_accessible_from_hash setting, and an expired hash link is
+ * refused first. (PHP also rate-limits these endpoints per IP/hash;
+ * the reference install has limiters disabled, so TS having none is
+ * consistent.) */
+function checkGuestInvoiceAuth(inv: InvoiceRowFull, ctx: CallContext): void {
+  const isAdmin = !!ctx.session?.admin;
+  const isOwner = ctx.session?.client?.id === inv.client_id;
+  if (isAdmin || isOwner) return;
+  const expired =
+    inv.hash_expires_at !== null &&
+    new Date(inv.hash_expires_at.replace(" ", "T") + "Z").getTime() < Date.now();
+  if (expired) throw new FbError("This invoice link has expired", 403);
+  if ((getSetting("invoice_accessible_from_hash") ?? "0") !== "1") {
+    throw new FbError("You do not have permission to perform this action", 403);
+  }
+}
+
+/** ServiceSubscription::getSubscriptionPeriodByInvoiceId: all priced
+ * lines must share one non-empty period (zero-price lines skipped, no
+ * items -> null). Deliberately NOT the type-filtered invoiceArray
+ * subscription: PHP's payment path uses this pure query. */
+function subscriptionPeriodForInvoice(invoiceId: number): string | null {
+  const items = listInvoiceItems(invoiceId);
+  if (items.length === 0) return null;
+  let period: string | null = null;
+  for (const it of items) {
+    const lineTotal = (it.price ?? 0) * (it.quantity ?? 1);
+    if (lineTotal <= 0) continue;
+    const p = it.period ?? null;
+    if (!p) return null;
+    if (period === null) {
+      period = p;
+      continue;
+    }
+    if (period !== p) return null;
+  }
+  return period;
+}
+
+register("guest", "invoice", "payment", async (ctx: CallContext) => {
+  // Guest Api::payment param checks, then Service::processInvoice.
+  const hash = ctx.params["hash"];
+  if (!hash) throw new FbError("Invoice hash not passed. Missing param hash", 810);
+  if (!/^[a-f0-9]{30,60}$/.test(hash)) {
+    throw new FbError("Invalid invoice hash", 4001);
+  }
+  const gatewayRaw = ctx.params["gateway_id"];
+  if (!gatewayRaw || gatewayRaw === "0") {
+    throw new FbError("Payment method not found. Missing param gateway_id", 811);
+  }
+  const inv = findInvoiceByHash(hash);
+  if (!inv) throw new FbError("Invoice not found", 812);
+  checkGuestInvoiceAuth(inv, ctx);
+  if (inv.status === "canceled" || inv.replaced_by_invoice_id !== null) {
+    throw new FbError("This invoice was canceled and cannot be paid", 403);
+  }
+  if (inv.status === "paid") {
+    throw new FbError("This invoice is already paid", 403);
+  }
+  const gatewayId = parseInt(gatewayRaw, 10);
+  const gw = findPayGatewayRow(Number.isNaN(gatewayId) ? 0 : gatewayId);
+  if (!gw) throw new FbError("Payment method not found", 813);
+  if (!gw.enabled) throw new FbError("Payment method not enabled", 814);
+  const period = subscriptionPeriodForInvoice(inv.id);
+  // PHP: $allowSubscribe = $data['allow_subscription'] ?? true, tested
+  // with PHP truthiness ("0"/"" false, every other string true).
+  const allowRaw = ctx.params["allow_subscription"];
+  const allowSubscribe = allowRaw === undefined ? true : !(allowRaw === "0" || allowRaw === "");
+  const subscribe = period !== null && gw.allow_recurrent === 1 && allowSubscribe;
+  if (!subscribe && gw.allow_single !== 1) {
+    throw new FbError("One-time payments are not enabled for the selected payment gateway", 815);
+  }
+  // Adapter forms render toApiArray(invoice, deep=true); TS invoiceArray
+  // with adminDetail carries the same buyer/lines/totals.
+  const view = invoiceArray(inv, { adminDetail: true });
+  const buyer = view["buyer"] as Record<string, unknown>;
+  const str = (v: unknown): string | null => (typeof v === "string" ? v : null);
+  const paymentView: PaymentInvoiceView = {
+    id: inv.id,
+    nr: String(inv.nr ?? ""),
+    serie: inv.serie ?? "",
+    hash: inv.hash,
+    client_id: inv.client_id,
+    currency: inv.currency,
+    subtotal: view["subtotal"] as number,
+    tax: view["tax"] as number,
+    total: view["total"] as number,
+    lines: (view["lines"] as { title: string | null }[]).map((l) => ({ title: l.title })),
+    buyer: {
+      first_name: str(buyer["first_name"]),
+      last_name: str(buyer["last_name"]),
+      address: str(buyer["address"]),
+      city: str(buyer["city"]),
+      state: str(buyer["state"]),
+      country: str(buyer["country"]),
+      zip: str(buyer["zip"]),
+      email: str(buyer["email"]),
+    },
+    subscriptionPeriod: period,
+  };
+  const { iframe, html } = await getPaymentHtml(gw, paymentView, subscribe);
+  return { iframe, type: "html", service_url: "", subscription: subscribe, result: html };
+});
+
+register("guest", "invoice", "pdf", (ctx: CallContext) => {
+  // Guest Api::pdf param checks, then Service::generatePDF.
+  const hash = ctx.params["hash"];
+  if (!hash) throw new FbError("Invoice hash was not passed");
+  if (!/^[a-f0-9]{30,60}$/.test(hash)) {
+    throw new FbError("Invalid invoice hash", 4001);
+  }
+  const inv = findInvoiceByHash(hash);
+  if (!inv) throw new FbError("Invoice not found");
+  checkGuestInvoiceAuth(inv, ctx);
+  const buf = invoicePdfByHash(hash);
+  if (!buf) throw new FbError("Invoice not found");
+  // Service::createPdfResponse disposition (serie_nr + '.pdf'); the TS
+  // PDF is a clean-room layout, not dompdf bytes, so parity compares
+  // status/headers/magic, never PHP bytes.
+  const name = serieNr(inv);
+  const safe = name.trim().replace(/[/\\%]/g, "-") || "invoice";
+  const fallback =
+    name.trim().replace(/[^A-Za-z0-9._-]/g, "-").replace(/^[.-]+|[.-]+$/g, "") || "invoice";
+  const disposition =
+    safe + ".pdf" === fallback + ".pdf"
+      ? `inline; filename=${safe}.pdf`
+      : `inline; filename=${fallback}.pdf; filename*=utf-8''${rawurlencode(safe + ".pdf")}`;
+  return new Response(new Uint8Array(buf), {
+    headers: { "content-type": "application/pdf", "content-disposition": disposition },
+  });
+});
+
+/** PHP rawurlencode: encodeURIComponent plus ! ' ( ) * (which it leaves). */
+function rawurlencode(s: string): string {
+  return encodeURIComponent(s).replace(/[!*'()]/g, (c) =>
+    "%" + c.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0"),
+  );
+}
+
+const INVOICE_EXPORTABLE = [
+  "id", "client_id", "serie", "nr", "currency", "currency_rate",
+  "credit", "base_income", "base_refund", "refund", "notes",
+  "text_1", "text_2", "status", "seller_company", "seller_company_vat",
+  "seller_company_number", "seller_address", "seller_phone", "seller_email",
+  "buyer_first_name", "buyer_last_name", "buyer_company", "buyer_company_vat",
+  "buyer_company_number", "buyer_address", "buyer_city", "buyer_state",
+  "buyer_country", "buyer_zip", "buyer_phone",
+  "buyer_email", "gateway_id", "issued", "taxname", "taxrate",
+  "due_at", "reminded_at", "paid_at", "created_at", "updated_at",
+];
+
+const INVOICE_DEFAULT_EXPORT = [
+  "id", "client_id", "nr", "currency", "credit", "base_income", "base_refund",
+  "refund", "notes", "status", "buyer_first_name", "buyer_last_name",
+  "buyer_company", "buyer_company_vat", "buyer_company_number", "buyer_address",
+  "buyer_city", "buyer_state", "buyer_country", "buyer_zip", "buyer_phone",
+  "buyer_email", "issued", "taxname", "taxrate",
+  "due_at", "reminded_at", "paid_at",
+];
+
+register("admin", "invoice", "export_csv", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  return exportCsvResponse(
+    "invoice",
+    "invoices.csv",
+    INVOICE_EXPORTABLE,
+    INVOICE_DEFAULT_EXPORT,
+    requestedCsvHeaders(ctx.rawParams, ctx.params),
+  );
 });
 
 register("guest", "invoice", "gateways", () => {

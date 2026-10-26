@@ -1,0 +1,10 @@
+{
+  "result": {
+    "iframe": true,
+    "type": "html",
+    "service_url": "",
+    "subscription": false,
+    "result": "&#34;Custom&#34; payment adapter is not fully configured."
+  },
+  "error": null
+}

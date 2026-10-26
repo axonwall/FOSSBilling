@@ -30,6 +30,7 @@ import {
 } from "../dispatch";
 import { clientBlock } from "./invoice";
 import { issueInvoice, prepareInvoice, round2 } from "../money";
+import { exportCsvResponse, requestedCsvHeaders } from "../csv";
 
 /**
  * Order module (Phase 3 batch 3) — TS port of
@@ -832,4 +833,30 @@ register("client", "order", "delete", (ctx: CallContext) => {
   }
   deleteOrderFull(order);
   return true;
+});
+
+// --- Phase 5 R1 decisions batch (D3): admin export_csv. ---
+const ORDER_EXPORTABLE = [
+  "id", "client_id", "product_id", "form_id", "promo_id", "promo_recurring",
+  "promo_used", "group_id", "group_master", "invoice_option", "title",
+  "currency", "unpaid_invoice_id", "service_id", "service_type", "period",
+  "quantity", "unit", "price", "discount", "status", "reason", "notes",
+  "suspension_grace_days", "referred_by", "expires_at", "activated_at",
+  "suspended_at", "unsuspended_at", "canceled_at", "created_at", "updated_at",
+];
+
+const ORDER_DEFAULT_EXPORT = [
+  "id", "client_id", "product_id", "title", "currency", "service_type",
+  "period", "quantity", "price", "discount", "status", "reason", "notes",
+];
+
+register("admin", "order", "export_csv", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  return exportCsvResponse(
+    "client_order",
+    "orders.csv",
+    ORDER_EXPORTABLE,
+    ORDER_DEFAULT_EXPORT,
+    requestedCsvHeaders(ctx.rawParams, ctx.params),
+  );
 });

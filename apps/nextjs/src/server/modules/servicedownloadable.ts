@@ -1,14 +1,16 @@
 // Servicedownloadable — downloadable product file management.
 //
-// Only the JSON endpoints are TS-served. `upload` and `update` need
-// multipart file_data, which the JSON dispatch cannot carry, and the
-// three `send_*` endpoints return binary file bytes, which the JSON
-// envelope cannot carry — all five stay PHP-proxied (same treatment as
-// the invoice PDF / CSV downloads deferred in earlier batches).
+// Phase 5 R1 decisions batch (D3): the five binary endpoints are now
+// TS-served via the seam's multipart + Response support — `upload`
+// and `update` take multipart file_data, the three `send_*` endpoints
+// return binary file bytes with PHP's BinaryFileResponse headers.
+// The JSON endpoints (file_update, file_delete, order_file_delete,
+// config_save) were ported in the D7 batch.
 
-import { existsSync, unlinkSync } from "node:fs";
+import { existsSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { FbError, register, requireAdmin, type CallContext } from "../dispatch";
+import { randomBytes } from "node:crypto";
+import { FbError, register, requireAdmin, requireClient, type CallContext } from "../dispatch";
 import { getDb, getDbWrite, nowTimestamp } from "../db";
 
 interface ProductRow {
@@ -22,6 +24,8 @@ interface OrderRow {
   product_id: number;
   service_id: number | null;
   service_type: string | null;
+  status: string | null;
+  expires_at: string | null;
   config: string | null;
 }
 
@@ -160,6 +164,236 @@ function removeStoredFileIfOrphaned(stored: string): void {
   const p = join(dir, stored);
   if (existsSync(p)) unlinkSync(p);
 }
+
+// --- Phase 5 R1 decisions batch (D3): binary endpoints. ---
+
+const ALLOWED_EXTENSIONS = [
+  "zip", "tar", "gz", "tgz", "bz2", "xz", "rar", "7z",
+  "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
+  "txt", "csv", "xml", "json", "yml", "yaml", "sql",
+  "png", "jpg", "jpeg", "gif", "svg", "webp",
+  "mp3", "wav", "ogg", "mp4", "m4v", "mov", "avi", "mkv", "webm",
+  "exe", "msi", "dmg", "pkg", "deb", "rpm", "apk", "ipa",
+  "jar", "war", "ear", "iso", "bin", "img",
+];
+
+/** PHP pathinfo(..., PATHINFO_EXTENSION): no dot or a leading dot only -> ''. */
+function clientExtension(filename: string): string {
+  const idx = filename.lastIndexOf(".");
+  if (idx <= 0) return "";
+  return filename.slice(idx + 1).toLowerCase();
+}
+
+function validateUploadExtension(filename: string): void {
+  const ext = clientExtension(filename);
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    throw new FbError(
+      `File extension ${ext} is not allowed. Allowed extensions: ${ALLOWED_EXTENSIONS.join(", ")}`,
+    );
+  }
+}
+
+function validateDisplayFilename(filename: unknown): string {
+  if (typeof filename !== "string" || filename === "" || filename.length > 255) {
+    throw new FbError("Downloadable filename is invalid");
+  }
+  return filename;
+}
+
+function normalizeLabel(v: unknown): string | null {
+  const t = optionalText(v);
+  if (t !== null && t.length > 255) throw new FbError("File label cannot exceed 255 characters");
+  return t;
+}
+
+function normalizeDescription(v: unknown): string | null {
+  const t = optionalText(v);
+  if (t !== null && t.length > 1000) {
+    throw new FbError("File description cannot exceed 1000 characters");
+  }
+  return t;
+}
+
+/** Service::createUploadedFileDefinition + storeUploadedFile: validate
+ * everything first (PHP validates before moving the file), then store
+ * under a fresh 64-hex name that does not already exist on disk. */
+function createUploadedFileDefinition(
+  file: { name: string; bytes: Buffer },
+  params: Record<string, string>,
+): FileDef {
+  validateUploadExtension(file.name);
+  const filename = validateDisplayFilename(file.name);
+  const label = normalizeLabel(params["label"]);
+  const description = normalizeDescription(params["description"]);
+  const dir = uploadsDir();
+  if (!dir) throw new FbError("File cannot be downloaded at the moment. Please contact support.", 404);
+  let stored = "";
+  do {
+    stored = randomBytes(32).toString("hex");
+  } while (existsSync(join(dir, stored)));
+  writeFileSync(join(dir, stored), file.bytes);
+  return {
+    id: randomBytes(16).toString("hex"),
+    filename,
+    stored_filename: stored,
+    label,
+    description,
+  };
+}
+
+function insertServiceFile(svcId: number, def: FileDef, sortOrder: number): void {
+  getDbWrite()
+    .prepare(
+      "INSERT INTO service_downloadable_file (label, description, downloads, sort_order, file_key, filename, stored_filename, created_at, updated_at, service_downloadable_id) VALUES (?, ?, 0, ?, ?, ?, ?, ?, ?, ?)",
+    )
+    .run(
+      def.label, def.description, sortOrder, def.id, def.filename, def.stored_filename,
+      nowTimestamp(), nowTimestamp(), svcId,
+    );
+}
+
+/** Symfony BinaryFileResponse disposition for an attachment: token-safe
+ * names stay unquoted; anything else is quoted with a utf-8 fallback
+ * (the parity corpus uses plain ASCII names, so the first form is the
+ * verified one). */
+function attachmentDisposition(displayName: string): string {
+  if (/^[A-Za-z0-9!#$&^_.+-]+$/.test(displayName)) {
+    return `attachment; filename=${displayName}`;
+  }
+  const fallback = displayName.replace(/[^A-Za-z0-9!#$&^_.+-]/g, "_") || "file";
+  return `attachment; filename="${fallback}"; filename*=utf-8''${encodeURIComponent(displayName).replace(/[!*'()]/g, (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0"))}`;
+}
+
+/** Service::sendFile / sendProductFile shared response: missing disk
+ * file -> the 404 message; countDownload=true (client path) bumps the
+ * downloads counter, false (admin order path) leaves it alone. */
+function sendStoredFile(
+  storedFilename: string,
+  displayName: string,
+  countDownload: boolean,
+  serviceFileId: number | null,
+): Response {
+  const dir = uploadsDir();
+  const p = dir ? join(dir, storedFilename) : "";
+  if (!dir || !existsSync(p)) {
+    throw new FbError("File cannot be downloaded at the moment. Please contact support.", 404);
+  }
+  if (countDownload && serviceFileId !== null) {
+    getDbWrite()
+      .prepare("UPDATE service_downloadable_file SET downloads = downloads + 1 WHERE id = ?")
+      .run(serviceFileId);
+  }
+  const buf = readFileSync(p);
+  return new Response(new Uint8Array(buf), {
+    headers: {
+      "content-type": "application/octet-stream",
+      "content-disposition": attachmentDisposition(displayName),
+      "cache-control": "public",
+      "last-modified": statSync(p).mtime.toUTCString(),
+      "content-length": String(buf.length),
+      "accept-ranges": "none",
+    },
+  });
+}
+
+register("admin", "servicedownloadable", "upload", (ctx) => {
+  requireAdmin(ctx);
+  if (!ctx.params["id"]) throw new FbError("Product ID was not passed");
+  const product = findProduct(Number(ctx.params["id"]));
+  // Api::upload checks file presence itself ('File was not uploaded.'),
+  // unlike the service-level message used by update().
+  const file = ctx.files?.["file_data"];
+  if (!file) throw new FbError("File was not uploaded.");
+  const definition = createUploadedFileDefinition(file, ctx.params);
+  const cfg = parseConfig(product.config);
+  const files = productFiles(product);
+  files.push(definition);
+  cfg["files"] = files;
+  saveProductConfig(product, cfg);
+  if (normalizeBoolean(cfg["update_orders"] ?? false)) {
+    for (const order of ordersForProduct(product.id)) {
+      const orderCfg = parseConfig(order.config);
+      const ofiles = Array.isArray(orderCfg["files"]) ? (orderCfg["files"] as FileDef[]) : [];
+      ofiles.push(definition);
+      orderCfg["files"] = ofiles;
+      saveOrderConfig(order, orderCfg);
+      const svcId = downloadableServiceFor(order);
+      if (svcId !== null) {
+        insertServiceFile(svcId, definition, serviceFiles(svcId).length);
+      }
+    }
+  }
+  return true;
+});
+
+register("admin", "servicedownloadable", "update", (ctx) => {
+  requireAdmin(ctx);
+  if (!ctx.params["order_id"]) throw new FbError("Order ID (order_id) was not passed");
+  const order = findOrder(Number(ctx.params["order_id"]));
+  const svcId = downloadableServiceFor(order);
+  if (svcId === null) throw new FbError("Order is not activated");
+  const file = ctx.files?.["file_data"];
+  if (!file) throw new FbError("File upload failed: no files in request.");
+  const definition = createUploadedFileDefinition(file, ctx.params);
+  insertServiceFile(svcId, definition, serviceFiles(svcId).length);
+  const orderCfg = parseConfig(order.config);
+  const ofiles = Array.isArray(orderCfg["files"]) ? (orderCfg["files"] as FileDef[]) : [];
+  ofiles.push(definition);
+  orderCfg["files"] = ofiles;
+  saveOrderConfig(order, orderCfg);
+  return true;
+});
+
+register("admin", "servicedownloadable", "send_file", (ctx) => {
+  requireAdmin(ctx);
+  if (!ctx.params["id"]) throw new FbError("Product ID was not passed");
+  if (!ctx.params["file_id"]) throw new FbError("File ID was not passed");
+  const product = findProduct(Number(ctx.params["id"]));
+  const key = validateFileKey(ctx.params["file_id"]);
+  const files = productFiles(product);
+  const idx = findDefIndex(files, key);
+  return sendStoredFile(files[idx].stored_filename, files[idx].filename, false, null);
+});
+
+register("admin", "servicedownloadable", "send_order_file", (ctx) => {
+  requireAdmin(ctx);
+  if (!ctx.params["order_id"]) throw new FbError("Order ID was not passed");
+  if (!ctx.params["file_id"]) throw new FbError("File ID was not passed");
+  const order = findOrder(Number(ctx.params["order_id"]));
+  const svcId = downloadableServiceFor(order);
+  if (svcId === null) throw new FbError("Order is not activated");
+  const fileId = Number(ctx.params["file_id"]);
+  const row = serviceFiles(svcId).find((f) => f.id === fileId);
+  if (!row) throw new FbError("File not found");
+  return sendStoredFile(row.stored_filename, row.filename, false, null);
+});
+
+register("client", "servicedownloadable", "send_file", (ctx) => {
+  requireClient(ctx);
+  // Api::send_file: RequiredParams plus the explicit empty() check on
+  // order_id (so "0" is also 'required'); file_id "0" passes the
+  // RequiredParams numeric check and falls through to the lookup.
+  const orderIdRaw = ctx.params["order_id"];
+  if (!orderIdRaw || orderIdRaw === "0") throw new FbError("Order ID is required");
+  if (!ctx.params["file_id"]) throw new FbError("File ID is required");
+  const order = getDb()
+    .prepare("SELECT * FROM client_order WHERE id = ? AND client_id = ?")
+    .get(Number(orderIdRaw), ctx.session!.client!.id) as unknown as OrderRow | undefined;
+  if (!order) throw new FbError("Order not found");
+  if (
+    order.expires_at !== null &&
+    order.expires_at !== undefined &&
+    new Date(String(order.expires_at).replace(" ", "T") + "Z").getTime() <= Date.now()
+  ) {
+    throw new FbError("Subscription expired");
+  }
+  const svcId = downloadableServiceFor(order);
+  if (svcId === null || order.status !== "active") throw new FbError("Order is not activated");
+  const fileId = Number(ctx.params["file_id"]);
+  const row = serviceFiles(svcId).find((f) => f.id === fileId);
+  if (!row) throw new FbError("File not found");
+  return sendStoredFile(row.stored_filename, row.filename, true, row.id);
+});
 
 register("admin", "servicedownloadable", "file_update", (ctx) => {
   requireAdmin(ctx);

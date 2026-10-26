@@ -9,6 +9,7 @@ import {
   type CurrencyRow,
 } from "../db";
 import { FbError, register, requireAdmin, type CallContext } from "../dispatch";
+import { readExtensionConfig } from "../crypt";
 import namesJson from "../data/currency-names.json";
 import pairsJson from "../data/currency-pairs.json";
 
@@ -259,6 +260,123 @@ function adminSetDefault(ctx: CallContext) {
   if (row.is_default !== 1) setDefaultCurrencyRow(code);
   return true;
 }
+
+// --- Phase 5 R1 decisions batch (D1): update_rates. TS port of
+// Currency Service::updateCurrencyRates + getRate + the three provider
+// fetchers. PHP caches provider responses (sync_rate TTL); TS has no
+// cache, so every call fetches — the TTL only affects request count,
+// never the returned rates. PHP flushes once at the end, so a provider
+// failure mid-loop persists nothing: TS computes every rate first and
+// only then writes. Transport/JSON failures propagate as plain Errors
+// (envelope 9999 with a transport message), mirroring PHP's uncaught
+// HttpClient exceptions; provider-level failures use the verbatim
+// InformationException messages. The live happy path cannot be verified
+// in the sandbox (external fetch fails at the TLS layer) — see
+// phase5/findings-r1i.md.
+async function fetchProviderJson(url: string, headers: Record<string, string> = {}) {
+  const res = await fetch(url, { headers, signal: AbortSignal.timeout(10000) });
+  const text = await res.text();
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    throw new Error(`Unexpected response from exchange rate provider (${res.status})`);
+  }
+}
+
+/** Currency Data API / currencylayer quote normalization: strip the
+ * from-currency prefix from each quotes key, skip non-numeric rates. */
+function apilayerRates(body: Record<string, unknown>, from: string): Record<string, unknown> {
+  const quotes = body["quotes"];
+  const out: Record<string, unknown> = {};
+  if (quotes && typeof quotes === "object" && !Array.isArray(quotes)) {
+    for (const [k, v] of Object.entries(quotes as Record<string, unknown>)) {
+      if (v === null || v === "" || !Number.isFinite(Number(v))) continue;
+      out[k.slice(from.length)] = v;
+    }
+  }
+  return out;
+}
+
+async function getRate(
+  from: string,
+  to: string,
+  config: Record<string, unknown>,
+): Promise<number> {
+  const provider = typeof config["provider"] === "string" ? config["provider"] : "";
+  let rates: Record<string, unknown>;
+  if (provider === "currency_data_api") {
+    const key = config["currencydata_key"];
+    if (!key) {
+      throw new FbError(
+        "You must configure your API key to use Currency Data API as an exchange rate data source.",
+      );
+    }
+    const body = await fetchProviderJson(
+      `https://api.apilayer.com/currency_data/live?source=${encodeURIComponent(from)}`,
+      { "Content-Type": "text/plain", apikey: String(key) },
+    );
+    if (body["success"] !== true) {
+      throw new FbError(
+        "There was an error when fetching currency rates from Currency Data API. See the error log for details.",
+      );
+    }
+    rates = apilayerRates(body, from);
+  } else if (provider === "currencylayer") {
+    const key = config["currencylayer_key"];
+    if (!key) {
+      throw new FbError(
+        "You must configure your API key to use currencylayer as an exchange rate data source.",
+      );
+    }
+    const body = await fetchProviderJson(
+      `https://api.apilayer.com/currency_data/live?access_key=${encodeURIComponent(String(key))}&source=${encodeURIComponent(from)}`,
+    );
+    if (body["success"] !== true) {
+      throw new FbError(
+        "There was an error when fetching currency rates from currencylayer. See the error log for details.",
+      );
+    }
+    rates = apilayerRates(body, from);
+  } else {
+    const key = typeof config["exchangerate_api_key"] === "string" ? config["exchangerate_api_key"] : "";
+    const url = key
+      ? `https://v6.exchangerate-api.com/v6/${encodeURIComponent(key)}/latest/${encodeURIComponent(from)}`
+      : `https://open.er-api.com/v6/latest/${encodeURIComponent(from)}`;
+    const body = await fetchProviderJson(url);
+    if (body["result"] !== "success") {
+      throw new FbError(
+        "There was an error when fetching currency rates from ExchangeRate-API. See the error log for details.",
+      );
+    }
+    const raw = key ? body["conversion_rates"] : body["rates"];
+    rates =
+      raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+  }
+  const v = rates[to];
+  if (v !== undefined && v !== null && v !== "" && Number.isFinite(Number(v))) return Number(v);
+  throw new FbError(`Unable to fetch conversion rate for currency: ${to}.`);
+}
+
+async function adminUpdateRates(ctx: CallContext) {
+  requireAdmin(ctx);
+  const def = findDefaultCurrency();
+  if (!def) throw new FbError("Default currency not found. Cannot update rates.");
+  const config = readExtensionConfig("mod_currency");
+  const computed: { code: string; rate: number }[] = [];
+  for (const row of listCurrencies()) {
+    if (row.is_default === 1) {
+      computed.push({ code: row.code, rate: 1.0 });
+    } else if (row.is_rate_manual === 1) {
+      continue;
+    } else {
+      computed.push({ code: row.code, rate: await getRate(def.code, row.code, config) });
+    }
+  }
+  for (const c of computed) updateCurrencyRow(c.code, { conversion_rate: c.rate });
+  return true;
+}
+
+register("admin", "currency", "update_rates", adminUpdateRates);
 
 register("guest", "currency", "get_pairs", guestGetPairs);
 register("guest", "currency", "get", guestGet);

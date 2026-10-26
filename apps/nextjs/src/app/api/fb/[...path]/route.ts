@@ -70,12 +70,11 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
     return new Response(JSON.stringify({ primed: res.ok }), { status: 200, headers: out });
   }
 
-  const bodyText =
-    req.method === "GET" || req.method === "HEAD" ? undefined : await req.text();
-
   // Strangler seam: serve from TypeScript when the module is ported and
   // enabled. Any failure in the TS path (e.g. DB not configured) falls
-  // back to PHP — the seam must never take the API down.
+  // back to PHP — the seam must never take the API down. The handler is
+  // resolved BEFORE reading the body so multipart requests can be
+  // parsed with formData() (req.text() would consume the stream first).
   if (path.length === 3) {
     const [role, module, method] = path.map((s) => s.toLowerCase());
     const handler = tsModulesEnabled().has(module) ? findHandler(role, module, method) : undefined;
@@ -83,16 +82,39 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
       try {
         const params: Record<string, string> = {};
         let rawParams: Record<string, unknown> = {};
+        let files: Record<string, { name: string; type: string; bytes: Buffer }> | undefined;
+        let bodyText: string | undefined;
         for (const [k, v] of req.nextUrl.searchParams) params[k] = v;
-        if (bodyText) {
-          const ct = req.headers.get("content-type") ?? "";
-          if (ct.includes("json")) {
-            rawParams = JSON.parse(bodyText) as Record<string, unknown>;
-            for (const [k, v] of Object.entries(rawParams)) {
-              params[k] = typeof v === "object" ? JSON.stringify(v) : String(v);
+        const contentType = req.headers.get("content-type") ?? "";
+        if (req.method !== "GET" && req.method !== "HEAD" && contentType.includes("multipart/form-data")) {
+          // Multipart in (servicedownloadable upload/update): text fields
+          // land in params/rawParams, files in ctx.files.
+          const form = await req.formData();
+          files = {};
+          for (const [k, v] of form.entries()) {
+            if (typeof v === "string") {
+              params[k] = v;
+              rawParams[k] = v;
+            } else {
+              files[k] = {
+                name: v.name,
+                type: v.type,
+                bytes: Buffer.from(await v.arrayBuffer()),
+              };
             }
-          } else {
-            for (const [k, v] of new URLSearchParams(bodyText)) params[k] = v;
+          }
+        } else {
+          bodyText = req.method === "GET" || req.method === "HEAD" ? undefined : await req.text();
+          if (bodyText) {
+            const ct = req.headers.get("content-type") ?? "";
+            if (ct.includes("json")) {
+              rawParams = JSON.parse(bodyText) as Record<string, unknown>;
+              for (const [k, v] of Object.entries(rawParams)) {
+                params[k] = typeof v === "object" ? JSON.stringify(v) : String(v);
+              }
+            } else {
+              for (const [k, v] of new URLSearchParams(bodyText)) params[k] = v;
+            }
           }
         }
         const cookieHeader = req.headers.get("cookie");
@@ -100,6 +122,8 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
         const callCtx = {
           params,
           rawParams,
+          files,
+          requestUri: `/api/${role}/${module}/${method}${req.nextUrl.search}`,
           ip:
             ((req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "127.0.0.1").replace(
               /^::ffff:/,
@@ -111,10 +135,18 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
         };
         enforceCsrf(callCtx, params["CSRFToken"] ?? req.headers.get("x-csrf-token") ?? undefined);
         const result = await handler(callCtx);
+        // Binary/text endpoints return a full Response: pass it through
+        // verbatim (plus handler cookies), never wrapped in the envelope.
+        if (result instanceof Response) {
+          for (const c of callCtx.setCookies) result.headers.append("set-cookie", c);
+          return result;
+        }
         const tsResponse = envelope(result);
         for (const c of callCtx.setCookies) tsResponse.headers.append("set-cookie", c);
 
-        if (process.env.FB_PARITY === "1") {
+        // Multipart requests carry no replayable bodyText, so the PHP
+        // comparison is skipped for them (it would POST an empty body).
+        if (process.env.FB_PARITY === "1" && !files) {
           try {
             const phpRes = await fetchPhp(req, path, bodyText);
             const phpJson = await phpRes.clone().json().catch(() => null);
@@ -140,6 +172,9 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
       }
     }
   }
+
+  const bodyText =
+    req.method === "GET" || req.method === "HEAD" ? undefined : await req.text();
 
   const res = await fetchPhp(req, path, bodyText);
 

@@ -1,0 +1,60 @@
+{
+  "result": {
+    "folders": {
+      "/home/hatch/scratch/fossbilling/runtime/src/data/cache": true,
+      "/home/hatch/scratch/fossbilling/runtime/src/data/log": true,
+      "/home/hatch/scratch/fossbilling/runtime/src/data/uploads": true
+    },
+    "files": {
+      "/home/hatch/scratch/fossbilling/runtime/src/config.php": true
+    },
+    "required_extensions": {
+      "curl": true,
+      "intl": true,
+      "openssl": true,
+      "xml": true,
+      "dom": true,
+      "iconv": true,
+      "json": true,
+      "zlib": true,
+      "gd": true,
+      "pdo_mysql": true,
+      "pdo_pgsql": false,
+      "pdo_sqlite": false
+    },
+    "suggested_extensions": {
+      "mbstring": {
+        "loaded": true,
+        "message": "improved performance"
+      },
+      "opcache": {
+        "loaded": true,
+        "message": "improved performance"
+      },
+      "imagick": {
+        "loaded": true,
+        "message": "PDF image processing performance"
+      },
+      "bz2": {
+        "loaded": true,
+        "message": "optional support for bzip2 archives"
+      },
+      "simplexml": {
+        "loaded": true,
+        "message": "the Plesk integration"
+      },
+      "xml": {
+        "loaded": true,
+        "message": "the Plesk integration"
+      }
+    },
+    "php_version": {
+      "isOk": true,
+      "version": "8.3.28",
+      "min_version": "8.3"
+    },
+    "can_install": true,
+    "last_patch": "132"
+  },
+  "error": null
+}

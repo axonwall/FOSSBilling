@@ -1,0 +1,28 @@
+[
+  {
+    "id": 12,
+    "label": "Order Guide",
+    "description": "Guide",
+    "downloads": 1,
+    "sort_order": 0,
+    "file_key": "ffffffffffffffffffffffffffffffff",
+    "filename": "order-guide.txt",
+    "stored_filename": "1111111111111111111111111111111111111111111111111111111111111111",
+    "created_at": "2026-10-26 12:00:00",
+    "updated_at": "2026-10-26 15:40:38",
+    "service_downloadable_id": 10
+  },
+  {
+    "id": 13,
+    "label": "Revised Guide",
+    "description": "v2",
+    "downloads": 0,
+    "sort_order": 1,
+    "file_key": "485a44489ebf8b12f275399e105a2f1d",
+    "filename": "guide-v2.txt",
+    "stored_filename": "372ffd039728225e363949b8eb6a27d0e6d16febea0e680ecb74efeaab9f17ac",
+    "created_at": "2026-10-26 15:40:41",
+    "updated_at": "2026-10-26 15:40:41",
+    "service_downloadable_id": 10
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "Host": "127.0.0.1:8080",
+  "Connection": "close",
+  "X-Powered-By": "PHP/8.3.28",
+  "Cache-Control": "must-revalidate, no-cache, private",
+  "Date": "Mon, 26 Oct 2026 15:40:30 GMT",
+  "Content-Type": "text/csv; charset=utf-8",
+  "Content-Disposition": "attachment; filename=orders.csv",
+  "Expires": "Mon, 26 Jul 1997 05:00:00 GMT"
+}

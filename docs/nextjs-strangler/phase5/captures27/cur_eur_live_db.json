@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "is_default": 1,
+    "conversion_rate": 1,
+    "is_rate_manual": 0,
+    "format_pattern": null,
+    "fraction_digits": null,
+    "code": "USD",
+    "created_at": "2026-10-23 20:32:43",
+    "updated_at": "2026-10-26 15:40:18"
+  },
+  {
+    "id": 9,
+    "is_default": 0,
+    "conversion_rate": 1,
+    "is_rate_manual": 0,
+    "format_pattern": null,
+    "fraction_digits": null,
+    "code": "EUR",
+    "created_at": null,
+    "updated_at": null
+  }
+]

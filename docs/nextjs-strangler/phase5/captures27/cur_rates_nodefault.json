@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Default currency not found. Cannot update rates.",
+    "code": 9999
+  }
+}

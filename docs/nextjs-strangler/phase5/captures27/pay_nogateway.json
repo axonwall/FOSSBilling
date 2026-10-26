@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Payment method not found. Missing param gateway_id",
+    "code": 811
+  }
+}

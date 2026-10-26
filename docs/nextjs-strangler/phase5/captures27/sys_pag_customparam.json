@@ -1,0 +1,19 @@
+{
+  "result": {
+    "currentpage": 3,
+    "numpages": 10,
+    "midrange": 7,
+    "range": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "start": 1,
+    "end": 7
+  },
+  "error": null
+}

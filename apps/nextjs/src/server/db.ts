@@ -2109,6 +2109,23 @@ export function findGatewayFull(id: number): {
     | undefined;
 }
 
+/** Full pay_gateway row for payment-adapter config merging. */
+export function findPayGatewayRow(id: number): {
+  id: number; gateway: string; name: string | null; enabled: number;
+  test_mode: number; allow_single: number; allow_recurrent: number; config: string | null;
+} | undefined {
+  return getDb()
+    .prepare(
+      "SELECT id, gateway, name, enabled, test_mode, allow_single, allow_recurrent, config FROM pay_gateway WHERE id = ?",
+    )
+    .get(id) as
+    | {
+        id: number; gateway: string; name: string | null; enabled: number;
+        test_mode: number; allow_single: number; allow_recurrent: number; config: string | null;
+      }
+    | undefined;
+}
+
 function sha256Hex(text: string): string {
   return createHash("sha256").update(text).digest("hex");
 }

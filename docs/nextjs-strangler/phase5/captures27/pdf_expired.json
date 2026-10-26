@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "This invoice link has expired",
+    "code": 403
+  }
+}

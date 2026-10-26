@@ -1,0 +1,12 @@
+{
+  "result": [
+    {
+      "type": "warning",
+      "title": "Warning",
+      "message": "Unable to fetch alerts from Central Alerts System. See the error log for more information.",
+      "buttons": [],
+      "dismissible": true
+    }
+  ],
+  "error": null
+}

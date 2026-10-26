@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "File extension php is not allowed. Allowed extensions: zip, tar, gz, tgz, bz2, xz, rar, 7z, pdf, doc, docx, xls, xlsx, ppt, pptx, txt, csv, xml, json, yml, yaml, sql, png, jpg, jpeg, gif, svg, webp, mp3, wav, ogg, mp4, m4v, mov, avi, mkv, webm, exe, msi, dmg, pkg, deb, rpm, apk, ipa, jar, war, ear, iso, bin, img",
+    "code": 9999
+  }
+}

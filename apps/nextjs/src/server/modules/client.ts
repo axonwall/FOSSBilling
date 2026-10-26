@@ -22,6 +22,7 @@ import { FbError, register, requireAdmin, requireClient, type CallContext } from
 import { isClientTaxable } from "../money";
 import { parseSessionContent, phpSerialize, replaceSessionSegment } from "../php-serialize";
 import { queueTemplatedEmail } from "../emailer";
+import { exportCsvResponse, requestedCsvHeaders } from "../csv";
 import countriesJson from "../data/countries.json";
 import {
   assertPasswordStrong,
@@ -989,3 +990,35 @@ register("guest", "client", "update_password", (ctx) => {
 register("guest", "client", "required", () => []);
 register("guest", "client", "custom_fields", () => []);
 register("guest", "client", "is_email_validation_required", () => false);
+
+// --- Phase 5 R1 decisions batch (D3): admin export_csv. ---
+const CLIENT_EXPORTABLE = [
+  "id", "aid", "role", "auth_type", "email", "status",
+  "email_approved", "tax_exempt", "merge_renewals", "type", "first_name", "last_name",
+  "gender", "birthday", "phone_cc", "phone", "company", "company_vat",
+  "company_number", "address_1", "address_2", "city", "state", "postcode",
+  "country", "notes", "currency", "lang", "timezone", "ip", "referred_by",
+  "billing_email",
+  "custom_1", "custom_2", "custom_3", "custom_4", "custom_5", "custom_6",
+  "custom_7", "custom_8", "custom_9", "custom_10", "custom_11", "custom_12",
+  "custom_13", "custom_14", "custom_15", "custom_16", "custom_17", "custom_18",
+  "custom_19", "custom_20",
+  "created_at", "updated_at",
+];
+
+const CLIENT_DEFAULT_EXPORT = [
+  "id", "email", "status", "first_name", "last_name", "phone_cc", "phone",
+  "company", "company_vat", "company_number", "address_1", "address_2",
+  "city", "state", "postcode", "country", "currency",
+];
+
+register("admin", "client", "export_csv", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  return exportCsvResponse(
+    "client",
+    "clients.csv",
+    CLIENT_EXPORTABLE,
+    CLIENT_DEFAULT_EXPORT,
+    requestedCsvHeaders(ctx.rawParams, ctx.params),
+  );
+});
