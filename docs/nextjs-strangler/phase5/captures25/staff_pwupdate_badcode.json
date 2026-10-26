@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "The link has expired or you have already confirmed the password reset.",
+    "code": 9999
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Transaction ID is required when using the Custom payment gateway.",
+    "code": 9999
+  }
+}

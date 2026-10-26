@@ -156,14 +156,21 @@ export function evalExpr(expr: string, ctx: Ctx & { __baseUrl?: string; __curren
       case "url": {
         const named = parseNamedArgs(f.args);
         const base = (ctx.__baseUrl ?? "http://127.0.0.1:8080/").replace(/\/?$/, "/");
-        let path = String(value ?? "");
+        let path = String(value ?? "").replace(/^\//, "");
         let qs = "";
         if (named.query) {
           const q = evalTerm(named.query, ctx) as Record<string, unknown>;
           const pairs = Object.entries(q).map(([k, v]) => `${k}=${encodeURIComponent(String(v ?? ""))}`);
           if (pairs.length) qs = "?" + pairs.join("&");
         }
-        value = base + path.replace(/^\//, "") + qs;
+        // PHP FOSSBillingExtension::url: area 'admin' routes through
+        // adminLink(), which prefixes the admin area prefix; any other
+        // area (or none) uses the bare link. The reference install's
+        // prefix is '/admin'.
+        if (named.area && String(evalTerm(named.area, ctx) ?? "") === "admin") {
+          path = `admin/${path}`;
+        }
+        value = base + path + qs;
         break;
       }
       default:
@@ -203,32 +210,49 @@ type Node =
   | { kind: "for"; varName: string; expr: string; body: Node[] };
 
 function parse(template: string): Node[] {
-  const tokens = template.split(/(\{\{.*?\}\}|\{%.*?%\})/s).filter((t) => t !== "");
+  const tokens = template.split(/(\{\{.*?\}\}|\{%.*?%\}|\{#.*?#\})/s).filter((t) => t !== "");
   let pos = 0;
+  // Twig strips exactly one newline following a {% %} tag (and, as
+  // observed, a {# #} comment); print tags {{ }} do not strip. Without
+  // this, every if/for body renders with a phantom blank line per tag
+  // line — visible in invoice emails as blank lines inside the <ul>.
+  function consumeTag(): void {
+    pos++;
+    if (pos < tokens.length) {
+      const next = tokens[pos];
+      if (!next.startsWith("{{") && !next.startsWith("{%") && !next.startsWith("{#")) {
+        tokens[pos] = next.replace(/^\r\n?|^\n/, "");
+      }
+    }
+  }
   function parseUntil(stops: string[]): Node[] {
     const nodes: Node[] = [];
     while (pos < tokens.length) {
       const tok = tokens[pos];
+      if (tok.startsWith("{#")) {
+        consumeTag(); // comment: dropped, newline after it stripped
+        continue;
+      }
       if (tok.startsWith("{%")) {
         const inner = tok.slice(2, -2).trim();
         const head = inner.split(/\s+/)[0];
         if (stops.includes(head)) return nodes;
         if (head === "if") {
-          pos++;
+          consumeTag();
           const body = parseUntil(["endif"]);
-          pos++; // consume endif
+          consumeTag(); // consume endif
           nodes.push({ kind: "if", cond: inner.slice(2).trim(), body });
           continue;
         }
         if (head === "for") {
           const m = inner.match(/^for\s+(\w+)\s+in\s+(.+)$/s);
-          pos++;
+          consumeTag();
           const body = parseUntil(["endfor"]);
-          pos++;
+          consumeTag();
           if (m) nodes.push({ kind: "for", varName: m[1], expr: m[2].trim(), body });
           continue;
         }
-        pos++; // unknown tag: skip
+        consumeTag(); // unknown tag: skip
         continue;
       }
       if (tok.startsWith("{{")) {

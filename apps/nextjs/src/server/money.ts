@@ -132,7 +132,8 @@ export function prepareInvoice(
     client_id: client.id,
     serie,
     nr: null,
-    hash: randomBytes(24).toString("hex"),
+    // PHP: bin2hex(random_bytes(random_int(15, 30))) — variable 30-60 hex.
+    hash: randomBytes(15 + Math.floor(Math.random() * 16)).toString("hex"),
     hash_expires_at: hashExpires,
     currency,
     currency_rate: currencyRate,

@@ -1,0 +1,23 @@
+{
+  "result": {
+    "promocode": null,
+    "promo_source": null,
+    "auto_promos": [],
+    "discount": 0,
+    "subtotal": 0,
+    "total": 0,
+    "items": [],
+    "currency": {
+      "code": "USD",
+      "name": "US Dollar",
+      "symbol": "$",
+      "conversion_rate": 1,
+      "is_rate_manual": false,
+      "format_pattern": null,
+      "fraction_digits": null,
+      "default": true
+    },
+    "subscribable": false
+  },
+  "error": null
+}

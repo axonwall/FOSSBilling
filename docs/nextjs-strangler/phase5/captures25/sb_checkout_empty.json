@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Cannot checkout an empty cart",
+    "code": 9999
+  }
+}

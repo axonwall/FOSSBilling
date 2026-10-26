@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "This client has already used this promo code. Please remove the promo code and checkout again.",
+    "code": 9874
+  }
+}

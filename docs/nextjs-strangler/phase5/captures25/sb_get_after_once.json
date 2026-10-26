@@ -1,0 +1,46 @@
+{
+  "result": {
+    "promocode": null,
+    "promo_source": "auto",
+    "auto_promos": [
+      {
+        "code": "CAP25AUTOABS7",
+        "title": "Promotional Code: CAP25AUTOABS7 - $7.00 Discount",
+        "discount": 7
+      }
+    ],
+    "discount": 7,
+    "subtotal": 20,
+    "total": 13,
+    "items": [
+      {
+        "quantity": 2,
+        "__cart_family": "5b6cd5a4c201f9de6b0e06c635265d31",
+        "id": 52,
+        "product_id": 2,
+        "form_id": null,
+        "title": "Phase0 Widget Hosting",
+        "type": "custom",
+        "unit": "product",
+        "price": 10,
+        "setup_price": 0,
+        "discount": 7,
+        "discount_price": 7,
+        "discount_setup": 0,
+        "total": 20
+      }
+    ],
+    "currency": {
+      "code": "USD",
+      "name": "US Dollar",
+      "symbol": "$",
+      "conversion_rate": 1,
+      "is_rate_manual": false,
+      "format_pattern": null,
+      "fraction_digits": null,
+      "default": true
+    },
+    "subscribable": false
+  },
+  "error": null
+}

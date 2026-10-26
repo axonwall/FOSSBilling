@@ -96,7 +96,7 @@ export function queueTemplatedEmail(
   actionCode: string,
   recipient: string,
   ctx: Record<string, unknown>,
-  opts: { toName?: string | null; clientId?: number | null } = {}
+  opts: { toName?: string | null; clientId?: number | null; adminId?: number | null } = {}
 ): number | null {
   try {
     const t = findEmailTemplate(actionCode);
@@ -123,6 +123,7 @@ export function queueTemplatedEmail(
       subject,
       content,
       clientId: opts.clientId ?? null,
+      adminId: opts.adminId ?? null,
     });
   } catch {
     return null;

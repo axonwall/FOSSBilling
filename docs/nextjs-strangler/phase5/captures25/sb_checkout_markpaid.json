@@ -1,0 +1,12 @@
+{
+  "result": {
+    "gateway_id": 1,
+    "invoice_id": 497,
+    "invoice_hash": "c1790e287fec13e6f90828c112d2e216",
+    "order_id": 170,
+    "orders": [
+      170
+    ]
+  },
+  "error": null
+}

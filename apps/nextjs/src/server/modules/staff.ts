@@ -1,34 +1,48 @@
 import bcrypt from "bcryptjs";
+import { createHash, randomBytes } from "node:crypto";
 import {
   addAdminToGroup,
   adminGroupIdsFor,
   countAdminGroupMembers,
   deleteAdminGroupRow,
+  deleteAdminPasswordResets,
   deleteAdminRow,
+  deleteSessionRow,
+  findAdminAuthByEmail,
   findAdminByEmail,
   findAdminFullById,
   findAdminGroupById,
+  findAdminLoginHistoryById,
+  findAdminPasswordResetByHash,
   insertAdmin,
   insertAdminGroup,
+  insertAdminLoginHistory,
   listAdminGroups,
   listAdminLoginHistory,
   listAdminPairs,
   listAdmins,
+  listSessionRows,
   removeAdminFromGroup,
+  replaceAdminPasswordReset,
   updateAdminGroupRow,
   updateAdminRow,
   type AdminFullRow,
   type AdminGroupRow,
 } from "../db";
 import { FbError, register, requireAdmin, type CallContext } from "../dispatch";
+import { queueTemplatedEmail } from "../emailer";
+import { getOrCreateTemplateId } from "../emailDefaults";
+import { parseSessionContent } from "../php-serialize";
+import { loginAsAdmin } from "../session";
 import { paginate } from "../util";
 
 /**
- * Staff module (admin reads) — TS port of Staff/Api/Admin.php read
- * methods. The API-level staff shape excludes api_token and embeds the
- * admin's groups (with computed path/depth/parent_name), mirroring the
- * PHP service output in captures7. Staff mutations and group management
- * are not ported yet (they intersect the permissions model).
+ * Staff module — TS port of Staff/Api/Admin.php + Guest.php (reads,
+ * group management, group pairs, login history, and the guest auth
+ * trio: login, passwordreset, update_password). The API-level staff
+ * shape excludes api_token and embeds the admin's groups (with computed
+ * path/depth/parent_name), mirroring the PHP service output in
+ * captures7. Parity oracle: capture25.py + parity22.py.
  */
 
 function groupArray(g: AdminGroupRow, all: AdminGroupRow[]) {
@@ -353,3 +367,154 @@ register("admin", "staff", "login_history_get_list", (ctx: CallContext) => {
   });
   return paginate(items, ctx.params);
 });
+
+register("admin", "staff", "group_get_pairs", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const all = listAdminGroups();
+  const out: Record<string, string> = {};
+  for (const g of all) out[String(g.id)] = groupArray(g, all).path;
+  return out;
+});
+
+register("admin", "staff", "login_history_get", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  if (!ctx.params["id"]) throw new FbError("Event ID was not passed");
+  const row = findAdminLoginHistoryById(Number(ctx.params["id"]));
+  if (!row) throw new FbError("Event not found");
+  const out: Record<string, unknown> = { id: row.id, ip: row.ip, created_at: row.created_at };
+  if (row.staff_id !== null && row.staff_id !== undefined) {
+    out["staff"] = { id: row.staff_id, name: row.staff_name, email: row.staff_email };
+  }
+  return out;
+});
+
+// --- Guest staff auth (Staff/Api/Guest.php + Staff/Service.php) -----------
+
+/**
+ * Tools::validateAndSanitizeEmail under APP_ENV=dev: RFC validation
+ * only (no DNS check). Mirrors the RFC shape closely enough for the
+ * envelope contract: one @, non-empty labels, no spaces or empty
+ * labels. Single-label domains pass, as they do under RFCValidation.
+ */
+function isValidEmail(email: string): boolean {
+  if (/\s/.test(email)) return false;
+  const parts = email.split("@");
+  if (parts.length !== 2 || parts[0] === "" || parts[1] === "") return false;
+  const labels = parts[1].split(".");
+  for (const label of labels) {
+    if (label === "" || label.startsWith("-") || label.endsWith("-")) return false;
+    if (!/^[A-Za-z0-9-]+$/.test(label)) return false;
+  }
+  return true;
+}
+
+function parseBcryptCost(hash: string | null): number | null {
+  if (!hash) return null;
+  const m = /^\$2[aby]\$(\d\d)\$/.exec(hash);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+/** Profile\Service::invalidateSessions for staff identities. */
+function invalidateAdminSessions(adminId: number): void {
+  for (const row of listSessionRows()) {
+    let admin: unknown;
+    try {
+      const attrs = parseSessionContent(row.content)["_sf2_attributes"];
+      admin =
+        attrs && typeof attrs === "object" && !Array.isArray(attrs)
+          ? (attrs as Record<string, unknown>)["admin"]
+          : undefined;
+    } catch {
+      continue;
+    }
+    if (admin && typeof admin === "object" && (admin as Record<string, unknown>)["id"] === adminId) {
+      deleteSessionRow(row.id);
+    }
+  }
+}
+
+register("guest", "staff", "login", (ctx: CallContext) => {
+  const email = ctx.params["email"];
+  if (!email) throw new FbError("Email required");
+  const password = ctx.params["password"];
+  if (!password) throw new FbError("Password required");
+  if (!isValidEmail(email)) throw new FbError("Email address is invalid");
+  // IP allowlist: skipped — the reference install has no mod_staff
+  // config row, so PHP skips the check too (documented).
+  const auth = findAdminAuthByEmail(email);
+  if (!auth || auth.status !== "active" || auth.system_name === "cron") {
+    // PHP runs a dummy verify for timing; the envelope is identical
+    // either way, so no dummy hash work is done here.
+    throw new FbError("Check your login details", 403);
+  }
+  if (!auth.pass || !bcrypt.compareSync(password, auth.pass)) {
+    throw new FbError("Check your login details", 403);
+  }
+  // PHP rehashes when password_needs_rehash (bcrypt cost 12 default).
+  if (parseBcryptCost(auth.pass) !== 12) {
+    updateAdminRow(auth.id, { pass: bcrypt.hashSync(password, 12) });
+  }
+  insertAdminLoginHistory(auth.id, ctx.ip);
+  loginAsAdmin(ctx, { id: auth.id, email: auth.email, name: auth.name });
+  return { id: auth.id, email: auth.email, name: auth.name };
+});
+
+register("guest", "staff", "passwordreset", (ctx: CallContext) => {
+  const email = ctx.params["email"];
+  if (!email) throw new FbError("Email required");
+  if (!isValidEmail(email)) throw new FbError("Email address is invalid");
+  // Rate limiters are disabled on the reference install and the
+  // antispam captcha is unset (checkCaptcha no-op) — both skipped.
+  const admin = findAdminByEmail(email);
+  if (!admin || admin.status !== "active" || admin.system_name === "cron") return true;
+  const hash = createHash("sha256").update(randomBytes(32)).digest("hex");
+  replaceAdminPasswordReset(admin.id, hash, ctx.ip);
+  getOrCreateTemplateId("mod_staff_password_reset_request", {});
+  queueTemplatedEmail(
+    "mod_staff_password_reset_request",
+    admin.email,
+    {
+      c: { id: admin.id, email: admin.email, name: admin.name, signature: admin.signature },
+      hash,
+    },
+    { toName: admin.name, adminId: admin.id },
+  );
+  return true;
+});
+
+register("guest", "staff", "update_password", (ctx: CallContext) => {
+  const code = ctx.params["code"];
+  if (!code) throw new FbError("Code required");
+  const password = ctx.params["password"];
+  if (!password) throw new FbError("Password required");
+  const confirm = ctx.params["password_confirm"];
+  if (!confirm) throw new FbError("Password confirmation required");
+  if (password !== confirm) throw new FbError("Passwords do not match.");
+  assertStrongPassword(password);
+  const reset = findAdminPasswordResetByHash(code);
+  if (!reset) {
+    throw new FbError("The link has expired or you have already confirmed the password reset.");
+  }
+  const createdMs = reset.created_at ? Date.parse(reset.created_at.replace(" ", "T") + "Z") : NaN;
+  if (Number.isNaN(createdMs) || createdMs + 900 * 1000 < Date.now()) {
+    throw new FbError("The link has expired or you have already confirmed the password reset.");
+  }
+  const admin = reset.admin_id ? findAdminFullById(reset.admin_id) : undefined;
+  if (!admin || admin.status !== "active" || admin.system_name === "cron") {
+    throw new FbError("The link has expired or you have already confirmed the password reset.");
+  }
+  deleteAdminPasswordResets(admin.id);
+  updateAdminRow(admin.id, { pass: bcrypt.hashSync(password, 12) });
+  invalidateAdminSessions(admin.id);
+  getOrCreateTemplateId("mod_staff_password_reset_approve", {});
+  queueTemplatedEmail(
+    "mod_staff_password_reset_approve",
+    admin.email,
+    {
+      c: { id: admin.id, email: admin.email, name: admin.name, signature: admin.signature },
+    },
+    { toName: admin.name, adminId: admin.id },
+  );
+  return null;
+});
+

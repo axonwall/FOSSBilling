@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Period parameter not passed",
+    "code": 9999
+  }
+}

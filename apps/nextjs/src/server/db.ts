@@ -642,6 +642,84 @@ export function findAdminByEmail(email: string): AdminFullRow | undefined {
     .get(email) as unknown as AdminFullRow | undefined;
 }
 
+/**
+ * Staff\Service::authorizeAdmin needs the password hash, status, and
+ * system_name — none of which findAdminByEmail selects. The active +
+ * non-cron filter mirrors findOneByEmailAndActive + the cron exclusion.
+ */
+export interface AdminAuthRow {
+  id: number;
+  email: string;
+  name: string;
+  pass: string | null;
+  status: string | null;
+  system_name: string | null;
+}
+
+export function findAdminAuthByEmail(email: string): AdminAuthRow | undefined {
+  return getDb()
+    .prepare("SELECT id, email, name, pass, status, system_name FROM admin WHERE email = ?")
+    .get(email) as AdminAuthRow | undefined;
+}
+
+export interface AdminPasswordResetRow {
+  id: number;
+  hash: string;
+  ip: string | null;
+  admin_id: number | null;
+  created_at: string | null;
+}
+
+export function findAdminPasswordResetByHash(hash: string): AdminPasswordResetRow | undefined {
+  return getDb()
+    .prepare("SELECT id, hash, ip, admin_id, created_at FROM admin_password_reset WHERE hash = ?")
+    .get(hash) as AdminPasswordResetRow | undefined;
+}
+
+/** Staff\Repository\AdminPasswordResetRepository::replaceReset. */
+export function replaceAdminPasswordReset(adminId: number, hash: string, ip: string | null): void {
+  const w = getDbWrite();
+  const now = nowTimestamp();
+  w.prepare("DELETE FROM admin_password_reset WHERE admin_id = ?").run(adminId);
+  w.prepare("INSERT INTO admin_password_reset (hash, ip, admin_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)")
+    .run(hash, ip, adminId, now, now);
+}
+
+export function deleteAdminPasswordResets(adminId: number): void {
+  getDbWrite().prepare("DELETE FROM admin_password_reset WHERE admin_id = ?").run(adminId);
+}
+
+/** Activity\Service::recordAdminLogin: one row per staff login. */
+export function insertAdminLoginHistory(adminId: number, ip: string | null): void {
+  getDbWrite()
+    .prepare("INSERT INTO activity_admin_history (admin_id, ip, created_at) VALUES (?, ?, ?)")
+    .run(adminId, ip, nowTimestamp());
+}
+
+/** Activity\Repository\ActivityAdminHistoryRepository::findOneByIdOrFail. */
+export function findAdminLoginHistoryById(id: number): {
+  id: number;
+  ip: string | null;
+  created_at: string | null;
+  staff_id: number | null;
+  staff_name: string | null;
+  staff_email: string | null;
+} | undefined {
+  return getDb()
+    .prepare(
+      `SELECT h.id AS id, h.ip AS ip, h.created_at AS created_at, a.id AS staff_id, a.name AS staff_name, a.email AS staff_email
+       FROM activity_admin_history h LEFT JOIN admin a ON a.id = h.admin_id WHERE h.id = ?`,
+    )
+    .get(id) as unknown as {
+    id: number;
+    ip: string | null;
+    created_at: string | null;
+    staff_id: number | null;
+    staff_name: string | null;
+    staff_email: string | null;
+  } | undefined;
+}
+
 export function insertAdmin(row: {
   email: string;
   pass: string;
@@ -834,6 +912,25 @@ export function findSession(id: string): SessionRow | undefined {
   return { id: row.id, content, lifetime: row.lifetime };
 }
 
+/**
+ * Profile\Service::invalidateSessions scans every session row and drops
+ * the ones whose _sf2_attributes bag carries the matching identity.
+ */
+export function listSessionRows(): SessionRow[] {
+  const rows = getDb()
+    .prepare("SELECT id, content, lifetime FROM session WHERE content IS NOT NULL AND LENGTH(content) > 0")
+    .all() as unknown as { id: string; content: string | Uint8Array; lifetime: number }[];
+  return rows.map((r) => ({
+    id: r.id,
+    content: typeof r.content === "string" ? r.content : new TextDecoder().decode(r.content),
+    lifetime: r.lifetime,
+  }));
+}
+
+export function deleteSessionRow(id: string): void {
+  getDbWrite().prepare("DELETE FROM session WHERE id = ?").run(id);
+}
+
 // ---------------------------------------------------------------------------
 // Money path (Phase 3): products, carts, promos, orders, invoices.
 // ---------------------------------------------------------------------------
@@ -973,6 +1070,19 @@ export function findCartBySession(sessionId: string): CartRow | undefined {
     .get(sessionId) as CartRow | undefined;
 }
 
+/** Cart/Api/Admin.php get_list: no search filter, every cart listed. */
+export function listCarts(): CartRow[] {
+  return getDb()
+    .prepare("SELECT id, session_id, currency_id, promo_id, created_at, updated_at FROM cart ORDER BY id ASC")
+    .all() as unknown as CartRow[];
+}
+
+export function findCartById(id: number): CartRow | undefined {
+  return getDb()
+    .prepare("SELECT id, session_id, currency_id, promo_id, created_at, updated_at FROM cart WHERE id = ?")
+    .get(id) as CartRow | undefined;
+}
+
 export function insertCart(sessionId: string, currencyId: number): number {
   const now = nowTimestamp();
   const info = getDbWrite()
@@ -1062,6 +1172,53 @@ export function findPromoById(id: number): PromoRow | undefined {
   return getDb().prepare(`SELECT ${PROMO_COLS} FROM promo WHERE id = ?`).get(id) as
     | PromoRow
     | undefined;
+}
+
+/**
+ * Product\Repository\PromoRepository::findAutoApplyPromos: active,
+ * auto-apply, inside the start/end window (NULL bounds are open),
+ * priority DESC, id ASC. Window compares against "now" in the
+ * server timezone (UTC on the TS seam, matching the PHP runtime).
+ */
+export function listAutoApplyPromos(): PromoRow[] {
+  const now = nowTimestamp();
+  return getDb()
+    .prepare(
+      `SELECT ${PROMO_COLS} FROM promo WHERE active = 1 AND auto_apply = 1
+       AND (start_at IS NULL OR start_at <= ?) AND (end_at IS NULL OR end_at >= ?)
+       ORDER BY priority DESC, id ASC`,
+    )
+    .all(now, now) as unknown as PromoRow[];
+}
+
+/**
+ * Product\Repository\PromoRedemptionRepository::clientHasActiveCheckoutApplication:
+ * a checkout-phase redemption in reserved or committed status. This is
+ * the exact once-per-client predicate — NOT countPromoRedemptionsForClient,
+ * which counts every phase and every non-released status.
+ */
+export function hasActiveCheckoutRedemption(promoId: number, clientId: number): boolean {
+  const row = getDb()
+    .prepare(
+      `SELECT COUNT(*) AS n FROM promo_redemption
+       WHERE promo_id = ? AND client_id = ? AND phase = 'checkout' AND status IN ('reserved', 'committed')`,
+    )
+    .get(promoId, clientId) as { n: number } | undefined;
+  return (row?.n ?? 0) > 0;
+}
+
+/**
+ * Product\Service::usePromo: increment only when capacity remains
+ * (maxuses 0/NULL = unlimited). Returns false — and the caller throws
+ * 'This promo code has reached its maximum number of uses.' — when the
+ * promo is maxed out. Staff checkout only; the client-checkout call
+ * site keeps the unconditional incrementPromoUsed.
+ */
+export function incrementPromoUsedIfAvailable(id: number): boolean {
+  const info = getDbWrite()
+    .prepare("UPDATE promo SET used = COALESCE(used, 0) + 1 WHERE id = ? AND (maxuses IS NULL OR maxuses = 0 OR used < maxuses)")
+    .run(id);
+  return info.changes > 0;
 }
 
 export function incrementPromoUsed(id: number): void {
@@ -1500,6 +1657,30 @@ export function findTransactionByTxnId(txnId: string): { id: number; invoice_id:
   return getDb().prepare('SELECT id, invoice_id FROM "transaction" WHERE txn_id = ?').get(txnId) as
     | { id: number; invoice_id: number | null }
     | undefined;
+}
+
+/**
+ * Invoice\ServiceTransaction::create dedupe, first leg: an existing
+ * PROCESSED row for the same gateway + external id is returned as-is.
+ */
+export function findProcessedTransaction(gatewayId: number, txnId: string): { id: number; invoice_id: number | null } | undefined {
+  return getDb()
+    .prepare('SELECT id, invoice_id FROM "transaction" WHERE gateway_id = ? AND txn_id = ? AND status = \'processed\'')
+    .get(gatewayId, txnId) as { id: number; invoice_id: number | null } | undefined;
+}
+
+/** Second dedupe leg: same gateway + canonical IPN hash. */
+export function findTransactionByGatewayHash(gatewayId: number, ipnHash: string): { id: number; invoice_id: number | null } | undefined {
+  return getDb()
+    .prepare('SELECT id, invoice_id FROM "transaction" WHERE gateway_id = ? AND ipn_hash = ?')
+    .get(gatewayId, ipnHash) as { id: number; invoice_id: number | null } | undefined;
+}
+
+/** The mark-as-paid settlement update: amount/currency/status/note. */
+export function settleTransaction(id: number, amount: number, currency: string, note: string): void {
+  getDbWrite()
+    .prepare('UPDATE "transaction" SET amount = ?, currency = ?, status = \'processed\', note = ?, updated_at = ? WHERE id = ?')
+    .run(amount, currency, note, nowTimestamp(), id);
 }
 
 export function findGateway(id: number): { id: number; gateway: string; enabled: number } | undefined {

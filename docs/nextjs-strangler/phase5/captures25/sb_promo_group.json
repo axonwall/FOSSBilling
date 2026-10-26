@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Promo code cannot be applied to this client account",
+    "code": 9999
+  }
+}

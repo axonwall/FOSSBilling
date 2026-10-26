@@ -1,0 +1,51 @@
+{
+  "result": {
+    "promocode": null,
+    "promo_source": "auto",
+    "auto_promos": [
+      {
+        "code": "CAP25AUTOABS7",
+        "title": "Promotional Code: CAP25AUTOABS7 - $7.00 Discount",
+        "discount": 7
+      }
+    ],
+    "discount": 7,
+    "subtotal": 11.99,
+    "total": 4.99,
+    "items": [
+      {
+        "action": "register",
+        "register_sld": "cap25domain",
+        "register_tld": ".com",
+        "register_years": "1",
+        "period": "1Y",
+        "__cart_family": "d7fbc6efc8b866bce865afd8f8b145c1",
+        "id": 60,
+        "product_id": 1,
+        "form_id": null,
+        "title": "Domain registration (cap25domain.com)",
+        "type": "domain",
+        "quantity": 1,
+        "unit": "year",
+        "price": 11.99,
+        "setup_price": 0,
+        "discount": 7,
+        "discount_price": 7,
+        "discount_setup": 0,
+        "total": 11.99
+      }
+    ],
+    "currency": {
+      "code": "USD",
+      "name": "US Dollar",
+      "symbol": "$",
+      "conversion_rate": 1,
+      "is_rate_manual": false,
+      "format_pattern": null,
+      "fraction_digits": null,
+      "default": true
+    },
+    "subscribable": true
+  },
+  "error": null
+}

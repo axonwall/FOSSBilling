@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "This domain is already in the cart.",
+    "code": 9999
+  }
+}

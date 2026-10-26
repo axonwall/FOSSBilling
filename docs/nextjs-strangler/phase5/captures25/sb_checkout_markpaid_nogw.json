@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Payment gateway is required when marking an invoice as paid.",
+    "code": 9999
+  }
+}

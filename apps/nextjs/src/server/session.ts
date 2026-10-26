@@ -70,12 +70,28 @@ export function readSession(cookieHeader: string | null): SessionInfo | null {
 }
 
 /**
- * The session a handler should use, creating one when the request has
- * none — the PHP cart does exactly this (a guest cart needs a session
- * row before anything can be stored against it). The new row carries an
- * empty Symfony attribute bag; the cookie is queued on the context so
- * the route can attach it to the response.
+ * Staff\Service::login, session half: Symfony regenerateId() mints a
+ * fresh id, keeps the attribute bag (so the CSRF token survives), then
+ * sets `admin`. Observed live 2026-10-26: the old row is NOT deleted
+ * by the PHP login path (it persists until session GC), so the TS
+ * login leaves it in place too — deleting it was a parity diff. The
+ * new session cookie is queued on the context for the route to attach
+ * to the response.
  */
+export function loginAsAdmin(ctx: CallContext, admin: Identity): SessionInfo {
+  const old = ctx.session;
+  const attrs: Record<string, string | number | Record<string, string | number | null>> = {};
+  if (old?.csrfToken) attrs["csrf_token"] = old.csrfToken;
+  attrs["admin"] = { id: admin.id, email: admin.email ?? null, name: admin.name ?? null };
+  const id = randomBytes(16).toString("hex");
+  const empty = phpSerialize({});
+  const content = `_sf2_attributes|${phpSerialize(attrs)}_symfony_flashes|${empty}_sf2_meta|${empty}`;
+  insertSession(id, content, Math.floor(Date.now() / 1000) + 86400);
+  // Deliberately no deleteSessionRow(old.id): PHP leaves the old row.
+  ctx.setCookies.push(`fossbilling_session=${id}; Path=/; HttpOnly; SameSite=Lax`);
+  ctx.session = { id, csrfToken: old?.csrfToken, admin: { id: admin.id, email: admin.email, name: admin.name } };
+  return ctx.session;
+}
 export function ensureSession(ctx: CallContext): SessionInfo {
   if (ctx.session) return ctx.session;
   const id = randomBytes(16).toString("hex");
