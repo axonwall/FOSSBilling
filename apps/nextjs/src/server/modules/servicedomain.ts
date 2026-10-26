@@ -3,14 +3,28 @@
 // Registrar split: metadata (get/list/pairs/available/install/copy/
 // update) is data-only and works for every in-tree adapter, since the
 // adapter getConfig tables are static. Action dispatch (domain actions,
-// guest check/transfer, sync) runs only the Custom adapter; any other
-// registrar code throws the post-cut "Domain registrar :adapter was
-// not found" shape, matching the D7 plan (cut adapters are deleted
-// with their modules at R6, not ported). Custom's network-free behavior
-// is pinned by capture24.
+// guest check/transfer, sync) runs the Custom adapter and the eNom
+// adapter (src/server/enom.ts); any other registrar code throws the
+// post-cut "Domain registrar :adapter was not found" shape, matching
+// the D7 plan (cut adapters are deleted with their modules at R6, not
+// ported). Custom's network-free behavior is pinned by capture24.
 
 import { domainToASCII } from "node:url";
 import { FbError, register, requireAdmin, requireClient, type CallContext } from "../dispatch";
+import {
+  enomCanBeTransferred,
+  enomCheckAvailable,
+  enomDisablePrivacy,
+  enomEnablePrivacy,
+  enomGetDomainDetails,
+  enomGetEpp,
+  enomGetExpiration,
+  enomModifyContact,
+  enomModifyNs,
+  enomSetLock,
+  type EnomConfig,
+  type EnomContact,
+} from "../enom";
 import { getDb, getDbWrite, nowTimestamp } from "../db";
 import { paginate } from "../util";
 
@@ -237,6 +251,13 @@ const ADAPTER_CONFIGS: Record<string, AdapterConfig> = {
       "api-key": ["password", { label: "ResellerID API Key", description: "ResellerID control panel, go to Settings -> API", required: false, secret: true }],
     },
   },
+  Enom: {
+    label: "Manages domains on eNom via API. eNom requires your server IP to be whitelisted on your eNom account.",
+    form: {
+      username: ["text", { label: "User Name", required: true }],
+      password: ["password", { label: "Password", required: true, secret: true }],
+    },
+  },
 };
 
 const ALL_ADAPTER_CODES = Object.keys(ADAPTER_CONFIGS).sort();
@@ -368,16 +389,34 @@ function getRegistrar(id: number): RegistrarRow {
 
 /**
  * Adapter dispatch for a domain service: resolves the service's registrar
- * row, requires the Custom adapter (the only ported one), and requires
- * the client row (PHP _getD merges the client profile into the domain).
+ * row, requires a ported adapter (Custom or Enom), and requires the
+ * client row (PHP _getD merges the client profile into the domain).
  */
-function requireCustomAdapter(svc: DomainRow): RegistrarRow {
+function resolveAdapter(svc: DomainRow): { reg: RegistrarRow; code: string } {
   if (svc.tld_registrar_id === null) throw new FbError("Registrar not found");
   const reg = getRegistrar(svc.tld_registrar_id);
-  if (reg.registrar !== "Custom") throw new FbError(`Domain registrar ${reg.registrar} was not found`);
+  if (reg.registrar !== "Custom" && reg.registrar !== "Enom") {
+    throw new FbError(`Domain registrar ${reg.registrar} was not found`);
+  }
   const client = getDb().prepare("SELECT id FROM client WHERE id = ?").get(svc.client_id);
   if (!client) throw new FbError("Client not found");
-  return reg;
+  return { reg, code: reg.registrar };
+}
+
+/** eNom client config from the stored registrar row (validates required fields). */
+function enomConfig(reg: RegistrarRow): EnomConfig {
+  const cfg = registrarConfig(reg);
+  validateRegistrarConfig(reg, cfg);
+  return { username: String(cfg["username"]), password: String(cfg["password"]), testMode: !!reg.test_mode };
+}
+
+/** eNom takes bare TLDs ("com"); rows store ".com" or "com". */
+function stripDots(tld: string | null): string {
+  return (tld ?? "").replace(/^\.+|\.+$/g, "");
+}
+
+function epochToTs(epoch: number): string {
+  return new Date(epoch * 1000).toISOString().slice(0, 19).replace("T", " ");
 }
 
 function saveDomain(svc: DomainRow, patch: Partial<DomainRow>): void {
@@ -471,7 +510,10 @@ register("admin", "servicedomain", "update", (ctx) => {
   return true;
 });
 
-function updateNameservers(ctx: CallContext, getService: (ctx: CallContext) => [OrderRow, DomainRow]): boolean {
+async function updateNameservers(
+  ctx: CallContext,
+  getService: (ctx: CallContext) => [OrderRow, DomainRow],
+): Promise<boolean> {
   const [, svc] = getService(ctx);
   if (ctx.params["ns1"] === undefined && (ctx.rawParams as Record<string, unknown>)["ns1"] === undefined) {
     throw new FbError("Nameserver 1 is required");
@@ -479,7 +521,20 @@ function updateNameservers(ctx: CallContext, getService: (ctx: CallContext) => [
   if (ctx.params["ns2"] === undefined && (ctx.rawParams as Record<string, unknown>)["ns2"] === undefined) {
     throw new FbError("Nameserver 2 is required");
   }
-  requireCustomAdapter(svc);
+  const { reg, code } = resolveAdapter(svc);
+  // PHP: adapter modifyNs runs BEFORE the local model set + flush, so
+  // an adapter failure persists nothing.
+  if (code === "Enom") {
+    await enomModifyNs(
+      enomConfig(reg),
+      svc.sld ?? "",
+      stripDots(svc.tld),
+      ["ns1", "ns2", "ns3", "ns4"].map((k) => {
+        const v = ctx.params[k];
+        return v === undefined || v === null ? null : String(v);
+      }),
+    );
+  }
   saveDomain(svc, {
     ns1: ctx.params["ns1"] ?? null,
     ns2: ctx.params["ns2"] ?? null,
@@ -505,7 +560,10 @@ function contactObject(ctx: CallContext): Record<string, unknown> | undefined {
   return bracket ? (bracket as Record<string, unknown>) : undefined;
 }
 
-function updateContacts(ctx: CallContext, getService: (ctx: CallContext) => [OrderRow, DomainRow]): boolean {
+async function updateContacts(
+  ctx: CallContext,
+  getService: (ctx: CallContext) => [OrderRow, DomainRow],
+): Promise<boolean> {
   const [, svc] = getService(ctx);
   const contact = contactObject(ctx);
   if (!contact || Object.keys(contact).length === 0) throw new FbError("Required field contact is missing");
@@ -525,7 +583,27 @@ function updateContacts(ctx: CallContext, getService: (ctx: CallContext) => [Ord
     const v = contact[field];
     if (v === undefined || v === null || v === "") throw new FbError(message);
   }
-  requireCustomAdapter(svc);
+  const { reg, code } = resolveAdapter(svc);
+  // PHP sets the model fields before the adapter call but flushes
+  // after it, so adapter-first-then-save is equivalent: a failure
+  // persists nothing.
+  if (code === "Enom") {
+    const enomContact: EnomContact = {
+      firstName: String(contact["first_name"]),
+      lastName: String(contact["last_name"]),
+      company: contact["company"] !== undefined && contact["company"] !== null ? String(contact["company"]) : "",
+      address1: String(contact["address1"]),
+      address2: contact["address2"] !== undefined && contact["address2"] !== null ? String(contact["address2"]) : "",
+      country: String(contact["country"]),
+      city: String(contact["city"]),
+      state: String(contact["state"]),
+      postcode: String(contact["postcode"]),
+      email: String(contact["email"]),
+      phoneCc: String(contact["phone_cc"]),
+      phone: String(contact["phone"]),
+    };
+    await enomModifyContact(enomConfig(reg), svc.sld ?? "", stripDots(svc.tld), enomContact);
+  }
   saveDomain(svc, {
     contact_first_name: String(contact["first_name"]),
     contact_last_name: String(contact["last_name"]),
@@ -552,9 +630,21 @@ register("client", "servicedomain", "update_contacts", (ctx) => {
   return updateContacts(ctx, getServiceClient);
 });
 
-function setPrivacy(ctx: CallContext, getService: (ctx: CallContext) => [OrderRow, DomainRow], value: boolean): boolean {
+async function setPrivacy(
+  ctx: CallContext,
+  getService: (ctx: CallContext) => [OrderRow, DomainRow],
+  value: boolean,
+): Promise<boolean> {
   const [, svc] = getService(ctx);
-  requireCustomAdapter(svc);
+  const { reg, code } = resolveAdapter(svc);
+  // PHP: adapter first, then the local flag — a failure flips nothing.
+  if (code === "Enom") {
+    if (value) {
+      await enomEnablePrivacy(enomConfig(reg), svc.sld ?? "", stripDots(svc.tld), svc.period ?? 1);
+    } else {
+      enomDisablePrivacy();
+    }
+  }
   saveDomain(svc, { privacy: value ? 1 : 0 });
   return true;
 }
@@ -576,9 +666,16 @@ register("client", "servicedomain", "disable_privacy_protection", (ctx) => {
   return setPrivacy(ctx, getServiceClient, false);
 });
 
-function setLocked(ctx: CallContext, getService: (ctx: CallContext) => [OrderRow, DomainRow], value: boolean): boolean {
+async function setLocked(
+  ctx: CallContext,
+  getService: (ctx: CallContext) => [OrderRow, DomainRow],
+  value: boolean,
+): Promise<boolean> {
   const [, svc] = getService(ctx);
-  requireCustomAdapter(svc);
+  const { reg, code } = resolveAdapter(svc);
+  if (code === "Enom") {
+    await enomSetLock(enomConfig(reg), svc.sld ?? "", stripDots(svc.tld), value);
+  }
   saveDomain(svc, { locked: value ? 1 : 0 });
   return true;
 }
@@ -606,12 +703,16 @@ function addYears(ts: string, years: number): string {
   return d.toISOString().slice(0, 19).replace("T", " ");
 }
 
-function syncDomain(svc: DomainRow): void {
+async function syncDomain(svc: DomainRow): Promise<void> {
   const order = getDb()
     .prepare("SELECT * FROM client_order WHERE service_type = 'domain' AND service_id = ? ORDER BY id ASC LIMIT 1")
     .get(svc.id) as unknown as OrderRow | undefined;
   if (!order) throw new FbError("Domain order not found");
-  requireCustomAdapter(svc);
+  const { reg, code } = resolveAdapter(svc);
+  if (code === "Enom") {
+    await syncEnomDomain(svc, reg);
+    return;
+  }
   const client = getDb().prepare("SELECT * FROM client WHERE id = ?").get(svc.client_id) as unknown as
     | Record<string, unknown>
     | undefined;
@@ -640,29 +741,70 @@ function syncDomain(svc: DomainRow): void {
   });
 }
 
-register("admin", "servicedomain", "sync", (ctx) => {
+/**
+ * PHP syncWhois for eNom, field by field: locked/privacy copied only
+ * when the adapter supplies them (eNom supplies lock via GetRegLock;
+ * privacy is null — see enom.ts — so it is never overwritten here);
+ * contact fields overwritten directly from the eNom registrant contact
+ * (no client-profile merge — that merge is _getD's outbound shape, not
+ * sync's); expires/registered via formatRegistrarTimestamp, which maps
+ * an unparseable value to null — and GetDomainInfo carries no creation
+ * date, so sync wipes registered_at, exactly as PHP would. Nameservers
+ * are untouched by syncWhois. The whole patch is one UPDATE after every
+ * eNom call succeeds, so a failed call persists nothing.
+ */
+async function syncEnomDomain(svc: DomainRow, reg: RegistrarRow): Promise<void> {
+  const details = await enomGetDomainDetails(enomConfig(reg), svc.sld ?? "", stripDots(svc.tld));
+  const patch: Partial<DomainRow> = {
+    expires_at: details.expiresAtEpoch !== null ? epochToTs(details.expiresAtEpoch) : null,
+    registered_at: null,
+    synced_at: nowTimestamp(),
+  };
+  if (details.locked !== null) patch.locked = details.locked ? 1 : 0;
+  if (details.contact) {
+    const c = details.contact;
+    patch.contact_first_name = c.firstName;
+    patch.contact_last_name = c.lastName;
+    patch.contact_email = c.email;
+    patch.contact_company = c.company;
+    patch.contact_address1 = c.address1;
+    patch.contact_address2 = c.address2;
+    patch.contact_country = c.country;
+    patch.contact_city = c.city;
+    patch.contact_state = c.state;
+    patch.contact_postcode = c.postcode;
+    // eNom's Phone is a single string; there is no cc split to write
+    // back, so phone_cc is left alone.
+    patch.contact_phone = c.phone;
+  }
+  saveDomain(svc, patch);
+}
+
+register("admin", "servicedomain", "sync", async (ctx) => {
   requireAdmin(ctx);
   const [, svc] = getServiceAdmin(ctx);
-  syncDomain(svc);
+  await syncDomain(svc);
   return true;
 });
-register("client", "servicedomain", "sync", (ctx) => {
+register("client", "servicedomain", "sync", async (ctx) => {
   requireClient(ctx);
   const [, svc] = getServiceClient(ctx);
-  syncDomain(svc);
+  await syncDomain(svc);
   return true;
 });
 
-register("admin", "servicedomain", "get_transfer_code", (ctx) => {
+register("admin", "servicedomain", "get_transfer_code", async (ctx) => {
   requireAdmin(ctx);
   const [, svc] = getServiceAdmin(ctx);
-  requireCustomAdapter(svc);
+  const { reg, code } = resolveAdapter(svc);
+  if (code === "Enom") return enomGetEpp(enomConfig(reg), svc.sld ?? "", stripDots(svc.tld));
   return "";
 });
-register("client", "servicedomain", "get_transfer_code", (ctx) => {
+register("client", "servicedomain", "get_transfer_code", async (ctx) => {
   requireClient(ctx);
   const [, svc] = getServiceClient(ctx);
-  requireCustomAdapter(svc);
+  const { reg, code } = resolveAdapter(svc);
+  if (code === "Enom") return enomGetEpp(enomConfig(reg), svc.sld ?? "", stripDots(svc.tld));
   return "";
 });
 
@@ -944,7 +1086,7 @@ register("admin", "servicedomain", "registrar_update", (ctx) => {
   return true;
 });
 
-register("admin", "servicedomain", "batch_sync_expiration_dates", (ctx) => {
+register("admin", "servicedomain", "batch_sync_expiration_dates", async (ctx) => {
   requireAdmin(ctx);
   const setting = getDb().prepare("SELECT * FROM setting WHERE param = ?").get("servicedomain_last_sync") as unknown as
     | { value: string | null }
@@ -958,9 +1100,17 @@ register("admin", "servicedomain", "batch_sync_expiration_dates", (ctx) => {
     try {
       if (d.tld_registrar_id === null) throw new FbError("Registrar not found");
       const reg = getRegistrar(d.tld_registrar_id);
-      if (reg.registrar !== "Custom") throw new FbError(`Domain registrar ${reg.registrar} was not found`);
-      const now = nowTimestamp();
-      saveDomain(d, { expires_at: d.expires_at ?? addYears(now, d.period ?? 1) });
+      if (reg.registrar === "Custom") {
+        const now = nowTimestamp();
+        saveDomain(d, { expires_at: d.expires_at ?? addYears(now, d.period ?? 1) });
+      } else if (reg.registrar === "Enom") {
+        // PHP syncExpirationDate: expires only, and only when the
+        // adapter supplies a usable value.
+        const exp = await enomGetExpiration(enomConfig(reg), d.sld ?? "", stripDots(d.tld));
+        if (exp !== null) saveDomain(d, { expires_at: epochToTs(exp) });
+      } else {
+        throw new FbError(`Domain registrar ${reg.registrar} was not found`);
+      }
     } catch {
       // PHP logs per-domain failures and continues.
     }
@@ -1011,7 +1161,7 @@ function guestTldOrThrow(ctx: CallContext, notConfiguredMessage: string): TldRow
   return row;
 }
 
-register("guest", "servicedomain", "check", (ctx) => {
+register("guest", "servicedomain", "check", async (ctx) => {
   if (!ctx.params["tld"]) throw new FbError("TLD is missing");
   if (!ctx.params["sld"]) throw new FbError("SLD is missing");
   if (!isSldValid(ctx.params["sld"])) throw new FbError(`Domain ${ctx.params["sld"]} is invalid`);
@@ -1022,6 +1172,9 @@ register("guest", "servicedomain", "check", (ctx) => {
   if (row.tld_registrar_id === null) throw new FbError("Registrar not found");
   const reg = getRegistrar(row.tld_registrar_id);
   validateRegistrarConfig(reg, registrarConfig(reg));
+  if (reg.registrar === "Enom") {
+    return enomCheckAvailable(enomConfig(reg), ctx.params["sld"], stripDots(row.tld));
+  }
   if (reg.registrar !== "Custom") throw new FbError(`Domain registrar ${reg.registrar} was not found`);
   const cfg = registrarConfig(reg);
   if (phpBool(cfg["use_rdap"])) {
@@ -1030,12 +1183,15 @@ register("guest", "servicedomain", "check", (ctx) => {
   return true;
 });
 
-register("guest", "servicedomain", "can_be_transferred", (ctx) => {
+register("guest", "servicedomain", "can_be_transferred", async (ctx) => {
   const row = guestTldOrThrow(ctx, "TLD is not configured.");
   if (!row.allow_transfer) throw new FbError("Domain cannot be transferred", 403);
   if (row.tld_registrar_id === null) throw new FbError("Registrar not found");
   const reg = getRegistrar(row.tld_registrar_id);
   validateRegistrarConfig(reg, registrarConfig(reg));
+  if (reg.registrar === "Enom") {
+    return enomCanBeTransferred(enomConfig(reg), ctx.params["sld"], stripDots(row.tld));
+  }
   if (reg.registrar !== "Custom") throw new FbError(`Domain registrar ${reg.registrar} was not found`);
   const cfg = registrarConfig(reg);
   if (phpBool(cfg["use_rdap"])) {
