@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Select values must be unique",
+    "code": 1597
+  }
+}

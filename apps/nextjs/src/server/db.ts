@@ -2222,3 +2222,274 @@ export function insertInvoiceNote(row: {
     );
   return Number(info.lastInsertRowid);
 }
+
+/* ------------------------------------------------------------------ */
+/* Phase 5 R1 leftovers sub-batch 2: formbuilder, redirect, antispam */
+/* (via extension_meta), activity email log, product pairs, dashboard */
+/* queries, and the module-active gate for non-core modules.         */
+/* ------------------------------------------------------------------ */
+
+/** Core modules are always active (Module::CORE_MODULES); any other
+ * module is active iff an extension row type='mod', name=module,
+ * status='installed' exists (ExtensionRepository::existsActiveByTypeAndName). */
+const CORE_MODULES = new Set([
+  "api", "activity", "antispam", "cart", "client", "cron", "currency", "email", "extension",
+  "index", "invoice", "order", "page", "product", "profile", "security",
+  "servicecustom", "servicedomain", "servicedownloadable", "servicehosting", "servicelicense",
+  "staff", "stats", "support", "system", "theme", "orderbutton", "formbuilder", "widgets",
+]);
+
+export function isModuleActive(mod: string): boolean {
+  if (CORE_MODULES.has(mod)) return true;
+  const row = getDb()
+    .prepare("SELECT 1 AS one FROM extension WHERE type = 'mod' AND name = ? AND status = 'installed'")
+    .get(mod) as { one: number } | undefined;
+  return !!row;
+}
+
+export interface FormRow {
+  id: number;
+  name: string | null;
+  style: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface FormFieldRow {
+  id: number;
+  name: string | null;
+  label: string | null;
+  hide_label: number | null;
+  description: string | null;
+  type: string | null;
+  default_value: string | null;
+  required: number | null;
+  hidden: number | null;
+  readonly: number | null;
+  is_unique: number | null;
+  prefix: string | null;
+  suffix: string | null;
+  options: string | null;
+  show_initial: string | null;
+  show_middle: string | null;
+  show_prefix: string | null;
+  show_suffix: string | null;
+  text_size: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+  form_id: number | null;
+}
+
+export function insertForm(name: string, style: string): number {
+  const ts = nowTimestamp();
+  const info = getDbWrite()
+    .prepare("INSERT INTO form (name, style, created_at, updated_at) VALUES (?, ?, ?, ?)")
+    .run(name, style, ts, ts);
+  return Number(info.lastInsertRowid);
+}
+
+export function findForm(id: number): FormRow | undefined {
+  return getDb().prepare("SELECT * FROM form WHERE id = ?").get(id) as unknown as FormRow | undefined;
+}
+
+export function listFormsWithCounts(): { id: number; name: string | null; product_count: number; order_count: number }[] {
+  return getDb()
+    .prepare(
+      `SELECT f.id, f.name, COUNT(p.id) AS product_count, COUNT(co.id) AS order_count
+       FROM form f
+       LEFT JOIN product p ON f.id = p.form_id
+       LEFT JOIN client_order co ON f.id = co.form_id
+       GROUP BY f.id`,
+    )
+    .all() as never[];
+}
+
+export function listFormPairs(): { id: number; name: string | null }[] {
+  return getDb().prepare("SELECT id, name FROM form").all() as never[];
+}
+
+export function updateFormRow(id: number, name: string, style: string): void {
+  getDbWrite()
+    .prepare("UPDATE form SET name = ?, style = ?, updated_at = ? WHERE id = ?")
+    .run(name, style, nowTimestamp(), id);
+}
+
+export function deleteFormCascade(id: number): void {
+  const w = getDbWrite();
+  w.prepare("DELETE FROM form_field WHERE form_id = ?").run(id);
+  w.prepare("DELETE FROM form WHERE id = ?").run(id);
+  w.prepare("UPDATE product SET form_id = NULL WHERE form_id = ?").run(id);
+  w.prepare("UPDATE client_order SET form_id = NULL WHERE form_id = ?").run(id);
+}
+
+export function countFormFields(formId: number): number {
+  const row = getDb()
+    .prepare("SELECT COUNT(*) AS n FROM form_field WHERE form_id = ?")
+    .get(formId) as { n: number };
+  return row.n;
+}
+
+export function listFormFields(formId: number): FormFieldRow[] {
+  return getDb()
+    .prepare("SELECT * FROM form_field WHERE form_id = ? ORDER BY id ASC")
+    .all(formId) as unknown as FormFieldRow[];
+}
+
+export function findFormField(id: number): FormFieldRow | undefined {
+  return getDb().prepare("SELECT * FROM form_field WHERE id = ?").get(id) as unknown as
+    | FormFieldRow
+    | undefined;
+}
+
+export function insertFormField(f: {
+  form_id: number | string;
+  name: string;
+  label: string;
+  hide_label: unknown;
+  description: unknown;
+  type: string;
+  default_value: unknown;
+  required: unknown;
+  hidden: unknown;
+  readonly: unknown;
+  options: unknown;
+  prefix: unknown;
+  suffix: unknown;
+  show_initial: unknown;
+  show_middle: unknown;
+  show_prefix: unknown;
+  show_suffix: unknown;
+  text_size: unknown;
+}): number {
+  const ts = nowTimestamp();
+  const info = getDbWrite()
+    .prepare(
+      `INSERT INTO form_field (form_id, name, label, hide_label, description, type, default_value,
+       required, hidden, readonly, options, prefix, suffix, show_initial, show_middle,
+       show_prefix, show_suffix, text_size, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      f.form_id, f.name, f.label, f.hide_label as never, f.description as never, f.type,
+      f.default_value as never, f.required as never, f.hidden as never, f.readonly as never,
+      f.options as never, f.prefix as never, f.suffix as never, f.show_initial as never,
+      f.show_middle as never, f.show_prefix as never, f.show_suffix as never,
+      f.text_size as never, ts, ts,
+    );
+  return Number(info.lastInsertRowid);
+}
+
+export function updateFormFieldRow(
+  id: number,
+  f: {
+    name: string; label: string; hide_label: unknown; description: unknown; default_value: unknown;
+    required: unknown; hidden: unknown; readonly: unknown; options: string; prefix: unknown;
+    suffix: unknown; show_initial: unknown; show_middle: unknown; show_prefix: unknown;
+    show_suffix: unknown; text_size: unknown;
+  },
+): void {
+  getDbWrite()
+    .prepare(
+      `UPDATE form_field SET name = ?, label = ?, hide_label = ?, description = ?,
+       default_value = ?, required = ?, hidden = ?, readonly = ?, options = ?, prefix = ?,
+       suffix = ?, show_initial = ?, show_middle = ?, show_prefix = ?, show_suffix = ?,
+       text_size = ?, updated_at = ? WHERE id = ?`,
+    )
+    .run(
+      f.name, f.label, f.hide_label as never, f.description as never, f.default_value as never,
+      f.required as never, f.hidden as never, f.readonly as never, f.options, f.prefix as never,
+      f.suffix as never, f.show_initial as never, f.show_middle as never, f.show_prefix as never,
+      f.show_suffix as never, f.text_size as never, nowTimestamp(), id,
+    );
+}
+
+export function deleteFormFieldRow(id: number): number {
+  const info = getDbWrite().prepare("DELETE FROM form_field WHERE id = ?").run(id);
+  return Number(info.changes);
+}
+
+export function countFormFieldsNamed(formId: number | null, name: string, excludeId: number): number {
+  const row = getDb()
+    .prepare("SELECT COUNT(*) AS n FROM form_field WHERE form_id = ? AND name = ? AND id != ?")
+    .get(formId, name, excludeId) as { n: number };
+  return row.n;
+}
+
+export interface ExtensionMetaRow {
+  id: number;
+  client_id: number | null;
+  extension: string | null;
+  rel_type: string | null;
+  rel_id: string | null;
+  meta_key: string | null;
+  meta_value: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export function listExtensionMetaByExtension(extension: string): ExtensionMetaRow[] {
+  return getDb()
+    .prepare("SELECT * FROM extension_meta WHERE extension = ? ORDER BY id ASC")
+    .all(extension) as unknown as ExtensionMetaRow[];
+}
+
+export function findExtensionMetaById(extension: string, id: number): ExtensionMetaRow | undefined {
+  return getDb()
+    .prepare("SELECT * FROM extension_meta WHERE extension = ? AND id = ?")
+    .get(extension, id) as unknown as ExtensionMetaRow | undefined;
+}
+
+export function insertExtensionMeta(extension: string, metaKey: string, metaValue: string): number {
+  const ts = nowTimestamp();
+  const info = getDbWrite()
+    .prepare(
+      "INSERT INTO extension_meta (extension, meta_key, meta_value, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+    )
+    .run(extension, metaKey, metaValue, ts, ts);
+  return Number(info.lastInsertRowid);
+}
+
+export function updateExtensionMetaRow(id: number, metaKey: string, metaValue: string): void {
+  getDbWrite()
+    .prepare("UPDATE extension_meta SET meta_key = ?, meta_value = ?, updated_at = ? WHERE id = ?")
+    .run(metaKey, metaValue, nowTimestamp(), id);
+}
+
+export function deleteExtensionMetaRow(id: number): void {
+  getDbWrite().prepare("DELETE FROM extension_meta WHERE id = ?").run(id);
+}
+
+export function insertActivityClientEmail(row: {
+  client_id: number | null;
+  sender: string | null;
+  recipients: string | null;
+  subject: string;
+  content_html: string | null;
+  content_text: string | null;
+}): number {
+  const info = getDbWrite()
+    .prepare(
+      `INSERT INTO activity_client_email (client_id, sender, recipients, subject, content_html,
+       content_text, attachment_name, attachment_content, attachment_mime, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NULL, ?)`,
+    )
+    .run(
+      row.client_id, row.sender, row.recipients, row.subject, row.content_html,
+      row.content_text, nowTimestamp(),
+    );
+  return Number(info.lastInsertRowid);
+}
+
+export function listProductPairs(filters: {
+  productsOnly: boolean;
+  activeOnly: boolean;
+  type: string | null;
+}): { id: number; title: string | null }[] {
+  const where: string[] = [];
+  const vals: unknown[] = [];
+  if (filters.productsOnly) { where.push("is_addon = 0"); }
+  if (filters.activeOnly) { where.push("active = 1"); }
+  if (filters.type) { where.push("type = ?"); vals.push(filters.type); }
+  const sql = `SELECT id, title FROM product ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY id ASC`;
+  return getDb().prepare(sql).all(...(vals as never[])) as never[];
+}

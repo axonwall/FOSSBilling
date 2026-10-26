@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "array_filter(): Argument #1 ($array) must be of type array, null given",
+    "code": 9998
+  }
+}

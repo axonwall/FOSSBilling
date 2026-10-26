@@ -1,0 +1,15 @@
+{
+  "result": [
+    {
+      "id": 40,
+      "path": "old/page",
+      "target": "https://example.com/new"
+    },
+    {
+      "id": 41,
+      "path": "gone",
+      "target": "/local"
+    }
+  ],
+  "error": null
+}

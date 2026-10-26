@@ -1,0 +1,8 @@
+{
+  "result": {
+    "id": 40,
+    "path": "old/page",
+    "target": "https://example.com/new"
+  },
+  "error": null
+}

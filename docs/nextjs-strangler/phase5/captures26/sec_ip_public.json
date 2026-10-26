@@ -1,0 +1,21 @@
+{
+  "result": {
+    "ip": {
+      "address": "8.8.8.8",
+      "type": "IPv4"
+    },
+    "country": {
+      "name": "United States",
+      "flag": "\ud83c\uddfa\ud83c\uddf8",
+      "currencies": [
+        "USD",
+        "USN"
+      ]
+    },
+    "asn": {
+      "asnNumber": 15169,
+      "asnOrg": "GOOGLE"
+    }
+  },
+  "error": null
+}

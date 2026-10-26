@@ -1,0 +1,12 @@
+{
+  "result": {
+    "publickey": null,
+    "enabled": false,
+    "version": null,
+    "captcha_provider": "recaptcha_v2",
+    "recaptcha_v3_threshold": 0.5,
+    "turnstile_site_key": null,
+    "hcaptcha_site_key": null
+  },
+  "error": null
+}

@@ -1,0 +1,14 @@
+{
+  "result": {
+    "id": 1,
+    "name": "Cap26 Form",
+    "style": {
+      "type": "horizontal",
+      "show_title": "0"
+    },
+    "created_at": "2026-10-26 14:39:03",
+    "updated_at": "2026-10-26 14:39:03",
+    "fields": []
+  },
+  "error": null
+}

@@ -1,0 +1,8 @@
+{
+  "result": {
+    "result": "failed",
+    "message": "http://127.0.0.1:8080/config.php returned HTTP 200 when it shouldn't have.\nhttp://127.0.0.1:8080/data/log/php_error.log returned HTTP 200 when it shouldn't have.\nhttp://127.0.0.1:8080/vendor/autoload.php returned HTTP 200 when it shouldn't have.\n",
+    "id": "webserver"
+  },
+  "error": null
+}

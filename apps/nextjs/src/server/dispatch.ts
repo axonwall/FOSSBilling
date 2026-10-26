@@ -68,6 +68,42 @@ export function errorEnvelope(err: unknown): Response {
   return Response.json({ result: null, error: { message, code: 9999 } });
 }
 
+/**
+ * PHP required-param check, mirroring both the RequiredParams
+ * attribute (Dispatcher::validateRequiredParams) and
+ * Validate::checkRequiredParamsForArray: a param is missing when
+ * unset, blank (string trims to empty), or empty-and-not-numeric
+ * (false, [], null). '0' and 0 pass (numeric). Throws FbError with
+ * the PHP message and code (attribute checks carry no code → 9999;
+ * body checks carry their explicit code, e.g. 2391, 9958).
+ */
+export function requireParam(
+  params: Record<string, string>,
+  name: string,
+  message: string,
+  code = 9999,
+): string {
+  const v = params[name];
+  if (v === undefined || v === null) throw new FbError(message, code);
+  if (typeof v === "string" && v.trim() === "") throw new FbError(message, code);
+  if (!isPhpNumeric(v) && isPhpEmpty(v)) throw new FbError(message, code);
+  return v;
+}
+
+function isPhpNumeric(v: unknown): boolean {
+  if (typeof v === "number") return Number.isFinite(v);
+  if (typeof v !== "string") return false;
+  return v.trim() !== "" && !Number.isNaN(Number(v));
+}
+
+function isPhpEmpty(v: unknown): boolean {
+  if (v === null || v === undefined || v === false) return true;
+  if (typeof v === "string") return v === "" || v === "0";
+  if (Array.isArray(v)) return v.length === 0;
+  if (typeof v === "number") return v === 0;
+  return false;
+}
+
 /** Guard: admin identity required (PHP: Authentication Failed / 201). */
 export function requireAdmin(ctx: CallContext) {
   if (!ctx.session?.admin) throw new FbError("Authentication Failed", 201);

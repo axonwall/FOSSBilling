@@ -1,0 +1,13 @@
+[
+  {
+    "id": 40,
+    "client_id": null,
+    "extension": "mod_redirect",
+    "rel_type": null,
+    "rel_id": null,
+    "meta_key": "moved",
+    "meta_value": "https://example.com/final",
+    "created_at": "2026-10-26 14:39:25",
+    "updated_at": "2026-10-26 14:39:27"
+  }
+]

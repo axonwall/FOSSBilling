@@ -1,0 +1,13 @@
+[
+  {
+    "id": 42,
+    "client_id": null,
+    "extension": "mod_antispam",
+    "rel_type": null,
+    "rel_id": null,
+    "meta_key": "config",
+    "meta_value": "<encrypted>",
+    "created_at": "2026-10-26 14:39:30",
+    "updated_at": "2026-10-26 14:39:33"
+  }
+]

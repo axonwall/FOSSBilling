@@ -1,0 +1,10 @@
+{
+  "result": [
+    {
+      "id": 40,
+      "path": "moved",
+      "target": "https://example.com/final"
+    }
+  ],
+  "error": null
+}

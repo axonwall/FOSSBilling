@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Field type not supported",
+    "code": 3207
+  }
+}

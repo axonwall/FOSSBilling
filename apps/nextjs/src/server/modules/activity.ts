@@ -1,6 +1,7 @@
-import { insertActivity, listActivity } from "../db";
+import { insertActivity, insertActivityClientEmail, listActivity } from "../db";
 import { register, requireAdmin, type CallContext } from "../dispatch";
 import { paginate } from "../util";
+import { phpInt } from "./formbuilder";
 
 /**
  * Activity module (admin) — TS port of Activity/Api/Admin.php
@@ -48,6 +49,25 @@ register("admin", "activity", "log_get_list", (ctx: CallContext) => {
     return item;
   });
   return paginate(items, ctx.params);
+});
+
+/** admin/activity/log_email: appends an activity_client_email row;
+ * false without `subject` (mirrors the PHP API, which returns false
+ * rather than throwing). Pinned by capture26.py. */
+register("admin", "activity", "log_email", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const subject = ctx.params["subject"];
+  if (!subject) return false;
+  const clientId = ctx.params["client_id"];
+  insertActivityClientEmail({
+    client_id: clientId ? phpInt(clientId) : null,
+    sender: ctx.params["sender"] ?? null,
+    recipients: ctx.params["recipients"] ?? null,
+    subject,
+    content_html: ctx.params["content_html"] ?? null,
+    content_text: ctx.params["content_text"] ?? null,
+  });
+  return true;
 });
 
 /** admin/activity/log: writes an activity_system entry; false without `m`. */

@@ -5,6 +5,7 @@ import {
   getDbWrite,
   listAllProducts,
   listCategories,
+  listProductPairs,
   listProductPeriods,
   listTlds,
   findTldRegistrar,
@@ -271,6 +272,32 @@ register("admin", "product", "get_list", (ctx: CallContext) => {
   if (ctx.params["type"]) items = items.filter((p) => p.type === ctx.params["type"]);
   if (ctx.params["status"]) items = items.filter((p) => p.status === ctx.params["status"]);
   return paginate(items.map((p) => productArray(p, true)), ctx.params);
+});
+
+/** admin/product/get_pairs: Repository::getPairs — products_only and
+ * active_only default true; a present '0'/'' disables the filter
+ * (PHP falsy), while any other non-empty value keeps it. Empty
+ * results encode as [] (not {}), matching PHP's empty array. Unlike
+ * the guest pairs, hidden products are NOT filtered here. */
+register("admin", "product", "get_pairs", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const rawVal = (k: string): unknown =>
+    ctx.rawParams && k in ctx.rawParams ? ctx.rawParams[k] : ctx.params[k];
+  const phpTruthy = (v: unknown, fallback: boolean): boolean => {
+    if (v === undefined) return fallback;
+    if (typeof v === "boolean") return v;
+    if (typeof v === "number") return v !== 0;
+    return v !== "" && v !== "0";
+  };
+  const pairs = listProductPairs({
+    productsOnly: phpTruthy(rawVal("products_only"), true),
+    activeOnly: phpTruthy(rawVal("active_only"), true),
+    type: ctx.params["type"] ?? null,
+  });
+  if (pairs.length === 0) return [];
+  const out: Record<string, string> = {};
+  for (const p of pairs) out[String(p.id)] = p.title ?? "";
+  return out;
 });
 
 register("admin", "product", "get", (ctx: CallContext) => {

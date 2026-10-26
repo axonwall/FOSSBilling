@@ -9,7 +9,7 @@
 // value rather than storing unreadable plaintext.
 
 import { createCipheriv, createDecipheriv, pbkdf2Sync, randomBytes } from "node:crypto";
-import { getDb } from "./db";
+import { getDb, getDbWrite, nowTimestamp } from "./db";
 
 function passphrase(): string | null {
   return process.env.FB_INFO_SALT ?? process.env.FB_CALLBACK_SALT ?? null;
@@ -48,6 +48,32 @@ export function encryptV2(text: string): string | null {
   const cipher = createCipheriv("aes-256-cbc", key(pass), iv);
   const data = Buffer.concat([cipher.update(text, "utf-8"), cipher.final()]);
   return "v2:" + Buffer.concat([iv, data]).toString("base64");
+}
+
+/** Write an extension config row (extension_meta, meta_key 'config'),
+ * mirroring Extension Service::setConfig: the full config object
+ * (including its 'ext' key) is JSON-encoded then v2-encrypted; an
+ * existing row is updated (updated_at bumped), otherwise inserted.
+ * Returns false when unkeyed (no salt) — callers then cannot store
+ * readable config, mirroring PHP's encrypt failure rather than
+ * writing plaintext. */
+export function writeExtensionConfig(ext: string, config: Record<string, unknown>): boolean {
+  const encrypted = encryptV2(JSON.stringify(config));
+  if (!encrypted) return false;
+  const db = getDbWrite();
+  const row = db
+    .prepare("SELECT id FROM extension_meta WHERE extension = ? AND meta_key = 'config'")
+    .get(ext) as { id: number } | undefined;
+  if (row) {
+    db.prepare("UPDATE extension_meta SET meta_value = ?, updated_at = ? WHERE id = ?")
+      .run(encrypted, nowTimestamp(), row.id);
+  } else {
+    const ts = nowTimestamp();
+    db.prepare(
+      "INSERT INTO extension_meta (extension, meta_key, meta_value, created_at, updated_at) VALUES (?, 'config', ?, ?, ?)",
+    ).run(ext, encrypted, ts, ts);
+  }
+  return true;
 }
 
 /** Read an extension config row (extension_meta, meta_key 'config'). */

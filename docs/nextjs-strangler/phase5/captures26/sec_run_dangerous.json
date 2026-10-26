@@ -1,0 +1,8 @@
+{
+  "result": {
+    "result": "warning",
+    "message": "The following PHP functions are enabled, potentially being a security concern:\n- exec\n- passthru\n- system\n- shell_exec\n- popen\n- proc_open\n- pcntl_exec\n",
+    "id": "dangerousFunctions"
+  },
+  "error": null
+}

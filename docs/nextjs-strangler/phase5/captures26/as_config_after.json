@@ -1,0 +1,20 @@
+{
+  "result": {
+    "block_ips": true,
+    "blocked_ips": "203.0.113.5",
+    "captcha_enabled": false,
+    "captcha_provider": "recaptcha_v2",
+    "captcha_recaptcha_publickey": null,
+    "captcha_recaptcha_privatekey": null,
+    "captcha_recaptcha_v3_threshold": 0.5,
+    "turnstile_site_key": null,
+    "turnstile_secret_key": null,
+    "hcaptcha_site_key": null,
+    "hcaptcha_secret_key": null,
+    "sfs": false,
+    "check_temp_emails": true,
+    "honeypot_enabled": true,
+    "honeypot_field": "bio"
+  },
+  "error": null
+}

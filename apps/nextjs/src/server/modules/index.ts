@@ -27,5 +27,15 @@ import "./servicelicense";
 import "./servicedownloadable";
 import "./servicehosting";
 import "./servicedomain";
+import "./formbuilder";
+import "./security";
+import "./redirect";
+import "./antispam";
+import "./widgets";
+import "./seo";
+import "./serviceapikey";
+import "./cookieconsent";
+import "./page";
+import "./indexmod";
 
 export { findHandler, tsModulesEnabled } from "../dispatch";

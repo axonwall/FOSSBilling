@@ -1,0 +1,11 @@
+{
+  "result": {
+    "ip": {
+      "address": "127.0.0.1",
+      "type": "IPv4"
+    },
+    "country": [],
+    "asn": []
+  },
+  "error": null
+}

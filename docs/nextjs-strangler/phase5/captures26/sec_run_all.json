@@ -1,0 +1,29 @@
+{
+  "result": [
+    {
+      "result": "warning",
+      "message": "The following PHP functions are enabled, potentially being a security concern:\n- exec\n- passthru\n- system\n- shell_exec\n- popen\n- proc_open\n- pcntl_exec\n",
+      "id": "dangerousFunctions",
+      "name": "Dangerous PHP functions"
+    },
+    {
+      "result": "failed",
+      "message": "- Fail: HTTPS is not enforced.\n- Warning: Debug mode is enabled for your FOSSBilling installation.\n- Warning: You appear to be using a non-release version of FOSSBilling.\n",
+      "id": "generalCheck",
+      "name": "General Check"
+    },
+    {
+      "result": "failed",
+      "message": "Failed to lookup PHP version status.",
+      "id": "phpVersion",
+      "name": "PHP Version Check"
+    },
+    {
+      "result": "failed",
+      "message": "http://127.0.0.1:8080/config.php returned HTTP 200 when it shouldn't have.\nhttp://127.0.0.1:8080/data/log/php_error.log returned HTTP 200 when it shouldn't have.\nhttp://127.0.0.1:8080/vendor/autoload.php returned HTTP 200 when it shouldn't have.\n",
+      "id": "webserver",
+      "name": "Webserver Check"
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Invalid IP address",
+    "code": 9999
+  }
+}

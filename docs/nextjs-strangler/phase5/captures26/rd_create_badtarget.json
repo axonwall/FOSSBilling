@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Only HTTP and HTTPS redirect targets are allowed.",
+    "code": 9999
+  }
+}

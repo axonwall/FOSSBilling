@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "FOSSBilling module cookieconsent is not installed/activated",
+    "code": 715
+  }
+}

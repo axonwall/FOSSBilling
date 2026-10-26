@@ -1,0 +1,27 @@
+{
+  "result": {
+    "id": 1,
+    "name": "new_text_1",
+    "label": "Text Input 1",
+    "hide_label": null,
+    "description": null,
+    "type": "text",
+    "default_value": null,
+    "required": null,
+    "hidden": null,
+    "readonly": null,
+    "is_unique": null,
+    "prefix": null,
+    "suffix": null,
+    "options": null,
+    "show_initial": null,
+    "show_middle": null,
+    "show_prefix": null,
+    "show_suffix": null,
+    "text_size": null,
+    "created_at": "2026-10-26 14:39:06",
+    "updated_at": "2026-10-26 14:39:06",
+    "form_id": 1
+  },
+  "error": null
+}

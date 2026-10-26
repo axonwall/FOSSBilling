@@ -1,0 +1,31 @@
+{
+  "result": {
+    "id": 3,
+    "name": "new_select_3",
+    "label": "Dropdown 3",
+    "hide_label": null,
+    "description": null,
+    "type": "select",
+    "default_value": null,
+    "required": null,
+    "hidden": null,
+    "readonly": null,
+    "is_unique": null,
+    "prefix": null,
+    "suffix": null,
+    "options": {
+      "First option": "1",
+      "Second option": "2",
+      "Third option": "3"
+    },
+    "show_initial": null,
+    "show_middle": null,
+    "show_prefix": null,
+    "show_suffix": null,
+    "text_size": null,
+    "created_at": "2026-10-26 14:39:06",
+    "updated_at": "2026-10-26 14:39:06",
+    "form_id": 1
+  },
+  "error": null
+}

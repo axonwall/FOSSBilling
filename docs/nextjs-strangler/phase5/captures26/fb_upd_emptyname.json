@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Field name cannot be empty. Please make sure it is not empty and does not contain special characters.",
+    "code": 3502
+  }
+}

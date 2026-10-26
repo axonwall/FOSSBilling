@@ -1,0 +1,17 @@
+{
+  "result": [
+    {
+      "id": 1,
+      "name": "Cap26 Form",
+      "product_count": 0,
+      "order_count": 0
+    },
+    {
+      "id": 2,
+      "name": "Cap26 Default",
+      "product_count": 0,
+      "order_count": 0
+    }
+  ],
+  "error": null
+}

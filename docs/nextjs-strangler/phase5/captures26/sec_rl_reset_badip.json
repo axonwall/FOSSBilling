@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "The provided input was not a valid IP address.",
+    "code": 9999
+  }
+}

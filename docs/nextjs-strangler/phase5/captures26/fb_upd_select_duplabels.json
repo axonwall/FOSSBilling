@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Select labels must be unique",
+    "code": 1598
+  }
+}

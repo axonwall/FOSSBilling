@@ -1,0 +1,16 @@
+{
+  "result": [
+    {
+      "slot": "client.theme.footer.end",
+      "widgets": [
+        {
+          "module": "branding",
+          "template": "mod_branding_footer",
+          "priority": 10
+        }
+      ],
+      "count": 1
+    }
+  ],
+  "error": null
+}
