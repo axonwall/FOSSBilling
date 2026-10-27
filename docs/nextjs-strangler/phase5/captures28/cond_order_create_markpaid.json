@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "You need the \"invoice\" permission to perform this action",
+    "code": 403
+  }
+}

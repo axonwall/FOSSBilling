@@ -1,0 +1,81 @@
+{
+  "result": {
+    "support": {
+      "index": 500,
+      "label": "Support",
+      "class": "headset",
+      "active": false,
+      "uri": "http://127.0.0.1:8080/admin/support?status=open",
+      "subpages": [
+        {
+          "label": "Support Tickets",
+          "uri": "http://127.0.0.1:8080/admin/support?status=open",
+          "index": 100,
+          "class": "",
+          "active": false
+        },
+        {
+          "label": "Canned Responses",
+          "uri": "http://127.0.0.1:8080/admin/support/canned-responses",
+          "index": 400,
+          "class": "",
+          "active": false
+        },
+        {
+          "index": 500,
+          "label": "Knowledge Base",
+          "uri": "http://127.0.0.1:8080/admin/support/kb",
+          "class": "",
+          "active": false
+        }
+      ]
+    },
+    "system": {
+      "index": 600,
+      "label": "System",
+      "class": "settings",
+      "active": false,
+      "uri": "http://127.0.0.1:8080/admin/system",
+      "subpages": [
+        {
+          "label": "Settings",
+          "index": 100,
+          "uri": "http://127.0.0.1:8080/admin/system",
+          "class": "",
+          "active": false
+        },
+        {
+          "label": "Update FOSSBilling",
+          "index": 100,
+          "uri": "http://127.0.0.1:8080/admin/system/update",
+          "class": "",
+          "active": false
+        }
+      ]
+    },
+    "extensions": {
+      "index": 1000,
+      "label": "Extensions",
+      "class": "iPlugin",
+      "active": false,
+      "uri": "http://127.0.0.1:8080/admin/extension",
+      "subpages": [
+        {
+          "label": "Overview",
+          "uri": "http://127.0.0.1:8080/admin/extension",
+          "index": 100,
+          "class": "",
+          "active": false
+        },
+        {
+          "label": "Languages",
+          "index": 200,
+          "uri": "http://127.0.0.1:8080/admin/extension/languages",
+          "class": "",
+          "active": false
+        }
+      ]
+    }
+  },
+  "error": null
+}

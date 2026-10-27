@@ -28,6 +28,7 @@ import {
   requireClient,
   type CallContext,
 } from "../dispatch";
+import { requirePermission } from "../permissions";
 import { clientBlock } from "./invoice";
 import { issueInvoice, prepareInvoice, round2 } from "../money";
 import { exportCsvResponse, requestedCsvHeaders } from "../csv";
@@ -234,6 +235,25 @@ register("admin", "order", "create", (ctx: CallContext) => {
   const productId = ctx.params["product_id"];
   if (!clientId) throw new FbError("Client ID was not passed");
   if (!productId) throw new FbError("Product ID was not passed");
+  // R2a conditional guards (Order Admin::create): product/manage_promos
+  // only when a promo is supplied (PHP !empty treats '0' as empty),
+  // and the invoice-access guard only when marking the invoice paid.
+  const promoCode = (ctx.params["promo_code"] ?? "").trim();
+  const promoId = ctx.params["promo_id"];
+  if (promoCode !== "" || (promoId !== undefined && promoId !== "" && promoId !== "0")) {
+    requirePermission(ctx, "product", "manage_promos");
+  }
+  const markPaidRaw =
+    ctx.rawParams["mark_invoice_paid"] !== undefined ? ctx.rawParams["mark_invoice_paid"] : ctx.params["mark_invoice_paid"];
+  const markPaid =
+    typeof markPaidRaw === "boolean"
+      ? markPaidRaw
+      : typeof markPaidRaw === "number"
+        ? markPaidRaw !== 0
+        : typeof markPaidRaw === "string"
+          ? ["1", "true", "yes", "on"].includes(markPaidRaw.toLowerCase())
+          : false;
+  if (markPaid) requirePermission(ctx, "invoice");
   const client = findClientById(Number(clientId));
   if (!client) throw new FbError("Client not found");
   const product = findProductById(Number(productId));

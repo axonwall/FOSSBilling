@@ -1,5 +1,7 @@
 import type { NextRequest } from "next/server";
 import { enforceCsrf, envelope, errorEnvelope, findHandler, tsModulesEnabled } from "@/server/dispatch";
+import { enforceDispatcherGates } from "@/server/guards";
+import { REMOVED_SYSTEM_ADMIN } from "@/server/modules/system";
 import { readSession } from "@/server/session";
 import "@/server/modules";
 
@@ -134,6 +136,14 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
           setCookies: [] as string[],
         };
         enforceCsrf(callCtx, params["CSRFToken"] ?? req.headers.get("x-csrf-token") ?? undefined);
+        // R2a dispatcher gates (Api\Dispatcher order: identity 201,
+        // activation 715, admin module access 725, method guards 403):
+        // after CSRF, before the handler. Removed system endpoints are
+        // exempt by R1 design — they throw the removal error before
+        // any auth check, for every caller.
+        if (!(role === "admin" && module === "system" && REMOVED_SYSTEM_ADMIN.includes(method))) {
+          enforceDispatcherGates(callCtx, role, module, method);
+        }
         const result = await handler(callCtx);
         // Binary/text endpoints return a full Response: pass it through
         // verbatim (plus handler cookies), never wrapped in the envelope.

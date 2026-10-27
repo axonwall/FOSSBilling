@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "You do not have access to the servicehosting module",
+    "code": 725
+  }
+}

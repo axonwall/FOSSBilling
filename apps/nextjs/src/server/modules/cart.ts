@@ -47,6 +47,7 @@ import {
   type PromoRow,
 } from "../db";
 import { FbError, register, requireAdmin, requireClient, type CallContext } from "../dispatch";
+import { requirePermission } from "../permissions";
 import { queueTemplatedEmail } from "../emailer";
 import { ensureSession } from "../session";
 import {
@@ -1559,6 +1560,10 @@ register("admin", "cart", "staff_basket_checkout", (ctx: CallContext) => {
   const markPaid = normalizeBooleanParam(
     ctx.rawParams["mark_invoice_paid"] !== undefined ? ctx.rawParams["mark_invoice_paid"] : ctx.params["mark_invoice_paid"],
   );
+  // R2a conditional guard (Cart Admin::staff_basket_checkout): the
+  // invoice-access guard fires only when marking the invoice paid, and
+  // PHP checks it before validateAdminMarkAsPaidRequest.
+  if (markPaid) requirePermission(ctx, "invoice");
   let markGateway: { id: number; gateway: string; name: string | null } | null = null;
   if (markPaid) markGateway = validateMarkPaidPreflight(ctx);
   const { client, basket } = resolveStaffBasket(ctx);

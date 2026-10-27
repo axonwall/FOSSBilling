@@ -1,0 +1,303 @@
+{
+  "result": {
+    "client": {
+      "index": 200,
+      "label": "Clients",
+      "uri": "http://127.0.0.1:8080/admin/client",
+      "class": "address-book",
+      "active": false,
+      "subpages": [
+        {
+          "label": "Overview",
+          "uri": "http://127.0.0.1:8080/admin/client",
+          "index": 100,
+          "class": "",
+          "active": false
+        }
+      ]
+    },
+    "order": {
+      "index": 300,
+      "label": "Orders",
+      "uri": "http://127.0.0.1:8080/admin/order",
+      "class": "package",
+      "active": false,
+      "subpages": [
+        {
+          "index": 100,
+          "label": "Overview",
+          "uri": "http://127.0.0.1:8080/admin/order",
+          "class": "",
+          "active": false
+        }
+      ]
+    },
+    "invoice": {
+      "index": 400,
+      "label": "Invoices",
+      "uri": "http://127.0.0.1:8080/admin/invoice",
+      "class": "receipt",
+      "active": true,
+      "subpages": [
+        {
+          "label": "Overview",
+          "uri": "http://127.0.0.1:8080/admin/invoice",
+          "index": 100,
+          "class": "",
+          "active": true
+        },
+        {
+          "label": "Subscriptions",
+          "uri": "http://127.0.0.1:8080/admin/invoice/subscriptions",
+          "index": 300,
+          "class": "",
+          "active": false
+        },
+        {
+          "label": "Transactions",
+          "uri": "http://127.0.0.1:8080/admin/invoice/transactions",
+          "index": 400,
+          "class": "",
+          "active": false
+        },
+        {
+          "label": "Failed Items",
+          "uri": "http://127.0.0.1:8080/admin/invoice/failed-items",
+          "index": 500,
+          "class": "",
+          "active": false
+        }
+      ]
+    },
+    "products": {
+      "index": 401,
+      "label": "Products",
+      "uri": "http://127.0.0.1:8080/admin/products",
+      "class": "photo",
+      "active": false,
+      "subpages": [
+        {
+          "index": 110,
+          "label": "Products & Services",
+          "uri": "http://127.0.0.1:8080/admin/product",
+          "class": "",
+          "active": false
+        },
+        {
+          "index": 120,
+          "label": "Product Addons",
+          "uri": "http://127.0.0.1:8080/admin/product/addons",
+          "class": "",
+          "active": false
+        },
+        {
+          "index": 130,
+          "label": "Product Promotions",
+          "uri": "http://127.0.0.1:8080/admin/product/promos",
+          "class": "",
+          "active": false
+        }
+      ]
+    },
+    "support": {
+      "index": 500,
+      "label": "Support",
+      "class": "headset",
+      "active": false,
+      "uri": "http://127.0.0.1:8080/admin/support?status=open",
+      "subpages": [
+        {
+          "label": "Support Tickets",
+          "uri": "http://127.0.0.1:8080/admin/support?status=open",
+          "index": 100,
+          "class": "",
+          "active": false
+        },
+        {
+          "label": "Canned Responses",
+          "uri": "http://127.0.0.1:8080/admin/support/canned-responses",
+          "index": 400,
+          "class": "",
+          "active": false
+        },
+        {
+          "index": 500,
+          "label": "Knowledge Base",
+          "uri": "http://127.0.0.1:8080/admin/support/kb",
+          "class": "",
+          "active": false
+        },
+        {
+          "index": 900,
+          "label": "Announcements",
+          "uri": "http://127.0.0.1:8080/admin/news",
+          "class": "",
+          "active": false
+        }
+      ]
+    },
+    "system": {
+      "index": 600,
+      "label": "System",
+      "class": "settings",
+      "active": false,
+      "uri": "http://127.0.0.1:8080/admin/system",
+      "subpages": {
+        "4": {
+          "label": "Settings",
+          "index": 100,
+          "uri": "http://127.0.0.1:8080/admin/system",
+          "class": "",
+          "active": false
+        },
+        "5": {
+          "label": "Update FOSSBilling",
+          "index": 100,
+          "uri": "http://127.0.0.1:8080/admin/system/update",
+          "class": "",
+          "active": false
+        },
+        "3": {
+          "index": 140,
+          "label": "Hosting Plans and Servers",
+          "uri": "http://127.0.0.1:8080/admin/servicehosting",
+          "class": "",
+          "active": false
+        },
+        "2": {
+          "index": 150,
+          "label": "Domain Registration",
+          "uri": "http://127.0.0.1:8080/admin/servicedomain",
+          "class": "",
+          "active": false
+        },
+        "1": {
+          "label": "Payment Gateways",
+          "uri": "http://127.0.0.1:8080/admin/invoice/gateways",
+          "index": 160,
+          "class": "",
+          "active": false
+        },
+        "0": {
+          "label": "Tax Rules",
+          "uri": "http://127.0.0.1:8080/admin/invoice/tax",
+          "index": 180,
+          "class": "",
+          "active": false
+        }
+      }
+    },
+    "security": {
+      "index": 650,
+      "label": "Security",
+      "class": "lock",
+      "active": false,
+      "uri": "http://127.0.0.1:8080/admin/security",
+      "subpages": [
+        {
+          "label": "Security Dashboard",
+          "index": 100,
+          "uri": "http://127.0.0.1:8080/admin/security",
+          "class": "",
+          "active": false
+        },
+        {
+          "label": "IP Lookup",
+          "index": 200,
+          "uri": "http://127.0.0.1:8080/admin/security/iplookup",
+          "class": "",
+          "active": false
+        },
+        {
+          "label": "Rate Limits",
+          "index": 300,
+          "uri": "http://127.0.0.1:8080/admin/security/rate-limits",
+          "class": "",
+          "active": false
+        }
+      ]
+    },
+    "activity": {
+      "index": 700,
+      "label": "Activity",
+      "class": "chart-bar",
+      "active": false,
+      "uri": "http://127.0.0.1:8080/admin/activity",
+      "subpages": {
+        "0": {
+          "label": "System Activity",
+          "index": 100,
+          "uri": "http://127.0.0.1:8080/admin/activity",
+          "class": "",
+          "active": false
+        },
+        "2": {
+          "index": 200,
+          "label": "Email History",
+          "uri": "http://127.0.0.1:8080/admin/email/history",
+          "class": "",
+          "active": false
+        },
+        "3": {
+          "index": 400,
+          "label": "Staff Login History",
+          "uri": "http://127.0.0.1:8080/admin/staff/logins",
+          "class": "",
+          "active": false
+        },
+        "1": {
+          "index": 900,
+          "label": "Client Login History",
+          "uri": "http://127.0.0.1:8080/admin/client/logins",
+          "class": "",
+          "active": false
+        }
+      }
+    },
+    "extensions": {
+      "index": 1000,
+      "label": "Extensions",
+      "class": "iPlugin",
+      "active": false,
+      "uri": "http://127.0.0.1:8080/admin/extension",
+      "subpages": [
+        {
+          "label": "Overview",
+          "uri": "http://127.0.0.1:8080/admin/extension",
+          "index": 100,
+          "class": "",
+          "active": false
+        },
+        {
+          "label": "Languages",
+          "index": 200,
+          "uri": "http://127.0.0.1:8080/admin/extension/languages",
+          "class": "",
+          "active": false
+        },
+        {
+          "label": "Widgets",
+          "index": 500,
+          "uri": "http://127.0.0.1:8080/admin/widgets",
+          "class": "",
+          "active": false
+        },
+        {
+          "label": "Custom Pages",
+          "index": 2000,
+          "uri": "http://127.0.0.1:8080/admin/custompages",
+          "class": "",
+          "active": false
+        },
+        {
+          "index": 4000,
+          "label": "Mass Mailer",
+          "uri": "http://127.0.0.1:8080/admin/massmailer",
+          "class": "",
+          "active": false
+        }
+      ]
+    }
+  },
+  "error": null
+}

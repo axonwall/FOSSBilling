@@ -8,7 +8,8 @@ import {
   updateSessionContent,
   upsertSetting,
 } from "../db";
-import { FbError, register, requireAdmin, type CallContext } from "../dispatch";
+import { FbError, register, requireAdmin, requireParam, type CallContext } from "../dispatch";
+import { hasPermission } from "../permissions";
 import { parseSessionContent, replaceSessionSegment } from "../php-serialize";
 import countriesJson from "../data/countries.json";
 import phoneCodesJson from "../data/phone-codes.json";
@@ -207,8 +208,9 @@ register("guest", "system", "get_pending_messages", (ctx: CallContext) => {
 // writes; home: R5 installer/config ownership),
 // error_reporting_enabled + toggle_error_reporting +
 // last_error_reporting_change (config.php + Sentry; home: R5),
-// is_allowed (needs the permission model TS does not have; home: R2),
 // instance_id (install identity; home: R5 installer).
+// (is_allowed was deferred here; it landed in R2a below once the
+// permission model existed.)
 
 /** PHP (int) cast for API params: leading integer, else 0. */
 function phpInt(v: string | undefined, dflt: number): number {
@@ -261,7 +263,7 @@ register("guest", "system", "paginator", (ctx: CallContext) => {
 
 register("guest", "system", "current_url", (ctx: CallContext) => ctx.requestUri);
 
-const REMOVED_SYSTEM_ADMIN = [
+export const REMOVED_SYSTEM_ADMIN = [
   "update_available",
   "update_info",
   "recheck_update",
@@ -290,6 +292,19 @@ for (const m of REMOVED_SYSTEM_ADMIN) {
 
 register("guest", "system", "template_exists", () => {
   throw new FbError("Endpoint guest/system/template_exists was removed in the Next.js port.");
+});
+
+// --- Phase 5 R2a: is_allowed (closes the R1 deferral). ---
+// System Admin::is_allowed: RequiredParams 'mod' ("mod" key is
+// missing, code 9999), then Staff::hasPermission(identity, mod, f).
+// No checkPermissions guard of its own: asking about a permission is
+// allowed for any logged-in admin, and the answer for a super admin
+// is always true.
+register("admin", "system", "is_allowed", (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const mod = requireParam(ctx.params, "mod", '"mod" key is missing');
+  const f = ctx.params["f"] ?? null;
+  return hasPermission(ctx.session!.admin!.id, mod, f);
 });
 
 register("admin", "system", "get_params", (ctx: CallContext) => {

@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "You need the \"client.manage_api_keys\" permission to perform this action",
+    "code": 403
+  }
+}

@@ -65,6 +65,7 @@ import {
   requireClient,
   type CallContext,
 } from "../dispatch";
+import { requirePermission } from "../permissions";
 import { getCompany } from "./system";
 import { randomBytes } from "node:crypto";
 import { activateOrderRow } from "./order";
@@ -557,6 +558,10 @@ register("admin", "invoice", "issue", (ctx: CallContext) => {
 register("admin", "invoice", "mark_as_paid", (ctx: CallContext) => {
   requireAdmin(ctx);
   const inv = getInvoiceOrThrow(ctx);
+  // R2a conditional guard (Invoice Admin::mark_as_paid): marking a
+  // deposit invoice as paid credits the client balance, so it needs
+  // client/manage_balance in addition to the table's manage_invoices.
+  if (isDepositInvoice(inv.id)) requirePermission(ctx, "client", "manage_balance");
   if (inv.status === "paid") return true;
   if (inv.status === "canceled" || inv.replaced_by_invoice_id !== null) {
     throw new FbError("This invoice was canceled and cannot be marked as paid");
@@ -1656,6 +1661,20 @@ export function refundInvoiceCore(inv: InvoiceRowFull, onlyIds: Set<number> | nu
 register("admin", "invoice", "refund", (ctx: CallContext) => {
   requireAdmin(ctx);
   const inv = getInvoiceOrThrow(ctx);
+  // R2a conditional guard (Invoice Admin::refund): refunding a deposit
+  // returns wallet credit, so with gateway_refund (default true) it
+  // needs client/manage_balance in addition to manage_invoices.
+  const gatewayRefundRaw =
+    ctx.rawParams["gateway_refund"] !== undefined ? ctx.rawParams["gateway_refund"] : ctx.params["gateway_refund"];
+  const gatewayRefund =
+    gatewayRefundRaw === undefined
+      ? true
+      : typeof gatewayRefundRaw === "boolean"
+        ? gatewayRefundRaw
+        : typeof gatewayRefundRaw === "number"
+          ? gatewayRefundRaw !== 0
+          : ["1", "true", "yes", "on"].includes(String(gatewayRefundRaw).toLowerCase());
+  if (gatewayRefund && isDepositInvoice(inv.id)) requirePermission(ctx, "client", "manage_balance");
   if (inv.status !== "paid") {
     throw new FbError("Only paid invoices can be refunded");
   }
@@ -1740,6 +1759,14 @@ register("admin", "invoice", "cancel", (ctx: CallContext) => {
 
 register("admin", "invoice", "reissue", (ctx: CallContext) => {
   requireAdmin(ctx);
+  // R2a conditional guard (Invoice Admin::reissue): order/manage fires
+  // only when an order or product is attached; PHP checks it before
+  // loading the invoice, so this sits before getInvoiceOrThrow. PHP
+  // !empty treats '0' as empty, hence the exclusion below.
+  const attachParam = (v: string | undefined) => v !== undefined && v !== "" && v !== "0";
+  if (attachParam(ctx.params["order_id"]) || attachParam(ctx.params["product_id"])) {
+    requirePermission(ctx, "order", "manage");
+  }
   const inv = getInvoiceOrThrow(ctx);
   const client = findClientById(inv.client_id);
   if (!client) throw new FbError("Client not found");
