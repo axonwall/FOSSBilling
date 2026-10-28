@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "You can only manage lower staff groups",
+    "code": 9999
+  }
+}

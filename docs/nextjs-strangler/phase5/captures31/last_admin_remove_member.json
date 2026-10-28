@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Cannot remove the last active super administrator",
+    "code": 9999
+  }
+}

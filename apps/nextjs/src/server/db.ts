@@ -746,6 +746,7 @@ export function updateAdminRow(
     signature: string | null;
     timezone: string | null;
     pass: string;
+    api_token: string | null;
   }>,
 ): void {
   const sets: string[] = [];

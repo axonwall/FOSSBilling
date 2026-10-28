@@ -3,6 +3,7 @@ import AdminLogoutButton from "@/components/AdminLogoutButton";
 import { sessionOpts } from "@/lib/session";
 import { readSession } from "@/server/session";
 import { buildAdminNavigation } from "@/server/modules/extension";
+import { hasPermission } from "@/server/permissions";
 
 /**
  * Admin chrome, Phase 5 R2a: a sidebar fed by the TS get_navigation
@@ -74,10 +75,12 @@ function fallbackChrome(children: React.ReactNode) {
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   let nav: Record<string, NavGroup> | null = null;
+  let sessionAdminId: number | null = null;
   try {
     const opts = await sessionOpts();
     const session = readSession(opts.cookieHeader ?? null);
     if (session?.admin) {
+      sessionAdminId = session.admin.id;
       nav = buildAdminNavigation(session.admin.id) as Record<string, NavGroup>;
     }
   } catch {
@@ -105,6 +108,28 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           ? [{ label: group.label, href: surviving[0].href }]
           : surviving,
     });
+  }
+
+  // R2d: static Staff section. PHP's nav has no staff-management entry
+  // (the Staff module only declares "Staff Login History" under
+  // activity), so no nav subpage can map to /admin/staff through
+  // NEXT_ROUTES. The section is therefore added here, filtered with
+  // the same permission semantics the nav builder uses: the Staff link
+  // requires staff module access, the Groups link additionally
+  // requires the manage_groups key that gates the group list read.
+  // Fail closed: if the permission lookup throws, no Staff section.
+  if (sessionAdminId !== null) {
+    try {
+      if (hasPermission(sessionAdminId, "staff")) {
+        const links = [{ label: "Staff", href: "/admin/staff" }];
+        if (hasPermission(sessionAdminId, "staff", "manage_groups")) {
+          links.push({ label: "Groups", href: "/admin/staff/groups" });
+        }
+        sections.push({ label: "Staff", links });
+      }
+    } catch {
+      // No Staff section on permission-lookup failure.
+    }
   }
 
   return (

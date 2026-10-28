@@ -1,0 +1,24 @@
+{
+  "id": 4,
+  "name": "R2d Cap Group",
+  "system_name": null,
+  "parent_id": 1,
+  "parent_name": "Super Administrator",
+  "path": "Super Administrator / R2d Cap Group",
+  "depth": 1,
+  "permissions": {
+    "support": {
+      "access": "1",
+      "view": "1",
+      "manage_tickets": "1"
+    },
+    "staff": {
+      "access": "1",
+      "view": "1"
+    },
+    "invoice": {
+      "access": "1"
+    }
+  },
+  "protected": false
+}

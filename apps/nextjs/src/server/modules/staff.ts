@@ -151,6 +151,89 @@ function requireSuperAdminGroups(ctx: CallContext) {
   }
 }
 
+// --- Staff hierarchy (Phase 5 R2d) -----------------------------------------
+// Port of Staff\Service::assertCanManageAdmin / assertCanManageGroup /
+// assertCanRemoveActiveSuperAdministrator + AdminGroupRepository::
+// getDescendantIdsForGroups. PHP's hierarchy rules, verified against
+// source: cron actors and super administrators bypass everything;
+// otherwise a target group must be a STRICT descendant of one of the
+// actor's groups (a group is not its own descendant), and a target
+// staff member's groups must ALL be strict descendants of the actor's
+// groups. These checks were missing from the TS port (a Lead with
+// create_and_edit_staff could mint super-admin accounts through the
+// seam); the R2d staff pages made them load-bearing, so they land
+// here. Order inside handlers mirrors PHP: after the load, after the
+// method guard (which the route already enforced), before mutation.
+
+function actorBypassesHierarchy(ctx: CallContext): boolean {
+  const actor = findAdminFullById(ctx.session!.admin!.id);
+  if (actor?.system_name === "cron") return true;
+  return isSuperAdmin(ctx);
+}
+
+/** Strict descendants of the given groups (children, grandchildren, …). */
+function descendantGroupIds(groupIds: number[]): number[] {
+  const all = listAdminGroups();
+  const childrenByParent = new Map<number, number[]>();
+  for (const g of all) {
+    const key = g.parent_id ?? 0;
+    const list = childrenByParent.get(key) ?? [];
+    list.push(g.id);
+    childrenByParent.set(key, list);
+  }
+  const out: number[] = [];
+  const seen = new Set<number>();
+  const queue = groupIds.flatMap((id) => childrenByParent.get(id) ?? []);
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+    queue.push(...(childrenByParent.get(id) ?? []));
+  }
+  return out;
+}
+
+function assertCanManageGroup(ctx: CallContext, groupId: number): void {
+  if (actorBypassesHierarchy(ctx)) return;
+  const descendants = descendantGroupIds(adminGroupIdsFor(ctx.session!.admin!.id));
+  if (!descendants.includes(groupId)) {
+    throw new FbError("You can only manage lower staff groups");
+  }
+}
+
+function assertCanManageAdmin(ctx: CallContext, target: AdminFullRow): void {
+  if (actorBypassesHierarchy(ctx)) return;
+  if (target.id === ctx.session!.admin!.id) {
+    throw new FbError("You cannot manage your own staff account here");
+  }
+  if (target.system_name === "cron") {
+    throw new FbError("You can only manage staff accounts in lower groups");
+  }
+  const targetGroups = adminGroupIdsFor(target.id);
+  if (targetGroups.length === 0) {
+    throw new FbError("You can only manage staff accounts in lower groups");
+  }
+  const descendants = descendantGroupIds(adminGroupIdsFor(ctx.session!.admin!.id));
+  if (targetGroups.some((id) => !descendants.includes(id))) {
+    throw new FbError("You can only manage staff accounts in lower groups");
+  }
+}
+
+function assertCanRemoveActiveSuperAdministrator(target: AdminFullRow): void {
+  if (target.status !== "active") return;
+  const all = listAdminGroups();
+  const superGroup = all.find((g) => g.system_name === "super_admin");
+  if (!superGroup) return;
+  if (!adminGroupIdsFor(target.id).includes(superGroup.id)) return;
+  const activeCount = listAdmins().filter(
+    (a) => a.status === "active" && adminGroupIdsFor(a.id).includes(superGroup.id),
+  ).length;
+  if (activeCount <= 1) {
+    throw new FbError("Cannot remove the last active super administrator");
+  }
+}
+
 function assertStrongPassword(pw: string | undefined) {
   if (!pw) throw new FbError("Password is required.");
   if (pw.length < 8) throw new FbError("Minimum password length is 8 characters.");
@@ -187,6 +270,7 @@ register("admin", "staff", "create", (ctx: CallContext) => {
   assertStrongPassword(password);
   const group = findAdminGroupById(Number(groupIdRaw));
   if (!group) throw new FbError("Group not found");
+  assertCanManageGroup(ctx, group.id);
   if (findAdminByEmail(email)) {
     throw new FbError(`Staff member with email ${email} is already registered.`, 788954);
   }
@@ -228,7 +312,15 @@ register("admin", "staff", "update", (ctx: CallContext) => {
   if (ctx.params["name"] !== undefined) fields.name = ctx.params["name"];
   if (ctx.params["signature"] !== undefined) fields.signature = ctx.params["signature"];
   if (ctx.params["timezone"] !== undefined) fields.timezone = ctx.params["timezone"];
+  assertCanManageAdmin(ctx, row);
+  const deactivating = row.status === "active" && newStatus !== "active";
+  if (deactivating) assertCanRemoveActiveSuperAdministrator(row);
+  // PHP clears the API token whenever the resulting status is inactive
+  // (not only on the active->inactive transition); sessions are
+  // invalidated only on the transition itself.
+  if (newStatus !== "active") fields.api_token = null;
   updateAdminRow(row.id, fields);
+  if (deactivating) invalidateAdminSessions(row.id);
   return true;
 });
 
@@ -238,6 +330,9 @@ register("admin", "staff", "delete", (ctx: CallContext) => {
   if (row.system_name === "cron") {
     throw new FbError("The cron administrator account cannot be removed");
   }
+  assertCanManageAdmin(ctx, row);
+  assertCanRemoveActiveSuperAdministrator(row);
+  deleteAdminPasswordResets(row.id);
   deleteAdminRow(row.id);
   return true;
 });
@@ -252,7 +347,9 @@ register("admin", "staff", "change_password", (ctx: CallContext) => {
   if (password !== confirm) throw new FbError("Passwords do not match.");
   assertStrongPassword(password);
   const row = getStaffOrThrow(ctx.params["id"]);
+  assertCanManageAdmin(ctx, row);
   updateAdminRow(row.id, { pass: bcrypt.hashSync(password, 12) });
+  invalidateAdminSessions(row.id);
   return true;
 });
 
@@ -298,6 +395,24 @@ register("admin", "staff", "group_update", (ctx: CallContext) => {
     // the flat param map cannot represent; a JSON string is accepted.
     fields.permissions = ctx.params["permissions"] || null;
   }
+  // PHP-native nested form shape (R2d parity28): permissions[module][key]
+  // arrives as flat keys because the route does not expand brackets, and
+  // posting only that shape previously silently left permissions
+  // unchanged. Expand it verbatim — PHP stores the array as-is
+  // (strings included, minus _submitted, which never matches the
+  // two-level pattern) — so seam and PHP read-backs match exactly.
+  // A bracket payload wins over a plain permissions param when both
+  // are present (a request never mixes them).
+  const bracket: Record<string, Record<string, string>> = {};
+  for (const [k, v] of Object.entries(ctx.params)) {
+    const m = /^permissions\[([^\]]+)\]\[([^\]]+)\]$/.exec(k);
+    if (m) {
+      (bracket[m[1]] ??= {})[m[2]] = v;
+    }
+  }
+  if (Object.keys(bracket).length > 0) {
+    fields.permissions = JSON.stringify(bracket);
+  }
   updateAdminGroupRow(group.id, fields);
   return true;
 });
@@ -323,6 +438,8 @@ register("admin", "staff", "group_member_add", (ctx: CallContext) => {
   if (!adminId) throw new FbError("Staff member ID was not passed");
   const group = getGroupOrThrow(ctx.params["group_id"]);
   const staff = getStaffOrThrow(adminId);
+  assertCanManageAdmin(ctx, staff);
+  assertCanManageGroup(ctx, group.id);
   if (!adminGroupIdsFor(staff.id).includes(group.id)) addAdminToGroup(staff.id, group.id);
   return true;
 });
@@ -333,6 +450,11 @@ register("admin", "staff", "group_member_remove", (ctx: CallContext) => {
   if (!adminId) throw new FbError("Staff member ID was not passed");
   const group = getGroupOrThrow(ctx.params["group_id"]);
   const staff = getStaffOrThrow(adminId);
+  assertCanManageAdmin(ctx, staff);
+  assertCanManageGroup(ctx, group.id);
+  // PHP returns true before the super-admin check when not a member.
+  if (!adminGroupIdsFor(staff.id).includes(group.id)) return true;
+  if (group.system_name === "super_admin") assertCanRemoveActiveSuperAdministrator(staff);
   removeAdminFromGroup(staff.id, group.id);
   return true;
 });

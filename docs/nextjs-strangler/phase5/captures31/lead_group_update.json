@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Only super administrators can manage staff groups",
+    "code": 403
+  }
+}

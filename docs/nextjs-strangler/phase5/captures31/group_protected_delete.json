@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Protected staff groups cannot be removed",
+    "code": 9999
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "id": 9,
+  "email": "r2d-cap2@example.local",
+  "name": "R2d Cap 2",
+  "system_name": null,
+  "status": "active",
+  "signature": null,
+  "timezone": null,
+  "groups": [
+    {
+      "id": 3,
+      "name": "Support Staff",
+      "system_name": "support_staff",
+      "parent_id": 2,
+      "parent_name": "Support Lead",
+      "path": "Super Administrator / Support Lead / Support Staff",
+      "depth": 2,
+      "permissions": {
+        "support": {
+          "access": true,
+          "view": true,
+          "manage_tickets": true
+        }
+      },
+      "protected": false
+    }
+  ]
+}

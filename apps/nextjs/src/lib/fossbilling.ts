@@ -151,4 +151,21 @@ export const adminApi = {
     fbCall("admin", "support", "ticket_get_list", params, opts),
   ticketGet: (id: number | string, opts?: CallOptions) =>
     fbCall("admin", "support", "ticket_get", { id }, opts),
+  staffList: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall("admin", "staff", "get_list", params, opts),
+  staffGet: (id: number | string, opts?: CallOptions) =>
+    fbCall("admin", "staff", "get", { id }, opts),
+  staffPairs: (opts?: CallOptions) => fbCall("admin", "staff", "get_pairs", {}, opts),
+  staffIsSuperAdmin: (opts?: CallOptions) =>
+    fbCall("admin", "staff", "is_super_administrator", {}, opts),
+  staffGroupList: (opts?: CallOptions) =>
+    fbCall("admin", "staff", "group_get_list", {}, opts),
+  staffGroupGet: (id: number | string, opts?: CallOptions) =>
+    fbCall("admin", "staff", "group_get", { id }, opts),
+  staffGroupMembers: (groupId: number | string, opts?: CallOptions) =>
+    fbCall("admin", "staff", "group_member_get_list", { group_id: groupId }, opts),
+  staffGroupPairs: (opts?: CallOptions) =>
+    fbCall("admin", "staff", "group_get_pairs", {}, opts),
+  staffLoginHistory: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall("admin", "staff", "login_history_get_list", params, opts),
 };

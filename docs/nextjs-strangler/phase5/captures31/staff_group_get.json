@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "You do not have access to the staff module",
+    "code": 725
+  }
+}
