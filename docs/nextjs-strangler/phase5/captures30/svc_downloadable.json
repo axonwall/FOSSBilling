@@ -1,0 +1,23 @@
+{
+  "error": null,
+  "result": {
+    "files": [
+      {
+        "description": null,
+        "downloads": 3,
+        "filename": "r2c-guide.pdf",
+        "id": 12,
+        "label": "User guide",
+        "path": "/home/hatch/scratch/fossbilling/runtime/src/data/uploads/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "description": null,
+        "downloads": 0,
+        "filename": "r2c-terms.txt",
+        "id": 13,
+        "label": "Terms",
+        "path": "/home/hatch/scratch/fossbilling/runtime/src/data/uploads/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ]
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "error": null,
+  "result": {
+    "domain": "r2csite.com",
+    "domain_order_id": null,
+    "hosting_plan": {
+      "bandwidth": "100GB",
+      "config": [],
+      "created_at": "2026-10-27 12:00:00",
+      "id": 13,
+      "max_addon": "5",
+      "max_ftp": "5",
+      "max_park": "5",
+      "max_pop": "10",
+      "max_sql": "5",
+      "max_sub": "5",
+      "name": "R2c Plan",
+      "quota": "10GB",
+      "updated_at": "2026-10-27 12:00:00"
+    },
+    "ip": "192.0.2.11",
+    "reseller": false,
+    "server": {
+      "accesshash": null,
+      "accesshash_set": true,
+      "active": true,
+      "assigned_ips": [],
+      "config": [],
+      "cpanel_url": "http://www.google.com?q=cpanel",
+      "created_at": "2026-10-27 12:00:00",
+      "hostname": "r2c.example.com",
+      "id": 19,
+      "ip": "192.0.2.10",
+      "manager": "Custom",
+      "max_accounts": 100,
+      "name": "R2c Test Server",
+      "ns1": "ns1.r2c.example",
+      "ns2": "ns2.r2c.example",
+      "ns3": null,
+      "ns4": null,
+      "password": null,
+      "passwordLength": 12,
+      "password_set": true,
+      "port": 2083,
+      "reseller_cpanel_url": "http://www.google.com?q=whm",
+      "secret_fields": [
+        "password",
+        "accesshash"
+      ],
+      "secure": false,
+      "status_url": null,
+      "updated_at": "2026-10-27 12:00:00"
+    },
+    "sld": "r2csite",
+    "tld": ".com",
+    "username": "r2cuser"
+  }
+}

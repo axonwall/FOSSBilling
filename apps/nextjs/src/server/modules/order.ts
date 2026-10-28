@@ -675,12 +675,402 @@ function customServiceArray(serviceId: number): Record<string, unknown> | null {
   };
 }
 
-function orderServiceData(order: OrderRowFull): Record<string, unknown> | null {
+/* ------------------------------------------------------------------ */
+/* Phase 5 R2c: service toApiArray ports (admin/order/service).        */
+/* PHP renders service detail only via Order::getOrderServiceData,    */
+/* which calls each service module's toApiArray with the identity;    */
+/* admin-only fields are included only for staff identity. The TS    */
+/* seam previously returned null for every non-custom type.           */
+/* ------------------------------------------------------------------ */
+
+/** PHP Tools::normalizePort: int/string in 1..65535, else the default. */
+function normalizePort(v: unknown, dflt: number | null): number | null {
+  if (typeof v !== "number" && typeof v !== "string") return dflt;
+  const s = typeof v === "string" ? v.trim() : String(v);
+  if (!/^-?\d+$/.test(s)) return dflt;
+  const n = parseInt(s, 10);
+  return n >= 1 && n <= 65535 ? n : dflt;
+}
+
+function jsonList(v: unknown): unknown[] {
+  if (typeof v !== "string" || v === "") return [];
+  try {
+    const parsed: unknown = JSON.parse(v);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function jsonObjectOr(v: unknown, fallback: unknown): unknown {
+  if (typeof v !== "string" || v === "") return fallback;
+  try {
+    const parsed: unknown = JSON.parse(v);
+    // PHP json_decode('{}', true) is an empty PHP array, which encodes
+    // as [] — not {} — so empty objects collapse to [] here.
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && Object.keys(parsed).length === 0) {
+      return [];
+    }
+    return parsed;
+  } catch {
+    return fallback;
+  }
+}
+
+/** PHP Servicehosting::getManagerUrls, for the ported managers. */
+function hostingManagerUrls(server: {
+  manager: string | null;
+  hostname: string | null;
+  port: unknown;
+}): [unknown, unknown] {
+  if (server.manager === "Custom") return ["http://www.google.com?q=cpanel", "http://www.google.com?q=whm"];
+  if (server.manager === "Hestia") {
+    if (!server.hostname) return [false, false];
+    const url = `https://${server.hostname}:${normalizePort(server.port, 8083)}/`;
+    return [url, url];
+  }
+  // Other managers' adapters are not ported; PHP would call the adapter
+  // (or return [false, false] if it throws). Documented divergence.
+  return [false, false];
+}
+
+/** PHP Servicehosting::getServerManagerSecretFields, ported managers. */
+function hostingSecretFields(manager: string | null): string[] {
+  // Custom declares no extras; Hestia's form marks username + accesshash
+  // secret (base already has password + accesshash).
+  if (manager === "Hestia") return ["password", "accesshash", "username"];
+  return ["password", "accesshash"];
+}
+
+interface HostingServerRow {
+  id: number;
+  name: string | null;
+  hostname: string | null;
+  ip: string | null;
+  ns1: string | null;
+  ns2: string | null;
+  ns3: string | null;
+  ns4: string | null;
+  assigned_ips: string | null;
+  status_url: string | null;
+  active: number;
+  max_accounts: number | null;
+  manager: string | null;
+  username: string | null;
+  password: string | null;
+  accesshash: string | null;
+  password_length: number | null;
+  port: unknown;
+  config: string | null;
+  secure: number;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+function hostingServerArray(server: HostingServerRow, isAdmin: boolean): Record<string, unknown> {
+  const [cpanelUrl, whmUrl] = hostingManagerUrls(server);
+  const out: Record<string, unknown> = {
+    name: server.name,
+    hostname: server.hostname,
+    ip: server.ip,
+    ns1: server.ns1,
+    ns2: server.ns2,
+    ns3: server.ns3,
+    ns4: server.ns4,
+    cpanel_url: cpanelUrl,
+    reseller_cpanel_url: whmUrl,
+  };
+  if (isAdmin) {
+    out["id"] = server.id;
+    out["active"] = !!server.active;
+    out["secure"] = !!server.secure;
+    out["assigned_ips"] = jsonList(server.assigned_ips);
+    out["status_url"] = server.status_url;
+    out["max_accounts"] = server.max_accounts;
+    out["manager"] = server.manager;
+    out["config"] = jsonObjectOr(server.config, []);
+    out["port"] = normalizePort(server.port, null);
+    out["passwordLength"] = server.password_length;
+    out["created_at"] = server.created_at;
+    out["updated_at"] = server.updated_at;
+    const secrets = hostingSecretFields(server.manager);
+    const values: Record<string, string | null> = {
+      password: server.password,
+      accesshash: server.accesshash,
+      username: server.username,
+    };
+    for (const field of secrets) {
+      const raw = values[field] ?? null;
+      out[field] = null;
+      out[`${field}_set`] = raw !== null && raw !== "";
+    }
+    out["secret_fields"] = secrets;
+  }
+  return out;
+}
+
+interface HostingHpRow {
+  id: number;
+  name: string | null;
+  bandwidth: string | null;
+  quota: string | null;
+  max_ftp: number | null;
+  max_sql: number | null;
+  max_pop: number | null;
+  max_sub: number | null;
+  max_park: number | null;
+  max_addon: number | null;
+  config: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+function hostingHpArray(hp: HostingHpRow): Record<string, unknown> {
+  return {
+    id: hp.id,
+    name: hp.name,
+    bandwidth: hp.bandwidth,
+    quota: hp.quota,
+    max_ftp: hp.max_ftp,
+    max_sql: hp.max_sql,
+    max_pop: hp.max_pop,
+    max_sub: hp.max_sub,
+    max_park: hp.max_park,
+    max_addon: hp.max_addon,
+    // PHP: json_decode(config ?? '', true) with NO [] fallback — null when empty.
+    config: hp.config ? jsonObjectOr(hp.config, null) : null,
+    created_at: hp.created_at,
+    updated_at: hp.updated_at,
+  };
+}
+
+function hostingServiceArray(order: OrderRowFull, isAdmin: boolean): Record<string, unknown> | null {
+  const row = getDb()
+    .prepare("SELECT * FROM service_hosting WHERE id = ?")
+    .get(String(order.service_id)) as unknown as
+    | {
+        id: number;
+        ip: string | null;
+        sld: string | null;
+        tld: string | null;
+        username: string | null;
+        reseller: number;
+        service_hosting_server_id: number | null;
+        service_hosting_hp_id: number | null;
+      }
+    | undefined;
+  if (!row) return null;
+  const server = getDb()
+    .prepare("SELECT * FROM service_hosting_server WHERE id = ?")
+    .get(String(row.service_hosting_server_id)) as unknown as HostingServerRow | undefined;
+  if (!server) throw new FbError("Server not found");
+  const hp = getDb()
+    .prepare("SELECT * FROM service_hosting_hp WHERE id = ?")
+    .get(String(row.service_hosting_hp_id)) as unknown as HostingHpRow | undefined;
+  if (!hp) throw new FbError("Hosting plan not found");
+  // PHP _getDomainOrderId: only when this order's config has a domain
+  // action of register/transfer; the related order shares group_id and
+  // has service_type 'domain'.
+  let domainOrderId: number | null = null;
+  try {
+    const cfg = order.config ? (JSON.parse(order.config) as Record<string, unknown>) : {};
+    const domain = cfg["domain"] as Record<string, unknown> | undefined;
+    const action = domain?.["action"];
+    if ((action === "register" || action === "transfer") && order.group_id !== null && order.group_id !== undefined) {
+      const rel = getDb()
+        .prepare("SELECT id FROM client_order WHERE group_id = ? AND service_type = 'domain' ORDER BY id ASC LIMIT 1")
+        .get(String(order.group_id)) as unknown as { id: number } | undefined;
+      domainOrderId = rel ? rel.id : null;
+    }
+  } catch {
+    domainOrderId = null;
+  }
+  return {
+    ip: row.ip,
+    sld: row.sld,
+    tld: row.tld,
+    domain: `${row.sld ?? ""}${row.tld ?? ""}`,
+    username: row.username,
+    reseller: !!row.reseller,
+    server: hostingServerArray(server, isAdmin),
+    hosting_plan: hostingHpArray(hp),
+    domain_order_id: domainOrderId,
+  };
+}
+
+/** PHP (int) cast for Doctrine integer columns: leading digits, else 0. */
+function phpIntCast(v: unknown): number | null {
+  if (v === null || v === undefined) return null;
+  if (typeof v === "number") return Math.trunc(v);
+  const m = /^\s*[+-]?\d+/.exec(String(v));
+  return m ? parseInt(m[0], 10) : 0;
+}
+
+function domainServiceArray(order: OrderRowFull, isAdmin: boolean): Record<string, unknown> | null {
+  const row = getDb()
+    .prepare("SELECT * FROM service_domain WHERE id = ?")
+    .get(String(order.service_id)) as unknown as
+    | {
+        sld: string | null;
+        tld: string | null;
+        ns1: string | null;
+        ns2: string | null;
+        ns3: string | null;
+        ns4: string | null;
+        period: string | number | null;
+        privacy: number;
+        locked: number;
+        registered_at: string | null;
+        expires_at: string | null;
+        synced_at: string | null;
+        contact_first_name: string | null;
+        contact_last_name: string | null;
+        contact_email: string | null;
+        contact_company: string | null;
+        contact_address1: string | null;
+        contact_address2: string | null;
+        contact_country: string | null;
+        contact_city: string | null;
+        contact_state: string | null;
+        contact_postcode: string | null;
+        contact_phone_cc: string | null;
+        contact_phone: string | null;
+        transfer_code: string | null;
+        tld_registrar_id: number | null;
+      }
+    | undefined;
+  if (!row) return null;
+  const out: Record<string, unknown> = {
+    domain: `${row.sld ?? ""}${row.tld ?? ""}`,
+    sld: row.sld,
+    tld: row.tld,
+    ns1: row.ns1,
+    ns2: row.ns2,
+    ns3: row.ns3,
+    ns4: row.ns4,
+    // PHP ServiceDomain::$period is ?int (Doctrine integer type casts
+    // the stored value, so '1Y' reads back as 1).
+    period: phpIntCast(row.period),
+    privacy: !!row.privacy,
+    locked: !!row.locked,
+    registered_at: row.registered_at,
+    expires_at: row.expires_at,
+    synced_at: row.synced_at,
+    contact: {
+      first_name: row.contact_first_name,
+      last_name: row.contact_last_name,
+      email: row.contact_email,
+      company: row.contact_company,
+      address1: row.contact_address1,
+      address2: row.contact_address2,
+      country: row.contact_country,
+      city: row.contact_city,
+      state: row.contact_state,
+      postcode: row.contact_postcode,
+      phone_cc: row.contact_phone_cc,
+      phone: row.contact_phone,
+    },
+  };
+  if (isAdmin) {
+    out["transfer_code"] = row.transfer_code;
+    const reg = row.tld_registrar_id
+      ? (getDb().prepare("SELECT name FROM tld_registrar WHERE id = ?").get(String(row.tld_registrar_id)) as unknown as
+          | { name: string | null }
+          | undefined)
+      : undefined;
+    out["registrar"] = reg ? reg.name : null;
+  }
+  return out;
+}
+
+function licenseServiceArray(order: OrderRowFull, isAdmin: boolean): Record<string, unknown> | null {
+  const row = getDb()
+    .prepare("SELECT * FROM service_license WHERE id = ?")
+    .get(String(order.service_id)) as unknown as
+    | {
+        license_key: string | null;
+        validate_ip: number;
+        validate_host: number;
+        validate_version: number;
+        validate_path: number;
+        ips: string | null;
+        hosts: string | null;
+        paths: string | null;
+        versions: string | null;
+        pinged_at: string | null;
+        plugin: string | null;
+      }
+    | undefined;
+  if (!row) return null;
+  const out: Record<string, unknown> = {
+    license_key: row.license_key,
+    validate_ip: !!row.validate_ip,
+    validate_host: !!row.validate_host,
+    validate_version: !!row.validate_version,
+    validate_path: !!row.validate_path,
+    ips: jsonList(row.ips),
+    hosts: jsonList(row.hosts),
+    paths: jsonList(row.paths),
+    versions: jsonList(row.versions),
+    pinged_at: row.pinged_at,
+  };
+  if (isAdmin) out["plugin"] = row.plugin;
+  return out;
+}
+
+function downloadableServiceArray(order: OrderRowFull, isAdmin: boolean): Record<string, unknown> | null {
+  const row = getDb()
+    .prepare("SELECT id FROM service_downloadable WHERE id = ?")
+    .get(String(order.service_id)) as unknown as { id: number } | undefined;
+  if (!row) return null;
+  const files = getDb()
+    .prepare(
+      "SELECT * FROM service_downloadable_file WHERE service_downloadable_id = ? ORDER BY sort_order ASC, id ASC",
+    )
+    .all(String(order.service_id)) as unknown as {
+    id: number;
+    filename: string | null;
+    label: string | null;
+    description: string | null;
+    stored_filename: string | null;
+    downloads: number | null;
+  }[];
+  // PHP PATH_UPLOADS is the uploads dir next to the database file.
+  const dbPath = process.env.FB_DATABASE_PATH ?? "";
+  const uploadsDir = dbPath.includes("/") ? dbPath.slice(0, dbPath.lastIndexOf("/")) + "/uploads" : "uploads";
+  return {
+    files: files.map((f) => {
+      const item: Record<string, unknown> = {
+        id: f.id,
+        filename: f.filename,
+        label: f.label,
+        description: f.description,
+      };
+      if (isAdmin) {
+        item["path"] = `${uploadsDir}/${f.stored_filename ?? ""}`;
+        item["downloads"] = f.downloads;
+      }
+      return item;
+    }),
+  };
+}
+
+function orderServiceData(order: OrderRowFull, isAdmin: boolean): Record<string, unknown> | null {
   if (order.service_id === null) return null;
-  if (order.service_type === "custom") return customServiceArray(order.service_id);
-  // Non-custom service modules (hosting, domain, ...) render their own
-  // toApiArray in PHP; the TS seam has no equivalent (documented gap).
-  return null;
+  switch (order.service_type) {
+    case "custom":
+      return customServiceArray(order.service_id);
+    case "hosting":
+      return hostingServiceArray(order, isAdmin);
+    case "domain":
+      return domainServiceArray(order, isAdmin);
+    case "license":
+      return licenseServiceArray(order, isAdmin);
+    case "downloadable":
+      return downloadableServiceArray(order, isAdmin);
+    default:
+      return null;
+  }
 }
 
 register("admin", "order", "get_invoice_options", (ctx: CallContext) => {
@@ -693,7 +1083,7 @@ register("admin", "order", "get_invoice_options", (ctx: CallContext) => {
 
 register("admin", "order", "service", (ctx: CallContext) => {
   requireAdmin(ctx);
-  return orderServiceData(getOrderOrThrowAdmin(ctx));
+  return orderServiceData(getOrderOrThrowAdmin(ctx), true);
 });
 
 register("admin", "order", "addons", (ctx: CallContext) => {
@@ -824,7 +1214,7 @@ register("client", "order", "service", (ctx: CallContext) => {
   requireClient(ctx);
   const order = getOrderOrThrowClient(ctx);
   if (order.status !== "active") throw new FbError("Order is not active");
-  return orderServiceData(order);
+  return orderServiceData(order, false);
 });
 
 register("client", "order", "upgradables", (ctx: CallContext) => {

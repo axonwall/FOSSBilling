@@ -1,0 +1,398 @@
+{
+  "error": null,
+  "result": {
+    "list": [
+      {
+        "addons": [],
+        "allow_quantity_select": false,
+        "category": {
+          "id": 1,
+          "title": "Default category"
+        },
+        "config": [],
+        "created_at": "2026-10-23 20:32:43",
+        "description": null,
+        "form_id": null,
+        "hidden": false,
+        "icon_url": null,
+        "id": 1,
+        "price_starting_from": 11.99,
+        "pricing": {
+          ".com": {
+            "active": 1,
+            "allow_register": 1,
+            "allow_transfer": 1,
+            "min_years": 1,
+            "periods": null,
+            "price_registration": "11.99",
+            "price_renew": "11.99",
+            "price_transfer": "11.99",
+            "registrar": {
+              "id": 1,
+              "title": "Custom"
+            },
+            "tld": ".com"
+          }
+        },
+        "priority": 1,
+        "product_category_id": 1,
+        "quantity_in_stock": 0,
+        "setup": "after_payment",
+        "slug": "domain-checker",
+        "status": "enabled",
+        "stock_control": false,
+        "suspension_grace_days": 0,
+        "title": "Domains registration and transfer",
+        "type": "domain",
+        "unit": "year",
+        "updated_at": "2026-10-23 20:32:43",
+        "upgrades": []
+      },
+      {
+        "addons": [],
+        "allow_quantity_select": false,
+        "category": {
+          "id": 1,
+          "title": "Default category"
+        },
+        "config": [],
+        "created_at": "2026-10-23 20:37:52",
+        "description": null,
+        "form_id": null,
+        "hidden": false,
+        "icon_url": null,
+        "id": 2,
+        "price_starting_from": 10,
+        "pricing": {
+          "free": {
+            "price": 0,
+            "setup": 0
+          },
+          "once": {
+            "price": 10,
+            "setup": 0
+          },
+          "recurrent": [],
+          "type": "once"
+        },
+        "priority": 11,
+        "product_category_id": 1,
+        "quantity_in_stock": 0,
+        "setup": "after_payment",
+        "slug": "phase0-widget-hosting",
+        "status": "enabled",
+        "stock_control": false,
+        "suspension_grace_days": 0,
+        "title": "Phase0 Widget Hosting",
+        "type": "custom",
+        "unit": "product",
+        "updated_at": "2026-10-26 16:06:31",
+        "upgrades": []
+      },
+      {
+        "addons": [],
+        "allow_quantity_select": false,
+        "category": {
+          "id": 1,
+          "title": "Default category"
+        },
+        "config": [],
+        "created_at": "2026-10-23 20:38:05",
+        "description": null,
+        "form_id": null,
+        "hidden": false,
+        "icon_url": null,
+        "id": 3,
+        "price_starting_from": 10,
+        "pricing": {
+          "free": {
+            "price": 0,
+            "setup": 0
+          },
+          "once": {
+            "price": 10,
+            "setup": 0
+          },
+          "recurrent": [],
+          "type": "once"
+        },
+        "priority": 21,
+        "product_category_id": 1,
+        "quantity_in_stock": 0,
+        "setup": "after_payment",
+        "slug": "phase0-widget-hosting-3149",
+        "status": "enabled",
+        "stock_control": false,
+        "suspension_grace_days": 0,
+        "title": "Phase0 Widget Hosting",
+        "type": "custom",
+        "unit": "product",
+        "updated_at": "2026-10-26 04:22:46",
+        "upgrades": []
+      },
+      {
+        "addons": [],
+        "allow_quantity_select": false,
+        "category": {
+          "id": 1,
+          "title": "Default category"
+        },
+        "config": [],
+        "created_at": "2026-10-24 02:36:51",
+        "description": null,
+        "form_id": null,
+        "hidden": false,
+        "icon_url": null,
+        "id": 9,
+        "price_starting_from": 15,
+        "pricing": {
+          "free": {
+            "price": 0,
+            "setup": 0
+          },
+          "once": {
+            "price": 0,
+            "setup": 0
+          },
+          "recurrent": {
+            "1M": {
+              "enabled": true,
+              "price": 15,
+              "setup": 5,
+              "title": "Every 1 month"
+            },
+            "1Y": {
+              "enabled": true,
+              "price": 150,
+              "setup": 0,
+              "title": "Every 1 year"
+            }
+          },
+          "type": "recurrent"
+        },
+        "priority": 22,
+        "product_category_id": 1,
+        "quantity_in_stock": 0,
+        "setup": "after_payment",
+        "slug": "phase3-recurring-widget",
+        "status": "enabled",
+        "stock_control": false,
+        "suspension_grace_days": 0,
+        "title": "Phase3 Recurring Widget",
+        "type": "custom",
+        "unit": "product",
+        "updated_at": "2026-10-24 02:36:51",
+        "upgrades": []
+      },
+      {
+        "addons": [],
+        "allow_quantity_select": false,
+        "category": {
+          "id": 1,
+          "title": "Default category"
+        },
+        "config": [],
+        "created_at": "2026-10-23 20:38:19",
+        "description": null,
+        "form_id": null,
+        "hidden": false,
+        "icon_url": null,
+        "id": 4,
+        "price_starting_from": 10,
+        "pricing": {
+          "free": {
+            "price": 0,
+            "setup": 0
+          },
+          "once": {
+            "price": 10,
+            "setup": 0
+          },
+          "recurrent": [],
+          "type": "once"
+        },
+        "priority": 31,
+        "product_category_id": 1,
+        "quantity_in_stock": 0,
+        "setup": "after_payment",
+        "slug": "phase0-widget-hosting-3286",
+        "status": "enabled",
+        "stock_control": false,
+        "suspension_grace_days": 0,
+        "title": "Phase0 Widget Hosting",
+        "type": "custom",
+        "unit": "product",
+        "updated_at": "2026-10-23 20:38:19",
+        "upgrades": []
+      },
+      {
+        "addons": [],
+        "allow_quantity_select": false,
+        "category": {
+          "id": 1,
+          "title": "Default category"
+        },
+        "config": [],
+        "created_at": "2026-10-23 20:39:40",
+        "description": null,
+        "form_id": null,
+        "hidden": false,
+        "icon_url": null,
+        "id": 5,
+        "price_starting_from": 10,
+        "pricing": {
+          "free": {
+            "price": 0,
+            "setup": 0
+          },
+          "once": {
+            "price": 10,
+            "setup": 0
+          },
+          "recurrent": [],
+          "type": "once"
+        },
+        "priority": 41,
+        "product_category_id": 1,
+        "quantity_in_stock": 0,
+        "setup": "after_payment",
+        "slug": "phase0-widget-hosting-114",
+        "status": "enabled",
+        "stock_control": false,
+        "suspension_grace_days": 0,
+        "title": "Phase0 Widget Hosting",
+        "type": "custom",
+        "unit": "product",
+        "updated_at": "2026-10-23 20:39:41",
+        "upgrades": []
+      },
+      {
+        "addons": [],
+        "allow_quantity_select": false,
+        "category": {
+          "id": 1,
+          "title": "Default category"
+        },
+        "config": [],
+        "created_at": "2026-10-23 20:40:10",
+        "description": null,
+        "form_id": null,
+        "hidden": false,
+        "icon_url": null,
+        "id": 6,
+        "price_starting_from": 10,
+        "pricing": {
+          "free": {
+            "price": 0,
+            "setup": 0
+          },
+          "once": {
+            "price": 10,
+            "setup": 0
+          },
+          "recurrent": [],
+          "type": "once"
+        },
+        "priority": 51,
+        "product_category_id": 1,
+        "quantity_in_stock": 0,
+        "setup": "after_payment",
+        "slug": "phase0-widget-hosting-1188",
+        "status": "enabled",
+        "stock_control": false,
+        "suspension_grace_days": 0,
+        "title": "Phase0 Widget Hosting",
+        "type": "custom",
+        "unit": "product",
+        "updated_at": "2026-10-23 20:40:10",
+        "upgrades": []
+      },
+      {
+        "addons": [],
+        "allow_quantity_select": false,
+        "category": {
+          "id": 1,
+          "title": "Default category"
+        },
+        "config": [],
+        "created_at": "2026-10-23 20:40:24",
+        "description": null,
+        "form_id": null,
+        "hidden": false,
+        "icon_url": null,
+        "id": 7,
+        "price_starting_from": 10,
+        "pricing": {
+          "free": {
+            "price": 0,
+            "setup": 0
+          },
+          "once": {
+            "price": 10,
+            "setup": 0
+          },
+          "recurrent": [],
+          "type": "once"
+        },
+        "priority": 61,
+        "product_category_id": 1,
+        "quantity_in_stock": 0,
+        "setup": "after_payment",
+        "slug": "phase0-widget-hosting-2728",
+        "status": "enabled",
+        "stock_control": false,
+        "suspension_grace_days": 0,
+        "title": "Phase0 Widget Hosting",
+        "type": "custom",
+        "unit": "product",
+        "updated_at": "2026-10-23 20:40:24",
+        "upgrades": []
+      },
+      {
+        "addons": [],
+        "allow_quantity_select": false,
+        "category": {
+          "id": 1,
+          "title": "Default category"
+        },
+        "config": [],
+        "created_at": "2026-10-23 20:41:06",
+        "description": null,
+        "form_id": null,
+        "hidden": false,
+        "icon_url": null,
+        "id": 8,
+        "price_starting_from": 10,
+        "pricing": {
+          "free": {
+            "price": 0,
+            "setup": 0
+          },
+          "once": {
+            "price": 10,
+            "setup": 0
+          },
+          "recurrent": [],
+          "type": "once"
+        },
+        "priority": 71,
+        "product_category_id": 1,
+        "quantity_in_stock": 0,
+        "setup": "after_payment",
+        "slug": "phase0-widget-hosting-1562",
+        "status": "enabled",
+        "stock_control": false,
+        "suspension_grace_days": 0,
+        "title": "Phase0 Widget Hosting",
+        "type": "custom",
+        "unit": "product",
+        "updated_at": "2026-10-23 20:41:07",
+        "upgrades": []
+      }
+    ],
+    "page": 1,
+    "pages": 1,
+    "per_page": 50,
+    "total": 9
+  }
+}

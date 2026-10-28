@@ -18,11 +18,16 @@ import { buildAdminNavigation } from "@/server/modules/extension";
  */
 
 // PHP admin path (after /admin/) -> Next route, for pages that exist.
+// R2c: product maps to /admin/products (the products group's
+// "Products & Services" subpage). Service detail pages are
+// order-addressed (/admin/services/[orderId]) and have no nav entry;
+// they are reached from order pages and direct URLs, not the sidebar.
 const NEXT_ROUTES: Record<string, string> = {
   client: "/admin/clients",
   order: "/admin/orders",
   invoice: "/admin/invoices",
   support: "/admin/tickets",
+  product: "/admin/products",
 };
 
 interface NavSub {

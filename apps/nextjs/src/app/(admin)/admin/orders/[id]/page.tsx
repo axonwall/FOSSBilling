@@ -14,6 +14,8 @@ interface Order {
   period?: string;
   expires_at?: string;
   created_at?: string;
+  service_id?: number | null;
+  service_type?: string | null;
   client?: { first_name?: string; last_name?: string; email?: string };
 }
 
@@ -56,6 +58,13 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                 </div>
               ))}
           </dl>
+          {o.service_id !== null && o.service_id !== undefined ? (
+            <p className="mt-4 text-sm">
+              <Link className="text-blue-700 underline" href={`/admin/services/${o.id}`}>
+                View {o.service_type ?? "service"} service
+              </Link>
+            </p>
+          ) : null}
           <OrderActions orderId={o.id} status={o.status ?? ""} />
         </>
       )}

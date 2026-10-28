@@ -135,6 +135,12 @@ export const adminApi = {
     fbCall("admin", "order", "get_list", params, opts),
   orderGet: (id: number | string, opts?: CallOptions) =>
     fbCall("admin", "order", "get", { id }, opts),
+  orderService: (id: number | string, opts?: CallOptions) =>
+    fbCall("admin", "order", "service", { id }, opts),
+  productList: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall("admin", "product", "get_list", params, opts),
+  productGet: (id: number | string, opts?: CallOptions) =>
+    fbCall("admin", "product", "get", { id }, opts),
   invoiceList: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
     fbCall("admin", "invoice", "get_list", params, opts),
   invoiceGet: (id: number | string, opts?: CallOptions) =>
