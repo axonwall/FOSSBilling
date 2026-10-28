@@ -1,0 +1,7 @@
+{
+ "error": {
+  "code": 5897,
+  "message": "Cannot activate the r4a_no_such_mod module: its manifest file is missing or invalid. The extension files may be incomplete, please reinstall the extension."
+ },
+ "result": null
+}

@@ -1,0 +1,24 @@
+{
+ "error": null,
+ "result": [
+  {
+   "author": "FOSSBilling",
+   "author_url": "https://www.fossbilling.org",
+   "description": "Creates and manages URL redirects within FOSSBilling.",
+   "download_url": null,
+   "has_settings": true,
+   "homepage_url": "https://fossbilling.org/",
+   "icon_path": "mod_Redirect_icon.svg",
+   "icon_url": "http://127.0.0.1:8080//modules/Redirect/icon.svg",
+   "id": "redirect",
+   "license": "N/A",
+   "maximum_fossbilling_version": null,
+   "minimum_fossbilling_version": null,
+   "name": "Redirect",
+   "project_url": "https://extensions.fossbilling.org/",
+   "status": "installed",
+   "type": "mod",
+   "version": "1.0.0"
+  }
+ ]
+}

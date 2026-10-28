@@ -100,6 +100,9 @@ export const ADMIN_GUARDS: Record<string, [string, string | null][]> = {
   "admin/email/template_send": [["email", "send_emails"]],
   "admin/email/template_update": [["email", "manage_templates"]],
   "admin/email/template_validate_all": [["email", "manage_templates"]],
+  "admin/extension/activate": [["extension", "manage_extensions"]],
+  "admin/extension/deactivate": [["extension", "manage_extensions"]],
+  "admin/extension/get_list": [["extension", "view"]],
   "admin/formbuilder/add_field": [["formbuilder", "manage"]],
   "admin/formbuilder/copy_form": [["formbuilder", "manage"]],
   "admin/formbuilder/create_form": [["formbuilder", "manage"]],
@@ -419,7 +422,7 @@ export async function enforceAdminGuards(ctx: CallContext, role: string, module:
  * activation gate (715) passes core modules unconditionally; any other
  * module must have an installed extension row.
  */
-const CORE_MODULES = new Set([
+export const CORE_MODULES = new Set([
   "api", "activity", "antispam", "cart", "client", "cron", "currency", "email", "extension",
   "index", "invoice", "order", "page", "product", "profile", "security", "servicecustom",
   "servicedomain", "servicedownloadable", "servicehosting", "servicelicense", "staff", "stats",

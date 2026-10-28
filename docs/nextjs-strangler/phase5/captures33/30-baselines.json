@@ -1,0 +1,54 @@
+{
+ "extension_meta_keys": [
+  [
+   "mod_theme",
+   "default/client"
+  ],
+  [
+   "mod_cron",
+   "config"
+  ],
+  [
+   "mod_massmailer",
+   "config"
+  ]
+ ],
+ "extension_rows": [
+  [
+   "mod",
+   "branding",
+   "installed",
+   "0.0.1"
+  ],
+  [
+   "mod",
+   "redirect",
+   "installed",
+   "1.0.0"
+  ],
+  [
+   "mod",
+   "custompages",
+   "installed",
+   "1.0.0"
+  ],
+  [
+   "mod",
+   "massmailer",
+   "installed",
+   "1.0.0"
+  ],
+  [
+   "mod",
+   "notification",
+   "installed",
+   "1.0.0"
+  ],
+  [
+   "mod",
+   "news",
+   "installed",
+   "1.0.0"
+  ]
+ ]
+}
