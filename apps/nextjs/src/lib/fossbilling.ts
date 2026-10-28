@@ -168,4 +168,50 @@ export const adminApi = {
     fbCall("admin", "staff", "group_get_pairs", {}, opts),
   staffLoginHistory: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
     fbCall("admin", "staff", "login_history_get_list", params, opts),
+  systemGetParams: (opts?: CallOptions) =>
+    fbCall<Record<string, string | null>>("admin", "system", "get_params", {}, opts),
+  systemUpdateParams: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall<boolean>("admin", "system", "update_params", params, opts),
+  currencyList: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall<{ list: unknown[]; total: number; page: number; per_page: number; pages: number }>(
+      "admin",
+      "currency",
+      "get_list",
+      params,
+      opts,
+    ),
+  currencyGetDefault: (opts?: CallOptions) =>
+    fbCall<Record<string, unknown>>("admin", "currency", "get_default", {}, opts),
+  currencyUpdateRates: (opts?: CallOptions) =>
+    fbCall<boolean>("admin", "currency", "update_rates", {}, opts),
+  statsSummaryIncome: (opts?: CallOptions) =>
+    fbCall<Record<string, number>>("admin", "stats", "get_summary_income", {}, opts),
+  statsIncomeVsRefunds: (opts?: CallOptions) =>
+    fbCall<{ income: number; refund: number }>("admin", "stats", "get_income_vs_refunds", {}, opts),
+  statsProductSummary: (opts?: CallOptions) =>
+    fbCall<{ id: number; title: string; orders: number }[]>(
+      "admin",
+      "stats",
+      "get_product_summary",
+      {},
+      opts,
+    ),
+  statsProductSales: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall<Record<string, number>>("admin", "stats", "get_product_sales", params, opts),
+  statsIncome: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall<[number, number][]> ("admin", "stats", "get_income", params, opts),
+  statsRefunds: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall<[number, number][]> ("admin", "stats", "get_refunds", params, opts),
+  statsOrders: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall<[number, number][]> ("admin", "stats", "get_orders", params, opts),
+  statsClients: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall<[number, number][]> ("admin", "stats", "get_clients", params, opts),
+  statsInvoices: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall<[number, number][]> ("admin", "stats", "get_invoices", params, opts),
+  statsTickets: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall<[number, number][]> ("admin", "stats", "get_tickets", params, opts),
+  statsClientCountries: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall<Record<string, number>>("admin", "stats", "client_countries", params, opts),
+  statsSalesCountries: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall<Record<string, number>>("admin", "stats", "sales_countries", params, opts),
 };

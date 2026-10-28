@@ -29,6 +29,7 @@ const NEXT_ROUTES: Record<string, string> = {
   invoice: "/admin/invoices",
   support: "/admin/tickets",
   product: "/admin/products",
+  system: "/admin/system",
 };
 
 interface NavSub {
@@ -108,6 +109,22 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           ? [{ label: group.label, href: surviving[0].href }]
           : surviving,
     });
+  }
+
+  // R2e: static Currencies + Statistics links under the System group.
+  // Neither module declares a nav entry in PHP (currencies live under
+  // system settings, stats are dashboard widgets), so they cannot map
+  // through NEXT_ROUTES. They are appended to the System section only
+  // when it renders — and it renders only for callers with system
+  // module access — so the gating is the group's own, fail-closed.
+  {
+    const sys = sections.find((s) => s.label === "System");
+    if (sys) {
+      sys.links.push(
+        { label: "Currencies", href: "/admin/system/currencies" },
+        { label: "Statistics", href: "/admin/system/stats" },
+      );
+    }
   }
 
   // R2d: static Staff section. PHP's nav has no staff-management entry

@@ -1,0 +1,21 @@
+{
+  "result": {
+    "pages": 1,
+    "page": 1,
+    "per_page": 100,
+    "total": 1,
+    "list": [
+      {
+        "code": "USD",
+        "name": "US Dollar",
+        "symbol": "$",
+        "conversion_rate": 1,
+        "is_rate_manual": false,
+        "format_pattern": null,
+        "fraction_digits": null,
+        "default": true
+      }
+    ]
+  },
+  "error": null
+}
