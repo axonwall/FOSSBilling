@@ -12,8 +12,8 @@ import { FbError, register, requireAdmin } from "../dispatch";
  * this install — it is unverified-live until seo is installed.
  */
 
-function requireSeoActive(): void {
-  if (!isModuleActive("seo")) {
+async function requireSeoActive(): Promise<void> {
+  if (!await isModuleActive("seo")) {
     throw new FbError("FOSSBilling module seo is not installed/activated", 715);
   }
 }
@@ -22,13 +22,13 @@ function phpBase(): string {
   return (process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080").replace(/\/$/, "");
 }
 
-register("admin", "seo", "info", (ctx) => {
+register("admin", "seo", "info", async (ctx) => {
   requireAdmin(ctx);
-  requireSeoActive();
-  const config = readExtensionConfig("mod_seo");
+  await requireSeoActive();
+  const config = await readExtensionConfig("mod_seo");
   return {
     sitemap_url: `${phpBase()}/sitemap.xml`,
-    last_exec: getSetting("mod_seo_last_sitemap_submit"),
+    last_exec: await getSetting("mod_seo_last_sitemap_submit"),
     engines: {
       google: {
         id: "google",
@@ -41,8 +41,8 @@ register("admin", "seo", "info", (ctx) => {
 
 register("admin", "seo", "ping_all", async (ctx) => {
   requireAdmin(ctx);
-  requireSeoActive();
-  const config = readExtensionConfig("mod_seo");
+  await requireSeoActive();
+  const config = await readExtensionConfig("mod_seo");
   // Forced ping (admin API passes $forced = true): the daily guard
   // is skipped. Each enabled engine is pinged best-effort; failures
   // are swallowed exactly like PHP's per-engine try/catch.
@@ -62,6 +62,6 @@ register("admin", "seo", "ping_all", async (ctx) => {
     }
   }
   const now = new Date().toISOString().slice(0, 19).replace("T", " ");
-  upsertSetting("mod_seo_last_sitemap_submit", now);
+  await upsertSetting("mod_seo_last_sitemap_submit", now);
   return true;
 });

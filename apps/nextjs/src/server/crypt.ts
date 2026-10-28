@@ -57,19 +57,19 @@ export function encryptV2(text: string): string | null {
  * Returns false when unkeyed (no salt) — callers then cannot store
  * readable config, mirroring PHP's encrypt failure rather than
  * writing plaintext. */
-export function writeExtensionConfig(ext: string, config: Record<string, unknown>): boolean {
+export async function writeExtensionConfig(ext: string, config: Record<string, unknown>): Promise<boolean> {
   const encrypted = encryptV2(JSON.stringify(config));
   if (!encrypted) return false;
   const db = getDbWrite();
-  const row = db
+  const row = await db
     .prepare("SELECT id FROM extension_meta WHERE extension = ? AND meta_key = 'config'")
     .get(ext) as { id: number } | undefined;
   if (row) {
-    db.prepare("UPDATE extension_meta SET meta_value = ?, updated_at = ? WHERE id = ?")
+    await db.prepare("UPDATE extension_meta SET meta_value = ?, updated_at = ? WHERE id = ?")
       .run(encrypted, nowTimestamp(), row.id);
   } else {
     const ts = nowTimestamp();
-    db.prepare(
+    await db.prepare(
       "INSERT INTO extension_meta (extension, meta_key, meta_value, created_at, updated_at) VALUES (?, 'config', ?, ?, ?)",
     ).run(ext, encrypted, ts, ts);
   }
@@ -77,8 +77,8 @@ export function writeExtensionConfig(ext: string, config: Record<string, unknown
 }
 
 /** Read an extension config row (extension_meta, meta_key 'config'). */
-export function readExtensionConfig(ext: string): Record<string, unknown> {
-  const row = getDb()
+export async function readExtensionConfig(ext: string): Promise<Record<string, unknown>> {
+  const row = await getDb()
     .prepare("SELECT meta_value FROM extension_meta WHERE extension = ? AND meta_key = 'config'")
     .get(ext) as unknown as { meta_value: string | null } | undefined;
   if (!row?.meta_value) return {};

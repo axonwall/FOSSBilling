@@ -14,9 +14,9 @@ import { phpInt } from "./formbuilder";
  * the PHP side (logins, mutations) appear here in real time, which is
  * the point of the shared-DB model.
  */
-register("admin", "activity", "log_get_list", (ctx: CallContext) => {
+register("admin", "activity", "log_get_list", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const rows = listActivity({
+  const rows = await listActivity({
     priority: ctx.params["priority"],
     minPriority: ctx.params["min_priority"] ?? (ctx.params["priority"] ? undefined : "6"),
     userFilter: ctx.params["user_filter"],
@@ -54,12 +54,12 @@ register("admin", "activity", "log_get_list", (ctx: CallContext) => {
 /** admin/activity/log_email: appends an activity_client_email row;
  * false without `subject` (mirrors the PHP API, which returns false
  * rather than throwing). Pinned by capture26.py. */
-register("admin", "activity", "log_email", (ctx: CallContext) => {
+register("admin", "activity", "log_email", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const subject = ctx.params["subject"];
   if (!subject) return false;
   const clientId = ctx.params["client_id"];
-  insertActivityClientEmail({
+  await insertActivityClientEmail({
     client_id: clientId ? phpInt(clientId) : null,
     sender: ctx.params["sender"] ?? null,
     recipients: ctx.params["recipients"] ?? null,
@@ -71,11 +71,11 @@ register("admin", "activity", "log_email", (ctx: CallContext) => {
 });
 
 /** admin/activity/log: writes an activity_system entry; false without `m`. */
-register("admin", "activity", "log", (ctx: CallContext) => {
+register("admin", "activity", "log", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const m = ctx.params["m"];
   if (!m) return false;
-  insertActivity({
+  await insertActivity({
     admin_id: ctx.params["admin_id"] ? Number(ctx.params["admin_id"]) : ctx.session!.admin!.id,
     client_id: ctx.params["client_id"] ? Number(ctx.params["client_id"]) : null,
     priority: ctx.params["priority"] ? Number(ctx.params["priority"]) : 6,

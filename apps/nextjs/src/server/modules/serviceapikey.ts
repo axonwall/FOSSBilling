@@ -12,8 +12,8 @@ import { phpInt } from "./formbuilder";
  * unverified-live until the module is installed.
  */
 
-function requireApikeyActive(): void {
-  if (!isModuleActive("serviceapikey")) {
+async function requireApikeyActive(): Promise<void> {
+  if (!await isModuleActive("serviceapikey")) {
     throw new FbError("FOSSBilling module serviceapikey is not installed/activated", 715);
   }
 }
@@ -27,28 +27,28 @@ interface ApiKeyRow {
   updated_at: string | null;
 }
 
-function findKeyByApiKey(key: string): ApiKeyRow | undefined {
-  return getDb().prepare("SELECT * FROM service_apikey WHERE api_key = ?").get(key) as unknown as
+async function findKeyByApiKey(key: string): Promise<ApiKeyRow | undefined> {
+  return await getDb().prepare("SELECT * FROM service_apikey WHERE api_key = ?").get(key) as unknown as
     | ApiKeyRow
     | undefined;
 }
 
-function findKeyById(id: number): ApiKeyRow | undefined {
-  return getDb().prepare("SELECT * FROM service_apikey WHERE id = ?").get(id) as unknown as
+async function findKeyById(id: number): Promise<ApiKeyRow | undefined> {
+  return await getDb().prepare("SELECT * FROM service_apikey WHERE id = ?").get(id) as unknown as
     | ApiKeyRow
     | undefined;
 }
 
 /** Order Service::getOrderService for the apikey service type. */
-function modelForOrder(orderId: number): ApiKeyRow | undefined {
-  const order = findOrderById(orderId);
+async function modelForOrder(orderId: number): Promise<ApiKeyRow | undefined> {
+  const order = await findOrderById(orderId);
   if (!order) throw new FbError("Order not found");
   if (order.service_type !== "apikey" || order.service_id === null) return undefined;
-  return findKeyById(order.service_id);
+  return await findKeyById(order.service_id);
 }
 
-function isActive(model: ApiKeyRow): boolean {
-  const order = getDb()
+async function isActive(model: ApiKeyRow): Promise<boolean> {
+  const order = await getDb()
     .prepare("SELECT * FROM client_order WHERE service_id = ? AND service_type = 'apikey'")
     .get(model.id) as unknown as { status: string; expires_at: string | null } | undefined;
   if (!order) throw new FbError("API key does not exist");
@@ -57,7 +57,7 @@ function isActive(model: ApiKeyRow): boolean {
   return true;
 }
 
-function generateKey(config: Record<string, unknown>): string {
+async function generateKey(config: Record<string, unknown>): Promise<string> {
   const length = (config["length"] as number | undefined) ?? 32;
   const split = (config["split"] as boolean | undefined) ?? true;
   const splitLength = (config["split_interval"] as number | undefined) ?? 8;
@@ -87,7 +87,7 @@ function generateKey(config: Record<string, unknown>): string {
           `Unknown uppercase option '${kase}'. API generator only accepts 'lower', 'upper', or 'mixed'.`,
         );
     }
-    if (!findKeyByApiKey(key)) return key;
+    if (!await findKeyByApiKey(key)) return key;
   }
   throw new FbError("Maximum number of iterations reached while generating API key");
 }
@@ -106,7 +106,7 @@ function parseConfig(text: string | null): Record<string, unknown> {
 
 /** Shared reset logic (admin + client); the client-ownership check
  * applies only when a client session is present. */
-function resetApiKey(ctx: CallContext): boolean {
+async function resetApiKey(ctx: CallContext): Promise<boolean> {
   const key = ctx.params["key"];
   const orderIdRaw = ctx.params["order_id"];
   // PHP empty(): '', '0', missing all count as empty; order_id wins
@@ -118,40 +118,40 @@ function resetApiKey(ctx: CallContext): boolean {
   }
   let model: ApiKeyRow | undefined;
   if (!orderEmpty) {
-    model = modelForOrder(phpInt(orderIdRaw));
+    model = await modelForOrder(phpInt(orderIdRaw));
   } else {
-    model = findKeyByApiKey(key!);
+    model = await findKeyByApiKey(key!);
   }
   if (!model) throw new FbError("API key does not exist");
   const client = ctx.session?.client;
   if (client && client.id !== model.client_id) throw new FbError("API key does not exist");
-  if (!isActive(model)) throw new FbError("Order is not active");
+  if (!await isActive(model)) throw new FbError("Order is not active");
   const config = parseConfig(model.config);
-  getDbWrite()
+  await getDbWrite()
     .prepare("UPDATE service_apikey SET api_key = ? WHERE id = ?")
-    .run(generateKey(config), model.id);
+    .run(await generateKey(config), model.id);
   return true;
 }
 
-register("guest", "serviceapikey", "check", (ctx) => {
-  requireApikeyActive();
+register("guest", "serviceapikey", "check", async (ctx) => {
+  await requireApikeyActive();
   const key = ctx.params["key"];
   if (!key || key === "" || key === "0") {
     throw new FbError("You must provide an API key to check it's validity.");
   }
-  const model = findKeyByApiKey(key);
+  const model = await findKeyByApiKey(key);
   if (!model) throw new FbError("API key does not exist");
-  return isActive(model);
+  return await isActive(model);
 });
 
-register("admin", "serviceapikey", "update", (ctx) => {
+register("admin", "serviceapikey", "update", async (ctx) => {
   requireAdmin(ctx);
-  requireApikeyActive();
+  await requireApikeyActive();
   const orderIdRaw = ctx.params["order_id"];
   if (!orderIdRaw || orderIdRaw === "" || orderIdRaw === "0") {
     throw new FbError("You must provide the API key order ID in order to update it.");
   }
-  const model = modelForOrder(phpInt(orderIdRaw));
+  const model = await modelForOrder(phpInt(orderIdRaw));
   if (!model) throw new FbError("API key does not exist");
   const apiKey = ctx.params["api_key"];
   if (apiKey !== undefined && model.api_key !== apiKey) {
@@ -165,20 +165,20 @@ register("admin", "serviceapikey", "update", (ctx) => {
     !(Array.isArray(rawConfig) && rawConfig.length === 0) &&
     !(typeof rawConfig === "object" && Object.keys(rawConfig as object).length === 0);
   const config = hasConfig ? JSON.stringify(rawConfig) : model.config;
-  getDbWrite()
+  await getDbWrite()
     .prepare("UPDATE service_apikey SET config = ? WHERE id = ?")
     .run(config, model.id);
   return true;
 });
 
-register("admin", "serviceapikey", "reset", (ctx) => {
+register("admin", "serviceapikey", "reset", async (ctx) => {
   requireAdmin(ctx);
-  requireApikeyActive();
-  return resetApiKey(ctx);
+  await requireApikeyActive();
+  return await resetApiKey(ctx);
 });
 
-register("client", "serviceapikey", "reset", (ctx) => {
+register("client", "serviceapikey", "reset", async (ctx) => {
   requireClient(ctx);
-  requireApikeyActive();
-  return resetApiKey(ctx);
+  await requireApikeyActive();
+  return await resetApiKey(ctx);
 });

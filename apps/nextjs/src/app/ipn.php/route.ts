@@ -38,8 +38,8 @@ interface GatewayRow {
   test_mode: number;
 }
 
-function gatewayRow(id: number): GatewayRow | undefined {
-  return getDb()
+async function gatewayRow(id: number): Promise<GatewayRow | undefined> {
+  return await getDb()
     .prepare("SELECT id, gateway, config, test_mode FROM pay_gateway WHERE id = ?")
     .get(id) as GatewayRow | undefined;
 }
@@ -109,7 +109,7 @@ export async function POST(req: Request) {
 
   try {
     if (isJson) {
-      return handleJsonWebhook(req, rawBody, gatewayId, query);
+      return await handleJsonWebhook(req, rawBody, gatewayId, query);
     }
     // Form callback (Custom and friends).
     const form = new URLSearchParams(rawBody);
@@ -120,14 +120,14 @@ export async function POST(req: Request) {
     const invoiceId = invoiceParam ? Number(invoiceParam) : post["invoice_id"] ? Number(post["invoice_id"]) : null;
     if (invoiceId === null) throw new FbError("Transaction invoice ID is missing");
     if (gatewayId === null) throw new FbError("Payment gateway ID is missing");
-    const invoice = findInvoiceById(invoiceId);
+    const invoice = await findInvoiceById(invoiceId);
     if (!invoice) throw new FbError("Invoice was not found");
-    const gateway = findGatewayFull(gatewayId);
+    const gateway = await findGatewayFull(gatewayId);
     if (!gateway) throw new FbError("Invalid payment gateway");
     // Idempotency: a processed txn with the same external id wins.
     const txnIdCandidate = post["txn_id"] ?? query["txn_id"] ?? null;
     if (txnIdCandidate) {
-      const existing = getDb()
+      const existing = await getDb()
         .prepare(
           'SELECT id FROM "transaction" WHERE txn_id = ? AND gateway_id = ? AND status = \'processed\'',
         )
@@ -141,7 +141,7 @@ export async function POST(req: Request) {
       http_raw_post_data: rawBody,
       server: null,
     });
-    const txId = insertTransactionFull({
+    const txId = await insertTransactionFull({
       txn_id: null,
       txn_status: null,
       amount: "0",
@@ -154,14 +154,14 @@ export async function POST(req: Request) {
       invoice_id: invoiceId,
       gateway_id: gatewayId,
     });
-    const tx = findTransactionById(txId);
+    const tx = await findTransactionById(txId);
     if (!tx) throw new FbError("Transaction not found");
     try {
       await processTransactionRow(tx, { post, get: query, rawBody });
     } catch (e) {
       // createAndProcess parks the failure on the transaction and the
       // caller still sees the error envelope (PHP behavior).
-      updateTransactionRow(txId, {
+      await updateTransactionRow(txId, {
         status: "error",
         error: e instanceof Error ? e.message : String(e),
       });
@@ -174,14 +174,14 @@ export async function POST(req: Request) {
   }
 }
 
-function handleJsonWebhook(
+async function handleJsonWebhook(
   req: Request,
   rawBody: string,
   gatewayId: number | null,
   query: Record<string, string>,
 ) {
   if (gatewayId === null) return fail("Payment gateway ID is missing");
-  const gateway = gatewayRow(gatewayId);
+  const gateway = await gatewayRow(gatewayId);
   if (!gateway) return fail("Invalid payment gateway");
   if (gateway.gateway !== "Stripe") {
     return fail("Unsupported JSON webhook gateway");
@@ -213,7 +213,7 @@ function handleJsonWebhook(
     http_raw_post_data: rawBody,
     server: null,
   });
-  const txId = insertTransactionFull({
+  const txId = await insertTransactionFull({
     txn_id: event.id ?? null,
     txn_status: event.type ?? null,
     amount: "0",
@@ -229,7 +229,7 @@ function handleJsonWebhook(
   const type = event.type ?? "";
   if (!STRIPE_HANDLED.has(type)) {
     // Unhandled events are recorded then deleted by PHP's adapter.
-    deleteTransactionRow(txId);
+    await deleteTransactionRow(txId);
     return envelope(txId, null);
   }
   if (type === "payment_intent.succeeded") {
@@ -237,24 +237,24 @@ function handleJsonWebhook(
     const metadata = (obj["metadata"] ?? {}) as Record<string, unknown>;
     const invoiceId = Number(metadata["invoice_id"] ?? 0);
     const amountReceived = Number(obj["amount_received"] ?? -1);
-    const invoice = invoiceId ? findInvoiceById(invoiceId) : undefined;
+    const invoice = invoiceId ? await findInvoiceById(invoiceId) : undefined;
     if (invoice) {
-      const totals = invoiceTotals(listInvoiceItems(invoice.id), invoice.taxrate ?? "0");
+      const totals = invoiceTotals(await listInvoiceItems(invoice.id), invoice.taxrate ?? "0");
       if (Math.round(totals.total * 100) === amountReceived) {
-        updateTransactionRow(txId, {
+        await updateTransactionRow(txId, {
           invoice_id: invoice.id,
           status: "processed",
           amount: String(totals.total),
           currency: invoice.currency,
           txn_status: type,
         });
-        if (invoice.status !== "paid") markInvoicePaid(invoice.id);
+        if (invoice.status !== "paid") await markInvoicePaid(invoice.id);
         return envelope(txId, null);
       }
     }
     // Amount/invoice mismatch: keep the row for review, like a
     // received transaction awaiting processing.
-    updateTransactionRow(txId, {
+    await updateTransactionRow(txId, {
       ...(invoiceId ? { invoice_id: invoiceId } : {}),
       error: "Stripe payment did not match an unpaid invoice total",
     });

@@ -35,34 +35,34 @@ function validateTarget(target: string): string {
   return t;
 }
 
-function getRedirect(id: number) {
-  const row = findExtensionMetaById("mod_redirect", id);
+async function getRedirect(id: number) {
+  const row = await findExtensionMetaById("mod_redirect", id);
   if (!row) throw new FbError("Redirect not found");
   return row;
 }
 
-register("admin", "redirect", "get_list", (ctx) => {
+register("admin", "redirect", "get_list", async (ctx) => {
   requireAdmin(ctx);
-  return listExtensionMetaByExtension("mod_redirect").map(toApiArray);
+  return (await listExtensionMetaByExtension("mod_redirect")).map(toApiArray);
 });
 
-register("admin", "redirect", "get", (ctx) => {
+register("admin", "redirect", "get", async (ctx) => {
   requireAdmin(ctx);
   const id = requireParam(ctx.params, "id", "Redirect ID was not passed");
-  return toApiArray(getRedirect(phpInt(id)));
+  return toApiArray(await getRedirect(phpInt(id)));
 });
 
-register("admin", "redirect", "create", (ctx) => {
+register("admin", "redirect", "create", async (ctx) => {
   requireAdmin(ctx);
   const path = requireParam(ctx.params, "path", "Redirect path was not passed");
   const target = requireParam(ctx.params, "target", "Redirect target was not passed");
-  return insertExtensionMeta("mod_redirect", validatePath(path), validateTarget(target));
+  return await insertExtensionMeta("mod_redirect", validatePath(path), validateTarget(target));
 });
 
-register("admin", "redirect", "update", (ctx: CallContext) => {
+register("admin", "redirect", "update", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const id = requireParam(ctx.params, "id", "Redirect ID was not passed");
-  const row = getRedirect(phpInt(id));
+  const row = await getRedirect(phpInt(id));
   // Only provided fields change; no change means no UPDATE (so
   // updated_at is untouched, mirroring Doctrine's no-op flush).
   const path = ctx.params["path"];
@@ -73,14 +73,14 @@ register("admin", "redirect", "update", (ctx: CallContext) => {
   // Doctrine skips the UPDATE when nothing changed, leaving
   // updated_at untouched; mirror that instead of bumping it.
   if (newKey === row.meta_key && newVal === row.meta_value) return true;
-  updateExtensionMetaRow(row.id, newKey, newVal);
+  await updateExtensionMetaRow(row.id, newKey, newVal);
   return true;
 });
 
-register("admin", "redirect", "delete", (ctx) => {
+register("admin", "redirect", "delete", async (ctx) => {
   requireAdmin(ctx);
   const id = requireParam(ctx.params, "id", "Redirect ID was not passed");
-  const row = getRedirect(phpInt(id));
-  deleteExtensionMetaRow(row.id);
+  const row = await getRedirect(phpInt(id));
+  await deleteExtensionMetaRow(row.id);
   return true;
 });

@@ -134,19 +134,19 @@ function processAssignedIPs(input: string): string {
   return JSON.stringify(out);
 }
 
-function findOrder(id: number): OrderRow | undefined {
-  return getDb().prepare("SELECT * FROM client_order WHERE id = ?").get(id) as unknown as OrderRow | undefined;
+async function findOrder(id: number): Promise<OrderRow | undefined> {
+  return await getDb().prepare("SELECT * FROM client_order WHERE id = ?").get(id) as unknown as OrderRow | undefined;
 }
 
-function findOrderForClient(id: number, clientId: number): OrderRow | undefined {
-  return getDb()
+async function findOrderForClient(id: number, clientId: number): Promise<OrderRow | undefined> {
+  return await getDb()
     .prepare("SELECT * FROM client_order WHERE id = ? AND client_id = ?")
     .get(id, clientId) as unknown as OrderRow | undefined;
 }
 
-function hostingByOrder(order: OrderRow): HostingRow | undefined {
+async function hostingByOrder(order: OrderRow): Promise<HostingRow | undefined> {
   if (order.service_id === null || order.service_type !== "hosting") return undefined;
-  return getDb().prepare("SELECT * FROM service_hosting WHERE id = ?").get(order.service_id) as unknown as
+  return await getDb().prepare("SELECT * FROM service_hosting WHERE id = ?").get(order.service_id) as unknown as
     | HostingRow
     | undefined;
 }
@@ -163,35 +163,35 @@ function performOnService(order: OrderRow): boolean {
   return true;
 }
 
-function getServiceAdmin(ctx: CallContext): [OrderRow, HostingRow] {
+async function getServiceAdmin(ctx: CallContext): Promise<[OrderRow, HostingRow]> {
   if (!ctx.params["order_id"]) throw new FbError("Order ID name is missing");
-  const order = findOrder(Number(ctx.params["order_id"]));
+  const order = await findOrder(Number(ctx.params["order_id"]));
   if (!order) throw new FbError("Order not found");
-  const svc = hostingByOrder(order);
+  const svc = await hostingByOrder(order);
   if (!svc) throw new FbError("Order is not activated");
   return [order, svc];
 }
 
-function getServiceClient(ctx: CallContext): [OrderRow, HostingRow] {
+async function getServiceClient(ctx: CallContext): Promise<[OrderRow, HostingRow]> {
   if (!ctx.params["order_id"]) throw new FbError("Order ID is required");
-  const order = findOrderForClient(Number(ctx.params["order_id"]), ctx.session!.client!.id);
+  const order = await findOrderForClient(Number(ctx.params["order_id"]), ctx.session!.client!.id);
   if (!order) throw new FbError("Order not found");
   assertUsable(order);
-  const svc = hostingByOrder(order);
+  const svc = await hostingByOrder(order);
   if (!svc || order.status !== "active") throw new FbError("Order is not activated");
   return [order, svc];
 }
 
-function getServer(id: number): ServerRow {
-  const row = getDb().prepare("SELECT * FROM service_hosting_server WHERE id = ?").get(id) as unknown as
+async function getServer(id: number): Promise<ServerRow> {
+  const row = await getDb().prepare("SELECT * FROM service_hosting_server WHERE id = ?").get(id) as unknown as
     | ServerRow
     | undefined;
   if (!row) throw new FbError("Server not found");
   return row;
 }
 
-function getHp(id: number): HpRow {
-  const row = getDb().prepare("SELECT * FROM service_hosting_hp WHERE id = ?").get(id) as unknown as
+async function getHp(id: number): Promise<HpRow> {
+  const row = await getDb().prepare("SELECT * FROM service_hosting_hp WHERE id = ?").get(id) as unknown as
     | HpRow
     | undefined;
   if (!row) throw new FbError("Hosting plan not found");
@@ -355,12 +355,12 @@ function hpToApi(row: HpRow): Record<string, unknown> {
   };
 }
 
-function usageStats(column: string, id: number): { total: number; active: number; orphaned: number; orphanedIds: number[] } {
-  const rows = getDb().prepare(`SELECT id FROM service_hosting WHERE ${column} = ?`).all(id) as unknown as { id: number }[];
+async function usageStats(column: string, id: number): Promise<{ total: number; active: number; orphaned: number; orphanedIds: number[] }> {
+  const rows = await getDb().prepare(`SELECT id FROM service_hosting WHERE ${column} = ?`).all(id) as unknown as { id: number }[];
   const ids = rows.map((r) => r.id);
   if (ids.length === 0) return { total: 0, active: 0, orphaned: 0, orphanedIds: [] };
   const ph = ids.map(() => "?").join(",");
-  const activeRows = getDb()
+  const activeRows = await getDb()
     .prepare(`SELECT DISTINCT service_id FROM client_order WHERE service_type = 'hosting' AND service_id IN (${ph})`)
     .all(...ids) as unknown as { service_id: number }[];
   const activeSet = new Set(activeRows.map((r) => r.service_id));
@@ -382,9 +382,9 @@ register("admin", "servicehosting", "manager_get_pairs", (ctx) => {
   return { Custom: CUSTOM_FORM, Hestia: HESTIA_FORM };
 });
 
-register("admin", "servicehosting", "server_get_pairs", (ctx) => {
+register("admin", "servicehosting", "server_get_pairs", async (ctx) => {
   requireAdmin(ctx);
-  const rows = getDb().prepare("SELECT id, name FROM service_hosting_server ORDER BY id ASC").all() as unknown as {
+  const rows = await getDb().prepare("SELECT id, name FROM service_hosting_server ORDER BY id ASC").all() as unknown as {
     id: number;
     name: string;
   }[];
@@ -394,17 +394,17 @@ register("admin", "servicehosting", "server_get_pairs", (ctx) => {
   return Object.keys(out).length > 0 ? out : [];
 });
 
-register("admin", "servicehosting", "server_get_list", (ctx) => {
+register("admin", "servicehosting", "server_get_list", async (ctx) => {
   requireAdmin(ctx);
   const order = sortClause(ctx.params, { id: "id", name: "name", ip: "ip", hostname: "hostname" });
-  const rows = getDb().prepare(`SELECT * FROM service_hosting_server ORDER BY ${order}`).all() as unknown as ServerRow[];
+  const rows = await getDb().prepare(`SELECT * FROM service_hosting_server ORDER BY ${order}`).all() as unknown as ServerRow[];
   return paginate(rows.map((r) => serverToApi(r, true)), ctx.params);
 });
 
-register("admin", "servicehosting", "server_get", (ctx) => {
+register("admin", "servicehosting", "server_get", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("Server ID was not passed");
-  return serverToApi(getServer(Number(ctx.params["id"])), true);
+  return serverToApi(await getServer(Number(ctx.params["id"])), true);
 });
 
 function serverConfigFrom(ctx: CallContext, existing: Record<string, unknown> | null): Record<string, unknown> {
@@ -420,7 +420,7 @@ function serverConfigFrom(ctx: CallContext, existing: Record<string, unknown> | 
   return cfg;
 }
 
-register("admin", "servicehosting", "server_create", (ctx) => {
+register("admin", "servicehosting", "server_create", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["name"]) throw new FbError("Server name was not passed");
   if (!ctx.params["ip"]) throw new FbError("Server IP was not passed");
@@ -436,43 +436,17 @@ register("admin", "servicehosting", "server_create", (ctx) => {
   const port = normalizePort(ctx.params["port"] ?? (ctx.rawParams as Record<string, unknown>)["port"], null);
   const pwLenRaw = ctx.params["passwordLength"] ?? (ctx.rawParams as Record<string, unknown>)["passwordLength"];
   const ts = nowTimestamp();
-  const info = getDbWrite()
-    .prepare(
-      `INSERT INTO service_hosting_server (name, ip, hostname, assigned_ips, status_url, active, max_accounts,
+  const info = await getDbWrite().insertAndGetId(`INSERT INTO service_hosting_server (name, ip, hostname, assigned_ips, status_url, active, max_accounts,
        ns1, ns2, ns3, ns4, manager, username, password, accesshash, password_length, port, config, secure,
        created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .run(
-      ctx.params["name"],
-      ctx.params["ip"],
-      ctx.params["hostname"] ?? null,
-      assigned !== "" ? processAssignedIPs(assigned) : null,
-      ctx.params["status_url"] ?? null,
-      normalizeBoolean(ctx.params["active"] ?? (ctx.rawParams as Record<string, unknown>)["active"] ?? true) ? 1 : 0,
-      ctx.params["max_accounts"] !== undefined ? Number(ctx.params["max_accounts"]) : null,
-      ctx.params["ns1"] ?? null,
-      ctx.params["ns2"] ?? null,
-      ctx.params["ns3"] ?? null,
-      ctx.params["ns4"] ?? null,
-      manager,
-      ctx.params["username"] ?? null,
-      ctx.params["password"] ?? null,
-      ctx.params["accesshash"] ?? null,
-      pwLenRaw !== undefined && !Number.isNaN(Number(pwLenRaw)) && String(pwLenRaw).trim() !== "" ? parseInt(String(pwLenRaw), 10) : null,
-      port !== null ? String(port) : null,
-      JSON.stringify(cfg),
-      normalizeBoolean(ctx.params["secure"] ?? (ctx.rawParams as Record<string, unknown>)["secure"] ?? true) ? 1 : 0,
-      ts,
-      ts,
-    );
-  return Number(info.lastInsertRowid);
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, ctx.params["name"], ctx.params["ip"], ctx.params["hostname"] ?? null, assigned !== "" ? processAssignedIPs(assigned) : null, ctx.params["status_url"] ?? null, normalizeBoolean(ctx.params["active"] ?? (ctx.rawParams as Record<string, unknown>)["active"] ?? true) ? 1 : 0, ctx.params["max_accounts"] !== undefined ? Number(ctx.params["max_accounts"]) : null, ctx.params["ns1"] ?? null, ctx.params["ns2"] ?? null, ctx.params["ns3"] ?? null, ctx.params["ns4"] ?? null, manager, ctx.params["username"] ?? null, ctx.params["password"] ?? null, ctx.params["accesshash"] ?? null, pwLenRaw !== undefined && !Number.isNaN(Number(pwLenRaw)) && String(pwLenRaw).trim() !== "" ? parseInt(String(pwLenRaw), 10) : null, port !== null ? String(port) : null, JSON.stringify(cfg), normalizeBoolean(ctx.params["secure"] ?? (ctx.rawParams as Record<string, unknown>)["secure"] ?? true) ? 1 : 0, ts, ts);
+  return Number(info);
 });
 
-register("admin", "servicehosting", "server_update", (ctx) => {
+register("admin", "servicehosting", "server_update", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("Server ID was not passed");
-  const row = getServer(Number(ctx.params["id"]));
+  const row = await getServer(Number(ctx.params["id"]));
   const raw = ctx.rawParams as Record<string, unknown>;
   const next: ServerRow = { ...row };
   next.name = ctx.params["name"] ?? row.name;
@@ -520,7 +494,7 @@ register("admin", "servicehosting", "server_update", (ctx) => {
   }
   // PHP persists first, then validates the manager config (719 on
   // failure) — a failed validation still leaves the update in place.
-  getDbWrite()
+  await getDbWrite()
     .prepare(
       `UPDATE service_hosting_server SET name = ?, ip = ?, hostname = ?, assigned_ips = ?, status_url = ?,
        active = ?, max_accounts = ?, ns1 = ?, ns2 = ?, ns3 = ?, ns4 = ?, manager = ?, username = ?, password = ?,
@@ -543,15 +517,15 @@ register("admin", "servicehosting", "server_update", (ctx) => {
   return true;
 });
 
-register("admin", "servicehosting", "server_delete", (ctx) => {
+register("admin", "servicehosting", "server_delete", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("Server ID was not passed");
-  const row = getServer(Number(ctx.params["id"]));
-  const usages = getDb()
+  const row = await getServer(Number(ctx.params["id"]));
+  const usages = await getDb()
     .prepare("SELECT COUNT(*) AS c FROM service_hosting WHERE service_hosting_server_id = ?")
     .get(row.id) as unknown as { c: number };
   if (usages.c > 0) {
-    const stats = usageStats("service_hosting_server_id", row.id);
+    const stats = await usageStats("service_hosting_server_id", row.id);
     if (stats.active > 0) {
       throw new FbError(`Hosting server is used by ${stats.active} service hostings`, 704);
     }
@@ -563,17 +537,17 @@ register("admin", "servicehosting", "server_delete", (ctx) => {
       );
     }
     for (const oid of stats.orphanedIds) {
-      getDbWrite().prepare("UPDATE service_hosting SET service_hosting_server_id = NULL WHERE id = ?").run(oid);
+      await getDbWrite().prepare("UPDATE service_hosting SET service_hosting_server_id = NULL WHERE id = ?").run(oid);
     }
   }
-  getDbWrite().prepare("DELETE FROM service_hosting_server WHERE id = ?").run(row.id);
+  await getDbWrite().prepare("DELETE FROM service_hosting_server WHERE id = ?").run(row.id);
   return true;
 });
 
 register("admin", "servicehosting", "server_test_connection", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("Server ID was not passed");
-  const row = getServer(Number(ctx.params["id"]));
+  const row = await getServer(Number(ctx.params["id"]));
   if (row.manager === "Custom") return true;
   if (row.manager !== "Hestia") throw new FbError(`Server manager ${row.manager} is invalid.`);
   if (!row.hostname || row.hostname.trim() === "") {
@@ -590,9 +564,9 @@ register("admin", "servicehosting", "server_test_connection", async (ctx) => {
   return true;
 });
 
-register("admin", "servicehosting", "hp_get_pairs", (ctx) => {
+register("admin", "servicehosting", "hp_get_pairs", async (ctx) => {
   requireAdmin(ctx);
-  const rows = getDb().prepare("SELECT id, name FROM service_hosting_hp ORDER BY id ASC").all() as unknown as {
+  const rows = await getDb().prepare("SELECT id, name FROM service_hosting_hp ORDER BY id ASC").all() as unknown as {
     id: number;
     name: string;
   }[];
@@ -602,48 +576,32 @@ register("admin", "servicehosting", "hp_get_pairs", (ctx) => {
   return Object.keys(out).length > 0 ? out : [];
 });
 
-register("admin", "servicehosting", "hp_get_list", (ctx) => {
+register("admin", "servicehosting", "hp_get_list", async (ctx) => {
   requireAdmin(ctx);
   const order = sortClause(ctx.params, { id: "id", name: "name" });
-  const rows = getDb().prepare(`SELECT * FROM service_hosting_hp ORDER BY ${order}`).all() as unknown as HpRow[];
+  const rows = await getDb().prepare(`SELECT * FROM service_hosting_hp ORDER BY ${order}`).all() as unknown as HpRow[];
   return paginate(rows.map(hpToApi), ctx.params);
 });
 
-register("admin", "servicehosting", "hp_get", (ctx) => {
+register("admin", "servicehosting", "hp_get", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("Hosting plan ID was not passed");
-  return hpToApi(getHp(Number(ctx.params["id"])));
+  return hpToApi(await getHp(Number(ctx.params["id"])));
 });
 
-register("admin", "servicehosting", "hp_create", (ctx) => {
+register("admin", "servicehosting", "hp_create", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["name"]) throw new FbError("Hosting plan name was not passed");
   const ts = nowTimestamp();
-  const info = getDbWrite()
-    .prepare(
-      `INSERT INTO service_hosting_hp (name, bandwidth, quota, max_addon, max_park, max_sub, max_pop, max_sql,
-       max_ftp, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .run(
-      ctx.params["name"],
-      String(ctx.params["bandwidth"] ?? 1024 * 1024),
-      String(ctx.params["quota"] ?? 1024 * 1024),
-      String(ctx.params["max_addon"] ?? 1),
-      String(ctx.params["max_park"] ?? 1),
-      String(ctx.params["max_sub"] ?? 1),
-      String(ctx.params["max_pop"] ?? 1),
-      String(ctx.params["max_sql"] ?? 1),
-      String(ctx.params["max_ftp"] ?? 1),
-      ts,
-      ts,
-    );
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId(`INSERT INTO service_hosting_hp (name, bandwidth, quota, max_addon, max_park, max_sub, max_pop, max_sql,
+       max_ftp, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, ctx.params["name"], String(ctx.params["bandwidth"] ?? 1024 * 1024), String(ctx.params["quota"] ?? 1024 * 1024), String(ctx.params["max_addon"] ?? 1), String(ctx.params["max_park"] ?? 1), String(ctx.params["max_sub"] ?? 1), String(ctx.params["max_pop"] ?? 1), String(ctx.params["max_sql"] ?? 1), String(ctx.params["max_ftp"] ?? 1), ts, ts);
+  return Number(info);
 });
 
-register("admin", "servicehosting", "hp_update", (ctx) => {
+register("admin", "servicehosting", "hp_update", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("Hosting plan ID was not passed");
-  const row = getHp(Number(ctx.params["id"]));
+  const row = await getHp(Number(ctx.params["id"]));
   const raw = ctx.rawParams as Record<string, unknown>;
   const next: HpRow = { ...row };
   next.name = ctx.params["name"] ?? row.name;
@@ -684,7 +642,7 @@ register("admin", "servicehosting", "hp_update", (ctx) => {
   const newValue = ctx.params["new_config_value"] ?? raw["new_config_value"];
   if (newName && newValue) config[String(newName)] = newValue;
   next.config = JSON.stringify(config);
-  getDbWrite()
+  await getDbWrite()
     .prepare(
       `UPDATE service_hosting_hp SET name = ?, bandwidth = ?, quota = ?, max_addon = ?, max_ftp = ?, max_sql = ?,
        max_pop = ?, max_sub = ?, max_park = ?, config = ?, updated_at = ? WHERE id = ?`,
@@ -696,15 +654,15 @@ register("admin", "servicehosting", "hp_update", (ctx) => {
   return true;
 });
 
-register("admin", "servicehosting", "hp_delete", (ctx) => {
+register("admin", "servicehosting", "hp_delete", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("Hosting plan ID was not passed");
-  const row = getHp(Number(ctx.params["id"]));
-  const usages = getDb()
+  const row = await getHp(Number(ctx.params["id"]));
+  const usages = await getDb()
     .prepare("SELECT COUNT(*) AS c FROM service_hosting WHERE service_hosting_hp_id = ?")
     .get(row.id) as unknown as { c: number };
   if (usages.c > 0) {
-    const stats = usageStats("service_hosting_hp_id", row.id);
+    const stats = await usageStats("service_hosting_hp_id", row.id);
     if (stats.active > 0) {
       throw new FbError(`Hosting plan is used by ${stats.active} service hostings`, 704);
     }
@@ -716,14 +674,14 @@ register("admin", "servicehosting", "hp_delete", (ctx) => {
       );
     }
     for (const oid of stats.orphanedIds) {
-      getDbWrite().prepare("UPDATE service_hosting SET service_hosting_hp_id = NULL WHERE id = ?").run(oid);
+      await getDbWrite().prepare("UPDATE service_hosting SET service_hosting_hp_id = NULL WHERE id = ?").run(oid);
     }
   }
-  getDbWrite().prepare("DELETE FROM service_hosting_hp WHERE id = ?").run(row.id);
+  await getDbWrite().prepare("DELETE FROM service_hosting_hp WHERE id = ?").run(row.id);
   return true;
 });
 
-register("admin", "servicehosting", "account_get_list", (ctx) => {
+register("admin", "servicehosting", "account_get_list", async (ctx) => {
   requireAdmin(ctx);
   const where: string[] = [];
   const args: (string | number)[] = [];
@@ -739,14 +697,14 @@ register("admin", "servicehosting", "account_get_list", (ctx) => {
     ip: "ip",
     created_at: "created_at",
   });
-  const rows = getDb()
+  const rows = await getDb()
     .prepare(`SELECT * FROM service_hosting ${where.length ? `WHERE ${where.join(" AND ")} ` : ""}ORDER BY ${order}`)
     .all(...args) as unknown as HostingRow[];
   const serviceIds = rows.map((r) => r.id);
   const orderByService = new Map<number, OrderRow>();
   if (serviceIds.length > 0) {
     const ph = serviceIds.map(() => "?").join(",");
-    const orders = getDb()
+    const orders = await getDb()
       .prepare(`SELECT * FROM client_order WHERE service_type = 'hosting' AND service_id IN (${ph}) ORDER BY id ASC`)
       .all(...serviceIds) as unknown as OrderRow[];
     for (const o of orders) {
@@ -758,21 +716,21 @@ register("admin", "servicehosting", "account_get_list", (ctx) => {
   const ticketsByOrder = new Map<number, number>();
   if (orderIds.length > 0) {
     const ph = orderIds.map(() => "?").join(",");
-    const metas = getDb()
+    const metas = await getDb()
       .prepare(`SELECT client_order_id, name, value FROM client_order_meta WHERE client_order_id IN (${ph})`)
       .all(...orderIds) as unknown as { client_order_id: number; name: string; value: string }[];
     for (const m of metas) {
       if (!metaByOrder.has(m.client_order_id)) metaByOrder.set(m.client_order_id, {});
       metaByOrder.get(m.client_order_id)![m.name] = m.value;
     }
-    const tickets = getDb()
+    const tickets = await getDb()
       .prepare(
         `SELECT rel_id, COUNT(id) AS c FROM support_ticket WHERE rel_type = 'order' AND rel_id IN (${ph}) AND (status = 'open' OR status = 'on_hold') GROUP BY rel_id`,
       )
       .all(...orderIds) as unknown as { rel_id: number; c: number }[];
     for (const t of tickets) ticketsByOrder.set(t.rel_id, t.c);
   }
-  const mapped = rows.map((r) => {
+  const mapped = await Promise.all(rows.map(async (r) => {
     const item: Record<string, unknown> = {
       id: r.id,
       sld: r.sld,
@@ -791,10 +749,10 @@ register("admin", "servicehosting", "account_get_list", (ctx) => {
       item["order"] = null;
       return item;
     }
-    const client = getDb().prepare("SELECT * FROM client WHERE id = ?").get(order.client_id) as unknown as
+    const client = await getDb().prepare("SELECT * FROM client WHERE id = ?").get(order.client_id) as unknown as
       | Parameters<typeof clientBlock>[0]
       | undefined;
-    const product = getDb().prepare("SELECT plugin FROM product WHERE id = ?").get(order.product_id) as unknown as
+    const product = await getDb().prepare("SELECT plugin FROM product WHERE id = ?").get(order.product_id) as unknown as
       | { plugin: string | null }
       | undefined;
     const orderOut: Record<string, unknown> = {
@@ -808,31 +766,31 @@ register("admin", "servicehosting", "account_get_list", (ctx) => {
     item["client"] = client ? clientBlock(client) : null;
     item["order"] = orderOut;
     return item;
-  });
+  }));
   return paginate(mapped, ctx.params);
 });
 
-register("admin", "servicehosting", "_getService", (ctx) => {
+register("admin", "servicehosting", "_getService", async (ctx) => {
   requireAdmin(ctx);
-  getServiceAdmin(ctx);
+  await getServiceAdmin(ctx);
   return [{}, {}];
 });
 
-register("client", "servicehosting", "_getService", (ctx) => {
+register("client", "servicehosting", "_getService", async (ctx) => {
   requireClient(ctx);
-  getServiceClient(ctx);
+  await getServiceClient(ctx);
   return [{}, {}];
 });
 
-register("admin", "servicehosting", "update", (ctx) => {
+register("admin", "servicehosting", "update", async (ctx) => {
   requireAdmin(ctx);
-  const [, svc] = getServiceAdmin(ctx);
+  const [, svc] = await getServiceAdmin(ctx);
   const patch: Partial<HostingRow> = {};
   if (ctx.params["username"]) patch.username = ctx.params["username"];
   if (ctx.params["ip"]) patch.ip = ctx.params["ip"];
   if (Object.keys(patch).length > 0) {
     const sets = Object.keys(patch).map((k) => `${k} = ?`).join(", ");
-    getDbWrite()
+    await getDbWrite()
       .prepare(`UPDATE service_hosting SET ${sets}, updated_at = ? WHERE id = ?`)
       .run(...(Object.values(patch) as (string | number | null)[]), nowTimestamp(), svc.id);
   }
@@ -842,29 +800,29 @@ register("admin", "servicehosting", "update", (ctx) => {
 async function changeAccount(
   ctx: CallContext,
   kind: "plan" | "username" | "ip" | "domain" | "password",
-  getService: (ctx: CallContext) => [OrderRow, HostingRow],
+  getService: (ctx: CallContext) => [OrderRow, HostingRow] | Promise<[OrderRow, HostingRow]>,
 ): Promise<boolean> {
-  const [order, svc] = getService(ctx);
+  const [order, svc] = await getService(ctx);
   const perform = performOnService(order);
   // _getAM runs only under perform: it throws when the linked server,
   // plan, or client row is missing.
   let server: ServerRow | null = null;
   if (perform) {
     if (svc.service_hosting_server_id === null) throw new FbError("Server not found");
-    server = getServer(svc.service_hosting_server_id);
+    server = await getServer(svc.service_hosting_server_id);
     if (svc.service_hosting_hp_id === null) throw new FbError("Hosting plan not found");
-    getHp(svc.service_hosting_hp_id);
-    const client = getDb().prepare("SELECT id FROM client WHERE id = ?").get(svc.client_id);
+    await getHp(svc.service_hosting_hp_id);
+    const client = await getDb().prepare("SELECT id FROM client WHERE id = ?").get(svc.client_id);
     if (!client) throw new FbError("Client not found");
   } else if (svc.service_hosting_server_id !== null) {
     // Non-perform path never touches the manager: a dangling server id
     // must not throw here.
-    server = getDb().prepare("SELECT * FROM service_hosting_server WHERE id = ?").get(svc.service_hosting_server_id) as unknown as ServerRow | undefined ?? null;
+    server = await getDb().prepare("SELECT * FROM service_hosting_server WHERE id = ?").get(svc.service_hosting_server_id) as unknown as ServerRow | undefined ?? null;
   }
   const manager = server?.manager ?? null;
   if (kind === "plan") {
     if (!ctx.params["plan_id"]) throw new FbError("plan_id is missing");
-    const hp = getHp(Number(ctx.params["plan_id"]));
+    const hp = await getHp(Number(ctx.params["plan_id"]));
     if (perform && manager === "Hestia" && server) {
       await hestiaRequest(server, {
         cmd: "v-change-user-package",
@@ -877,7 +835,7 @@ async function changeAccount(
         }
       });
     }
-    getDbWrite()
+    await getDbWrite()
       .prepare("UPDATE service_hosting SET service_hosting_hp_id = ?, updated_at = ? WHERE id = ?")
       .run(hp.id, nowTimestamp(), svc.id);
     return true;
@@ -890,7 +848,7 @@ async function changeAccount(
       if (manager === "Hestia") throw new FbError("HestiaCP does not support username changes");
       if (manager !== "Custom" && manager !== null) throw new FbError(`Server manager ${manager} is invalid.`);
     }
-    getDbWrite()
+    await getDbWrite()
       .prepare("UPDATE service_hosting SET username = ?, updated_at = ? WHERE id = ?")
       .run(lower, nowTimestamp(), svc.id);
     return true;
@@ -902,7 +860,7 @@ async function changeAccount(
       if (manager === "Hestia") throw new FbError("HestiaCP does not support changing the account IP");
       if (manager !== "Custom" && manager !== null) throw new FbError(`Server manager ${manager} is invalid.`);
     }
-    getDbWrite()
+    await getDbWrite()
       .prepare("UPDATE service_hosting SET ip = ?, updated_at = ? WHERE id = ?")
       .run(ip, nowTimestamp(), svc.id);
     return true;
@@ -915,7 +873,7 @@ async function changeAccount(
       if (manager === "Hestia") throw new FbError("HestiaCP does not support changing the account domain");
       if (manager !== "Custom" && manager !== null) throw new FbError(`Server manager ${manager} is invalid.`);
     }
-    getDbWrite()
+    await getDbWrite()
       .prepare("UPDATE service_hosting SET sld = ?, tld = ?, updated_at = ? WHERE id = ?")
       .run(sld, tld, nowTimestamp(), svc.id);
     return true;
@@ -938,7 +896,7 @@ async function changeAccount(
   if (perform && manager !== "Hestia" && manager !== "Custom" && manager !== null) {
     throw new FbError(`Server manager ${manager} is invalid.`);
   }
-  getDbWrite()
+  await getDbWrite()
     .prepare("UPDATE service_hosting SET pass = ?, updated_at = ? WHERE id = ?")
     .run(PASSWORD_PLACEHOLDER, nowTimestamp(), svc.id);
   return true;
@@ -977,34 +935,34 @@ register("client", "servicehosting", "change_password", (ctx) => {
   return changeAccount(ctx, "password", getServiceClient);
 });
 
-register("admin", "servicehosting", "sync", (ctx) => {
+register("admin", "servicehosting", "sync", async (ctx) => {
   requireAdmin(ctx);
-  const [, svc] = getServiceAdmin(ctx);
-  if (svc.service_hosting_hp_id !== null) getHp(svc.service_hosting_hp_id);
-  if (svc.service_hosting_server_id !== null) getServer(svc.service_hosting_server_id);
-  const client = getDb().prepare("SELECT id FROM client WHERE id = ?").get(svc.client_id);
+  const [, svc] = await getServiceAdmin(ctx);
+  if (svc.service_hosting_hp_id !== null) await getHp(svc.service_hosting_hp_id);
+  if (svc.service_hosting_server_id !== null) await getServer(svc.service_hosting_server_id);
+  const client = await getDb().prepare("SELECT id FROM client WHERE id = ?").get(svc.client_id);
   if (!client) throw new FbError("Client not found");
   // Both kept managers synchronize as a no-op clone: username/ip
   // never change, so there is nothing to persist.
   return true;
 });
 
-register("client", "servicehosting", "get_login_url", (ctx) => {
+register("client", "servicehosting", "get_login_url", async (ctx) => {
   requireClient(ctx);
-  const [, svc] = getServiceClient(ctx);
-  const server = svc.service_hosting_server_id !== null ? getServer(svc.service_hosting_server_id) : null;
+  const [, svc] = await getServiceClient(ctx);
+  const server = svc.service_hosting_server_id !== null ? await getServer(svc.service_hosting_server_id) : null;
   if (!server) throw new FbError("Server not found");
   if (svc.service_hosting_hp_id === null) throw new FbError("Hosting plan not found");
-  getHp(svc.service_hosting_hp_id);
-  const client = getDb().prepare("SELECT id FROM client WHERE id = ?").get(svc.client_id);
+  await getHp(svc.service_hosting_hp_id);
+  const client = await getDb().prepare("SELECT id FROM client WHERE id = ?").get(svc.client_id);
   if (!client) throw new FbError("Client not found");
   const [url, resellerUrl] = managerLoginUrls(server);
   return svc.reseller ? resellerUrl : url;
 });
 
-register("client", "servicehosting", "hp_get_pairs", (ctx) => {
+register("client", "servicehosting", "hp_get_pairs", async (ctx) => {
   requireClient(ctx);
-  const products = getDb()
+  const products = await getDb()
     .prepare("SELECT config FROM product WHERE type = 'hosting' AND active = 1 AND status = 'enabled' AND is_addon = 0")
     .all() as unknown as { config: string | null }[];
   const planIds = new Set<number>();
@@ -1018,7 +976,7 @@ register("client", "servicehosting", "hp_get_pairs", (ctx) => {
   const out: Record<string, string> = {};
   if (planIds.size > 0) {
     const ph = [...planIds].map(() => "?").join(",");
-    const plans = getDb().prepare(`SELECT id, name FROM service_hosting_hp WHERE id IN (${ph})`).all(...planIds) as unknown as {
+    const plans = await getDb().prepare(`SELECT id, name FROM service_hosting_hp WHERE id IN (${ph})`).all(...planIds) as unknown as {
       id: number;
       name: string;
     }[];
@@ -1027,9 +985,9 @@ register("client", "servicehosting", "hp_get_pairs", (ctx) => {
   return Object.keys(out).length > 0 ? out : [];
 });
 
-register("guest", "servicehosting", "free_tlds", (ctx) => {
+register("guest", "servicehosting", "free_tlds", async (ctx) => {
   if (!ctx.params["product_id"]) throw new FbError("Product ID is missing");
-  const product = getDb().prepare("SELECT * FROM product WHERE id = ?").get(Number(ctx.params["product_id"])) as unknown as
+  const product = await getDb().prepare("SELECT * FROM product WHERE id = ?").get(Number(ctx.params["product_id"])) as unknown as
     | { type: string | null; config: string | null }
     | undefined;
   if (!product) throw new FbError("Product not found");
@@ -1039,8 +997,8 @@ register("guest", "servicehosting", "free_tlds", (ctx) => {
   if (Array.isArray(free) && free.length > 0) {
     return free.map((tld) => ({ tld }));
   }
-  const rows = getDb()
+  const rows = await getDb()
     .prepare("SELECT * FROM tld WHERE active = 1 AND allow_register = 1 ORDER BY id ASC")
     .all() as unknown as Parameters<typeof tldToApiArray>[0][];
-  return rows.map((r) => tldToApiArray(r));
+  return await Promise.all(rows.map(async (r) => await tldToApiArray(r)));
 });

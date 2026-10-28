@@ -120,7 +120,7 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
           }
         }
         const cookieHeader = req.headers.get("cookie");
-        const session = readSession(cookieHeader);
+        const session = await readSession(cookieHeader);
         const callCtx = {
           params,
           rawParams,
@@ -142,7 +142,7 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
         // exempt by R1 design — they throw the removal error before
         // any auth check, for every caller.
         if (!(role === "admin" && module === "system" && REMOVED_SYSTEM_ADMIN.includes(method))) {
-          enforceDispatcherGates(callCtx, role, module, method);
+          await enforceDispatcherGates(callCtx, role, module, method);
         }
         const result = await handler(callCtx);
         // Binary/text endpoints return a full Response: pass it through

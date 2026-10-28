@@ -21,14 +21,14 @@ import { paginate, slugify } from "../util";
  * truncation) — the parity corpus covers the title-only path.
  */
 
-function postArray(row: PostRow, withAuthor = false) {
+async function postArray(row: PostRow, withAuthor = false) {
   const raw = row.content ?? "";
   const moreAt = raw.indexOf("<!--more-->");
   const excerpt = moreAt >= 0 ? raw.slice(0, moreAt) : null;
   // PHP populates the author summary only on single-get paths; list
   // responses always carry author: [] (the pager never sets adminData).
   const author =
-    withAuthor && row.admin_id ? { name: findAdminById(row.admin_id)?.name ?? null } : [];
+    withAuthor && row.admin_id ? { name: (await findAdminById(row.admin_id))?.name ?? null } : [];
   return {
     id: row.id,
     title: row.title,
@@ -54,39 +54,39 @@ function generateDescription(content: string | null): string | null {
   return text.length > 160 ? `${text.slice(0, 160)}...` : text || null;
 }
 
-register("guest", "news", "get_list", (ctx: CallContext) => {
-  return paginate(listPosts(true).map((r) => postArray(r)), ctx.params);
+register("guest", "news", "get_list", async (ctx: CallContext) => {
+  return paginate(await Promise.all((await listPosts(true)).map(async (r) => await postArray(r))), ctx.params);
 });
 
-register("guest", "news", "get", (ctx: CallContext) => {
+register("guest", "news", "get", async (ctx: CallContext) => {
   const id = ctx.params["id"];
   const slug = ctx.params["slug"];
   if (!id && !slug) throw new FbError("ID or slug is required.");
-  const row = id ? findPostById(Number(id)) : findPostBySlug(slug!);
+  const row = id ? await findPostById(Number(id)) : await findPostBySlug(slug!);
   if (!row || row.status !== "active") throw new FbError("News item not found.");
-  return postArray(row, true);
+  return await postArray(row, true);
 });
 
-register("admin", "news", "get_list", (ctx: CallContext) => {
+register("admin", "news", "get_list", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  return paginate(listPosts(false).map((r) => postArray(r)), ctx.params);
+  return paginate(await Promise.all((await listPosts(false)).map(async (r) => await postArray(r))), ctx.params);
 });
 
-register("admin", "news", "get", (ctx: CallContext) => {
+register("admin", "news", "get", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const id = ctx.params["id"];
   const slug = ctx.params["slug"];
   if (!id && !slug) throw new FbError("ID or slug is required.");
-  const row = id ? findPostById(Number(id)) : findPostBySlug(slug!);
+  const row = id ? await findPostById(Number(id)) : await findPostBySlug(slug!);
   if (!row) throw new FbError("News item not found.");
-  return postArray(row, true);
+  return await postArray(row, true);
 });
 
-register("admin", "news", "create", (ctx: CallContext) => {
+register("admin", "news", "create", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const title = ctx.params["title"];
   if (!title) throw new FbError("Post title was not passed");
-  return insertPost({
+  return await insertPost({
     admin_id: ctx.session!.admin!.id,
     title,
     slug: slugify(title),
@@ -96,16 +96,16 @@ register("admin", "news", "create", (ctx: CallContext) => {
   });
 });
 
-register("admin", "news", "update", (ctx: CallContext) => {
+register("admin", "news", "update", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const id = Number(ctx.params["id"] ?? 0);
-  const row = findPostById(id);
+  const row = await findPostById(id);
   if (!row) throw new FbError("News item not found");
   let description: string | null = ctx.params["description"] ?? row.description;
   if (!description) {
     description = generateDescription(ctx.params["content"] ?? row.content);
   }
-  updatePostRow(id, {
+  await updatePostRow(id, {
     title: ctx.params["title"] ?? row.title,
     description,
     content: ctx.params["content"] ?? row.content,
@@ -114,22 +114,22 @@ register("admin", "news", "update", (ctx: CallContext) => {
   return true;
 });
 
-register("admin", "news", "batch_delete", (ctx: CallContext) => {
+register("admin", "news", "batch_delete", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const ids = ctx.params["ids"];
   if (!ids) throw new FbError("IDs were not passed");
   for (const part of ids.split(",")) {
     const id = Number(part.trim());
-    if (id) deletePostRow(id);
+    if (id) await deletePostRow(id);
   }
   return true;
 });
 
-register("admin", "news", "delete", (ctx: CallContext) => {
+register("admin", "news", "delete", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const id = Number(ctx.params["id"] ?? 0);
-  const row = findPostById(id);
+  const row = await findPostById(id);
   if (!row) throw new FbError("News item not found");
-  deletePostRow(id);
+  await deletePostRow(id);
   return true;
 });

@@ -583,7 +583,7 @@ async function stripeGetOrCreateCustomer(
 ): Promise<string> {
   const db = getDb();
   if (inv.client_id !== null && inv.client_id !== undefined) {
-    const cached = db
+    const cached = await db
       .prepare("SELECT external_customer_id FROM pay_gateway_customer WHERE pay_gateway_id = ? AND client_id = ?")
       .get(gatewayId, inv.client_id) as { external_customer_id: string } | undefined;
     if (cached) return cached.external_customer_id;
@@ -606,13 +606,13 @@ async function stripeGetOrCreateCustomer(
   }
   if (inv.client_id !== null && inv.client_id !== undefined) {
     try {
-      getDbWrite()
+      await getDbWrite()
         .prepare(
           "INSERT INTO pay_gateway_customer (client_id, external_customer_id, created_at, updated_at, pay_gateway_id) VALUES (?, ?, ?, ?, ?)",
         )
         .run(inv.client_id, customerId, nowTimestamp(), nowTimestamp(), gatewayId);
     } catch {
-      const winner = db
+      const winner = await db
         .prepare("SELECT external_customer_id FROM pay_gateway_customer WHERE pay_gateway_id = ? AND client_id = ?")
         .get(gatewayId, inv.client_id) as { external_customer_id: string } | undefined;
       if (winner) return winner.external_customer_id;
@@ -653,7 +653,7 @@ async function stripeGetOrCreatePriceId(
     .update(`${productName}|${currency}|${amount}|${recurring.interval}|${recurring.interval_count}`)
     .digest("hex");
   const db = getDb();
-  const cached = db
+  const cached = await db
     .prepare("SELECT external_price_id FROM pay_gateway_product WHERE pay_gateway_id = ? AND cache_key = ?")
     .get(gatewayId, cacheKey) as { external_price_id: string } | undefined;
   if (cached) return cached.external_price_id;
@@ -705,13 +705,13 @@ async function stripeGetOrCreatePriceId(
   if (typeof price["id"] !== "string") throw stripeGenericError();
   const priceId = price["id"] as string;
   try {
-    getDbWrite()
+    await getDbWrite()
       .prepare(
         "INSERT INTO pay_gateway_product (cache_key, name, external_product_id, external_price_id, created_at, updated_at, pay_gateway_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
       )
       .run(cacheKey, productName, productId, priceId, nowTimestamp(), nowTimestamp(), gatewayId);
   } catch {
-    const winner = db
+    const winner = await db
       .prepare("SELECT external_price_id FROM pay_gateway_product WHERE pay_gateway_id = ? AND cache_key = ?")
       .get(gatewayId, cacheKey) as { external_price_id: string } | undefined;
     if (winner) return winner.external_price_id;

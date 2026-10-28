@@ -68,21 +68,21 @@ export function currencyToApi(row: CurrencyRow) {
   };
 }
 
-function resolveCurrency(ctx: CallContext): CurrencyRow {
+async function resolveCurrency(ctx: CallContext): Promise<CurrencyRow> {
   const code = ctx.params["code"];
-  const row = code ? findCurrencyByCode(code) : findDefaultCurrency();
+  const row = code ? await findCurrencyByCode(code) : await findDefaultCurrency();
   if (!row) throw new FbError("Currency not found.");
   return row;
 }
 
-function guestGetPairs() {
+async function guestGetPairs() {
   const out: Record<string, string> = {};
-  for (const row of listCurrencies()) out[row.code] = currencyName(row.code);
+  for (const row of await listCurrencies()) out[row.code] = currencyName(row.code);
   return out;
 }
 
-function guestGet(ctx: CallContext) {
-  return currencyToApi(resolveCurrency(ctx));
+async function guestGet(ctx: CallContext) {
+  return currencyToApi(await resolveCurrency(ctx));
 }
 
 function truthy(v: string | undefined, dflt: boolean): boolean {
@@ -90,8 +90,8 @@ function truthy(v: string | undefined, dflt: boolean): boolean {
   return !["0", "false", "no", ""].includes(v.toLowerCase());
 }
 
-function guestFormat(ctx: CallContext) {
-  const row = resolveCurrency(ctx);
+async function guestFormat(ctx: CallContext) {
+  const row = await resolveCurrency(ctx);
   let price = parseFloat(ctx.params["price"] ?? "0") || 0;
   if (truthy(ctx.params["convert"], true)) price = price * row.conversion_rate;
   const digits = fractionDigits(row.code, row.fraction_digits);
@@ -120,9 +120,9 @@ function guestFormat(ctx: CallContext) {
   }).format(price);
 }
 
-function adminGetList(ctx: CallContext) {
+async function adminGetList(ctx: CallContext) {
   requireAdmin(ctx);
-  const all = listCurrencies().map(currencyToApi);
+  const all = (await listCurrencies()).map(currencyToApi);
   const perPage = parseInt(ctx.params["per_page"] ?? "100", 10) || 100;
   const page = parseInt(ctx.params["page"] ?? "1", 10) || 1;
   const total = all.length;
@@ -135,18 +135,18 @@ function adminGetPairs(ctx: CallContext) {
   return { ...ADMIN_PAIRS };
 }
 
-function adminGet(ctx: CallContext) {
+async function adminGet(ctx: CallContext) {
   requireAdmin(ctx);
   const code = ctx.params["code"];
   if (!code) throw new FbError("Currency code is missing");
-  const row = findCurrencyByCode(code);
+  const row = await findCurrencyByCode(code);
   if (!row) throw new FbError("Currency not found.");
   return currencyToApi(row);
 }
 
-function adminGetDefault(ctx: CallContext) {
+async function adminGetDefault(ctx: CallContext) {
   requireAdmin(ctx);
-  const row = findDefaultCurrency();
+  const row = await findDefaultCurrency();
   if (!row) throw new FbError("Currency not found.");
   return currencyToApi(row);
 }
@@ -185,11 +185,11 @@ function normalizeFractionDigits(raw: string): number | null {
   return n;
 }
 
-function adminCreate(ctx: CallContext) {
+async function adminCreate(ctx: CallContext) {
   requireAdmin(ctx);
   const code = ctx.params["code"];
   if (!code) throw new FbError("Currency code is missing");
-  if (findCurrencyByCode(code)) throw new FbError("Currency already registered.");
+  if (await findCurrencyByCode(code)) throw new FbError("Currency already registered.");
   if (!validCurrencyCode(code)) throw new FbError("Currency code is invalid.");
   const manual = truthy(ctx.params["is_rate_manual"], false);
   const rateRaw = ctx.params["conversion_rate"];
@@ -207,15 +207,15 @@ function adminCreate(ctx: CallContext) {
     }
     rate = Number(rateRaw);
   }
-  insertCurrency({ code, conversion_rate: rate, is_rate_manual: manual ? 1 : 0 });
+  await insertCurrency({ code, conversion_rate: rate, is_rate_manual: manual ? 1 : 0 });
   return code;
 }
 
-function adminUpdate(ctx: CallContext) {
+async function adminUpdate(ctx: CallContext) {
   requireAdmin(ctx);
   const code = ctx.params["code"];
   if (!code) throw new FbError("Currency code is missing");
-  const row = findCurrencyByCode(code);
+  const row = await findCurrencyByCode(code);
   if (!row) throw new FbError("Currency not found.");
   const fields: Parameters<typeof updateCurrencyRow>[1] = {};
   if ("format_pattern" in ctx.params) {
@@ -236,28 +236,28 @@ function adminUpdate(ctx: CallContext) {
     fields.conversion_rate = Number(rateRaw);
   }
   if (manual !== null) fields.is_rate_manual = manual ? 1 : 0;
-  updateCurrencyRow(code, fields);
+  await updateCurrencyRow(code, fields);
   return true;
 }
 
-function adminDelete(ctx: CallContext) {
+async function adminDelete(ctx: CallContext) {
   requireAdmin(ctx);
   const code = ctx.params["code"];
   if (!code) throw new FbError("Currency code is missing");
-  const row = findCurrencyByCode(code);
+  const row = await findCurrencyByCode(code);
   if (!row) throw new FbError("Currency not found.");
   if (row.is_default === 1) throw new FbError("Cannot remove the default currency.");
-  deleteCurrencyRow(code);
+  await deleteCurrencyRow(code);
   return true;
 }
 
-function adminSetDefault(ctx: CallContext) {
+async function adminSetDefault(ctx: CallContext) {
   requireAdmin(ctx);
   const code = ctx.params["code"];
   if (!code) throw new FbError("Currency code is missing");
-  const row = findCurrencyByCode(code);
+  const row = await findCurrencyByCode(code);
   if (!row) throw new FbError("Currency not found.");
-  if (row.is_default !== 1) setDefaultCurrencyRow(code);
+  if (row.is_default !== 1) await setDefaultCurrencyRow(code);
   return true;
 }
 
@@ -359,11 +359,11 @@ async function getRate(
 
 async function adminUpdateRates(ctx: CallContext) {
   requireAdmin(ctx);
-  const def = findDefaultCurrency();
+  const def = await findDefaultCurrency();
   if (!def) throw new FbError("Default currency not found. Cannot update rates.");
-  const config = readExtensionConfig("mod_currency");
+  const config = await readExtensionConfig("mod_currency");
   const computed: { code: string; rate: number }[] = [];
-  for (const row of listCurrencies()) {
+  for (const row of await listCurrencies()) {
     if (row.is_default === 1) {
       computed.push({ code: row.code, rate: 1.0 });
     } else if (row.is_rate_manual === 1) {
@@ -372,7 +372,7 @@ async function adminUpdateRates(ctx: CallContext) {
       computed.push({ code: row.code, rate: await getRate(def.code, row.code, config) });
     }
   }
-  for (const c of computed) updateCurrencyRow(c.code, { conversion_rate: c.rate });
+  for (const c of computed) await updateCurrencyRow(c.code, { conversion_rate: c.rate });
   return true;
 }
 

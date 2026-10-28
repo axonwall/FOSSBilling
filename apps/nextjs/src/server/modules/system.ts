@@ -54,8 +54,8 @@ function withSystemUrl(value: string | null): string | null {
   return value;
 }
 
-export function getCompany() {
-  const r = getSettings(COMPANY_PARAMS);
+export async function getCompany() {
+  const r = await getSettings(COMPANY_PARAMS);
   const get = (k: string) => r.get(k) ?? null;
   const logo = withSystemUrl(get("company_logo"));
   return {
@@ -96,10 +96,10 @@ const GUEST_HIDDEN_WHEN_PUBLIC = [
   "bic",
 ] as const;
 
-function company(ctx: CallContext) {
-  const info: Record<string, unknown> = { ...getCompany() };
+async function company(ctx: CallContext) {
+  const info: Record<string, unknown> = { ...await getCompany() };
   const loggedIn = !!(ctx.session?.admin || ctx.session?.client);
-  const hide = getSetting("hide_company_public");
+  const hide = await getSetting("hide_company_public");
   if (!loggedIn && hide && hide !== "0") {
     for (const k of GUEST_HIDDEN_WHEN_PUBLIC) delete info[k];
   }
@@ -150,12 +150,12 @@ register("guest", "system", "period_title", periodTitle);
 register("guest", "system", "countries", () => ({ ...(countriesJson as Record<string, string>) }));
 register("guest", "system", "phone_codes", () => [...(phoneCodesJson as number[])]);
 register("guest", "system", "timezones", () => timezonesJson);
-register("guest", "system", "default_country", () => findSettingValue("default_country"));
+register("guest", "system", "default_country", async () => await findSettingValue("default_country"));
 register("guest", "system", "locale", () => "en_US");
 
-register("guest", "system", "param", (ctx: CallContext) => {
+register("guest", "system", "param", async (ctx: CallContext) => {
   const key = ctx.params["key"] ?? "";
-  const value = findPublicSetting(key);
+  const value = await findPublicSetting(key);
   if (value === undefined) throw new FbError(`Parameter ${key} does not exist`);
   return value;
 });
@@ -167,9 +167,9 @@ register("guest", "system", "param", (ctx: CallContext) => {
  * segment is re-serialized without the key, every other segment is
  * preserved byte-for-byte (see php-serialize.ts).
  */
-register("guest", "system", "get_pending_messages", (ctx: CallContext) => {
+register("guest", "system", "get_pending_messages", async (ctx: CallContext) => {
   if (!ctx.session) return [];
-  const row = findSession(ctx.session.id);
+  const row = await findSession(ctx.session.id);
   if (!row) return [];
   let attrs: Record<string, unknown> = {};
   try {
@@ -181,7 +181,7 @@ register("guest", "system", "get_pending_messages", (ctx: CallContext) => {
   if (!Array.isArray(messages)) return [];
   const nextAttrs = { ...attrs };
   delete nextAttrs["pending_messages"];
-  updateSessionContent(row.id, replaceSessionSegment(row.content, "_sf2_attributes", nextAttrs as import("../php-serialize").PhpValue));
+  await updateSessionContent(row.id, replaceSessionSegment(row.content, "_sf2_attributes", nextAttrs as import("../php-serialize").PhpValue));
   return messages;
 });
 
@@ -300,25 +300,25 @@ register("guest", "system", "template_exists", () => {
 // No checkPermissions guard of its own: asking about a permission is
 // allowed for any logged-in admin, and the answer for a super admin
 // is always true.
-register("admin", "system", "is_allowed", (ctx: CallContext) => {
+register("admin", "system", "is_allowed", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const mod = requireParam(ctx.params, "mod", '"mod" key is missing');
   const f = ctx.params["f"] ?? null;
-  return hasPermission(ctx.session!.admin!.id, mod, f);
+  return await hasPermission(ctx.session!.admin!.id, mod, f);
 });
 
-register("admin", "system", "get_params", (ctx: CallContext) => {
+register("admin", "system", "get_params", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const out: Record<string, string | null> = {};
-  for (const row of getAllSettings()) out[row.param] = row.value;
+  for (const row of await getAllSettings()) out[row.param] = row.value;
   return out;
 });
 
-register("admin", "system", "update_params", (ctx: CallContext) => {
+register("admin", "system", "update_params", async (ctx: CallContext) => {
   requireAdmin(ctx);
   for (const [k, v] of Object.entries(ctx.params)) {
     if (k === "CSRFToken") continue;
-    upsertSetting(k, v ?? "");
+    await upsertSetting(k, v ?? "");
   }
   return true;
 });

@@ -87,55 +87,55 @@ export function currencyArray(row: CurrencyRow): Record<string, unknown> {
   return currencyToApi(row);
 }
 
-function cartCurrency(cart: CartRow): CurrencyRow {
-  const all = listCurrencies();
+async function cartCurrency(cart: CartRow): Promise<CurrencyRow> {
+  const all = await listCurrencies();
   return (
-    all.find((c) => c.id === cart.currency_id) ?? findDefaultCurrency() ?? all[0]
+    all.find((c) => c.id === cart.currency_id) ?? await findDefaultCurrency() ?? all[0]
   );
 }
 
-function getSessionCart(ctx: CallContext): CartRow {
-  const session = ensureSession(ctx);
-  let cart = findCartBySession(session.id);
+async function getSessionCart(ctx: CallContext): Promise<CartRow> {
+  const session = await ensureSession(ctx);
+  let cart = await findCartBySession(session.id);
   if (cart) return cart;
   let currency: CurrencyRow | undefined;
   if (session.client) {
-    const client = findClientById(session.client.id);
-    if (client?.currency) currency = findCurrencyByCode(client.currency);
+    const client = await findClientById(session.client.id);
+    if (client?.currency) currency = await findCurrencyByCode(client.currency);
   }
-  currency ??= findDefaultCurrency();
+  currency ??= await findDefaultCurrency();
   if (!currency) throw new FbError("Default currency not found");
-  const id = insertCart(session.id, currency.id);
-  cart = findCartBySession(session.id);
+  const id = await insertCart(session.id, currency.id);
+  cart = await findCartBySession(session.id);
   if (!cart) throw new FbError("Cart could not be created");
   void id;
   return cart;
 }
 
-export function productPrice(product: ProductRow, config: Record<string, unknown>): number {
-  const payment = product.product_payment_id ? findProductPayment(product.product_payment_id) : undefined;
+export async function productPrice(product: ProductRow, config: Record<string, unknown>): Promise<number> {
+  const payment = product.product_payment_id ? await findProductPayment(product.product_payment_id) : undefined;
   if (!payment || payment.type === "free") return 0;
   if (payment.type === "once") return payment.once_price ?? 0;
   if (payment.type === "recurrent") {
-    const period = listProductPeriods(payment.id).find((p) => p.code === config["period"]);
+    const period = (await listProductPeriods(payment.id)).find((p) => p.code === config["period"]);
     return period?.price ?? 0;
   }
   return 0;
 }
 
-export function productSetupPrice(product: ProductRow, config: Record<string, unknown>): number {
-  const payment = product.product_payment_id ? findProductPayment(product.product_payment_id) : undefined;
+export async function productSetupPrice(product: ProductRow, config: Record<string, unknown>): Promise<number> {
+  const payment = product.product_payment_id ? await findProductPayment(product.product_payment_id) : undefined;
   if (!payment || payment.type === "free") return 0;
   if (payment.type === "once") return payment.once_setup_price ?? 0;
   if (payment.type === "recurrent") {
-    const period = listProductPeriods(payment.id).find((p) => p.code === config["period"]);
+    const period = (await listProductPeriods(payment.id)).find((p) => p.code === config["period"]);
     return period?.setup_price ?? 0;
   }
   return 0;
 }
 
-function isRecurrent(product: ProductRow): boolean {
-  const payment = product.product_payment_id ? findProductPayment(product.product_payment_id) : undefined;
+async function isRecurrent(product: ProductRow): Promise<boolean> {
+  const payment = product.product_payment_id ? await findProductPayment(product.product_payment_id) : undefined;
   return payment?.type === "recurrent";
 }
 
@@ -172,10 +172,10 @@ export function promoAppliesTo(promo: PromoRow, productId: number, config: Recor
 }
 
 /** Product\Service::getProductDiscount for one item. */
-export function itemPromoDiscount(promo: PromoRow, product: ProductRow, config: Record<string, unknown>): number {
+export async function itemPromoDiscount(promo: PromoRow, product: ProductRow, config: Record<string, unknown>): Promise<number> {
   if (!promoAppliesTo(promo, product.id, config)) return 0;
   const qty = Math.max(1, parseInt(String(config["quantity"] ?? "1"), 10) || 1);
-  const price = productPrice(product, config) * qty;
+  const price = await productPrice(product, config) * qty;
   if (price === 0) return 0;
   if (promo.type === "absolute") return promo.value;
   if (promo.type === "percentage") return round2((price * promo.value) / 100);
@@ -194,16 +194,16 @@ interface CartItemView extends Record<string, unknown> {
   total: number;
 }
 
-function cartItemArray(cp: CartProductRow, promo: PromoRow | null): CartItemView {
-  const product = findProductById(cp.product_id);
+async function cartItemArray(cp: CartProductRow, promo: PromoRow | null): Promise<CartItemView> {
+  const product = await findProductById(cp.product_id);
   const config = parseConfig(cp.config);
   const qty = Math.max(1, parseInt(String(config["quantity"] ?? "1"), 10) || 1);
-  const price = product ? productPrice(product, config) : 0;
-  const setup = product ? productSetupPrice(product, config) : 0;
+  const price = product ? await productPrice(product, config) : 0;
+  const setup = product ? await productSetupPrice(product, config) : 0;
   let discountPrice = 0;
   let discountSetup = 0;
   if (promo && product) {
-    const raw = itemPromoDiscount(promo, product, config);
+    const raw = await itemPromoDiscount(promo, product, config);
     const subtotal = price * qty;
     discountPrice = Math.min(raw, subtotal);
     if (promo.freesetup && promoAppliesTo(promo, product.id, config)) {
@@ -234,9 +234,9 @@ function cartItemArray(cp: CartProductRow, promo: PromoRow | null): CartItemView
   };
 }
 
-export function cartArray(cart: CartRow): Record<string, unknown> {
-  const promo = cart.promo_id ? (findPromoById(cart.promo_id) ?? null) : null;
-  const items = listCartProducts(cart.id).map((cp) => cartItemArray(cp, promo));
+export async function cartArray(cart: CartRow): Promise<Record<string, unknown>> {
+  const promo = cart.promo_id ? (await findPromoById(cart.promo_id) ?? null) : null;
+  const items = await Promise.all((await listCartProducts(cart.id)).map(async (cp) => await cartItemArray(cp, promo)));
   let subtotal = 0;
   let discount = 0;
   for (const item of items) {
@@ -251,7 +251,7 @@ export function cartArray(cart: CartRow): Record<string, unknown> {
     subtotal,
     total: subtotal - discount,
     items,
-    currency: currencyArray(cartCurrency(cart)),
+    currency: currencyArray(await cartCurrency(cart)),
     subscribable: isSubscribable(items),
   };
 }
@@ -270,41 +270,41 @@ function isSubscribable(items: CartItemView[]): boolean {
   return period !== null;
 }
 
-function resetCart(cart: CartRow): void {
-  clearCartProducts(cart.id);
-  updateCartRow(cart.id, { promo_id: null });
+async function resetCart(cart: CartRow): Promise<void> {
+  await clearCartProducts(cart.id);
+  await updateCartRow(cart.id, { promo_id: null });
 }
 
 // --- Guest cart handlers -------------------------------------------------
 
-register("guest", "cart", "get", (ctx: CallContext) => {
-  const cart = getSessionCart(ctx);
-  return cartArray(cart);
+register("guest", "cart", "get", async (ctx: CallContext) => {
+  const cart = await getSessionCart(ctx);
+  return await cartArray(cart);
 });
 
-register("guest", "cart", "reset", (ctx: CallContext) => {
-  const cart = getSessionCart(ctx);
-  resetCart(cart);
+register("guest", "cart", "reset", async (ctx: CallContext) => {
+  const cart = await getSessionCart(ctx);
+  await resetCart(cart);
   return true;
 });
 
-register("guest", "cart", "add_item", (ctx: CallContext) => {
-  const cart = getSessionCart(ctx);
+register("guest", "cart", "add_item", async (ctx: CallContext) => {
+  const cart = await getSessionCart(ctx);
   const idRaw = ctx.params["id"];
   if (!idRaw) throw new FbError("Product ID was not passed");
-  const product = findProductById(Number(idRaw));
+  const product = await findProductById(Number(idRaw));
   if (!product || product.active !== 1) throw new FbError("Product not found");
   if (product.is_addon) {
     throw new FbError("Addon products cannot be added separately.");
   }
   // PHP resets the cart by default: one add = one fresh cart, unless
   // the caller passes `multiple`.
-  if (!phpTruthy(ctx.params["multiple"])) resetCart(cart);
-  if (isRecurrent(product)) {
+  if (!phpTruthy(ctx.params["multiple"])) await resetCart(cart);
+  if (await isRecurrent(product)) {
     const period = ctx.params["period"];
     if (!period) throw new FbError("Period parameter not passed");
-    const payment = findProductPayment(product.product_payment_id!)!;
-    const enabled = listProductPeriods(payment.id).some((p) => p.code === period && p.enabled);
+    const payment = (await findProductPayment(product.product_payment_id!))!;
+    const enabled = (await listProductPeriods(payment.id)).some((p) => p.code === period && p.enabled);
     if (!enabled) throw new FbError("Selected billing period is invalid");
   }
   const config: Record<string, unknown> = {};
@@ -315,29 +315,29 @@ register("guest", "cart", "add_item", (ctx: CallContext) => {
     config[k] = v;
   }
   config[CART_FAMILY_KEY] = randomBytes(16).toString("hex");
-  insertCartProduct(cart.id, product.id, JSON.stringify(config));
+  await insertCartProduct(cart.id, product.id, JSON.stringify(config));
   return true;
 });
 
-register("guest", "cart", "remove_item", (ctx: CallContext) => {
-  const cart = getSessionCart(ctx);
+register("guest", "cart", "remove_item", async (ctx: CallContext) => {
+  const cart = await getSessionCart(ctx);
   const id = Number(ctx.params["id"] ?? 0);
-  const item = listCartProducts(cart.id).find((cp) => cp.id === id);
-  if (item) deleteCartProductRow(item.id);
+  const item = (await listCartProducts(cart.id)).find((cp) => cp.id === id);
+  if (item) await deleteCartProductRow(item.id);
   return true;
 });
 
-register("guest", "cart", "get_currency", (ctx: CallContext) => {
-  const cart = getSessionCart(ctx);
-  return currencyArray(cartCurrency(cart));
+register("guest", "cart", "get_currency", async (ctx: CallContext) => {
+  const cart = await getSessionCart(ctx);
+  return currencyArray(await cartCurrency(cart));
 });
 
-register("guest", "cart", "set_currency", (ctx: CallContext) => {
-  const cart = getSessionCart(ctx);
+register("guest", "cart", "set_currency", async (ctx: CallContext) => {
+  const cart = await getSessionCart(ctx);
   const code = ctx.params["currency"];
-  const currency = code ? findCurrencyByCode(code) : undefined;
+  const currency = code ? await findCurrencyByCode(code) : undefined;
   if (!currency) throw new FbError("Currency not found");
-  updateCartRow(cart.id, { currency_id: currency.id });
+  await updateCartRow(cart.id, { currency_id: currency.id });
   return true;
 });
 
@@ -350,95 +350,95 @@ function promoCanBeApplied(promo: PromoRow): boolean {
   return true;
 }
 
-function promoGroupAvailable(promo: PromoRow, clientId: number | null): boolean {
+async function promoGroupAvailable(promo: PromoRow, clientId: number | null): Promise<boolean> {
   const groups = jsonList(promo.client_groups).map(Number);
   if (groups.length === 0) return true;
   if (clientId === null) return false;
   // Client group membership is checked against client_group_members.
-  return clientGroupIds(clientId).some((g) => groups.includes(g));
+  return (await clientGroupIds(clientId)).some((g) => groups.includes(g));
 }
 
-function clientGroupIds(clientId: number): number[] {
-  const rows = getDb()
+async function clientGroupIds(clientId: number): Promise<number[]> {
+  const rows = await getDb()
     .prepare("SELECT client_group_id FROM client_group_members WHERE client_id = ?")
     .all(clientId) as unknown as { client_group_id: number }[];
   return rows.map((r) => r.client_group_id);
 }
 
-function assertPromoCondition(cart: CartRow, promo: PromoRow): void {
+async function assertPromoCondition(cart: CartRow, promo: PromoRow): Promise<void> {
   const required = jsonList(promo.requires_products).map(Number);
   if (required.length === 0) return;
-  const inCart = new Set(listCartProducts(cart.id).map((cp) => cp.product_id));
+  const inCart = new Set((await listCartProducts(cart.id)).map((cp) => cp.product_id));
   const missing = required.filter((id) => !inCart.has(id));
   if (missing.length > 0) {
-    const titles = missing.map((id) => findProductById(id)?.title ?? `#${id}`);
+    const titles = await Promise.all(missing.map(async (id) => (await findProductById(id))?.title ?? `#${id}`));
     throw new FbError(
       `This promo code requires the following products in the cart: ${titles.join(", ")}`,
     );
   }
 }
 
-register("guest", "cart", "apply_promo", (ctx: CallContext) => {
+register("guest", "cart", "apply_promo", async (ctx: CallContext) => {
   const code = ctx.params["promocode"];
-  const promo = code ? findPromoByCode(code) : undefined;
+  const promo = code ? await findPromoByCode(code) : undefined;
   if (!promo || !promo.active) {
     throw new FbError("The promo code has expired or does not exist");
   }
   const clientId = ctx.session?.client?.id ?? null;
-  if (!promoGroupAvailable(promo, clientId)) {
+  if (!await promoGroupAvailable(promo, clientId)) {
     throw new FbError("Promo code cannot be applied to your account");
   }
   if (!promoCanBeApplied(promo)) {
     throw new FbError("The promo code has expired or does not exist");
   }
-  const cart = getSessionCart(ctx);
+  const cart = await getSessionCart(ctx);
   if (cart.promo_id === promo.id) return true;
-  if (listCartProducts(cart.id).length === 0) {
+  if ((await listCartProducts(cart.id)).length === 0) {
     throw new FbError("Add products to your cart before applying promo code");
   }
-  assertPromoCondition(cart, promo);
-  updateCartRow(cart.id, { promo_id: promo.id });
+  await assertPromoCondition(cart, promo);
+  await updateCartRow(cart.id, { promo_id: promo.id });
   return true;
 });
 
-register("guest", "cart", "remove_promo", (ctx: CallContext) => {
-  const cart = getSessionCart(ctx);
-  updateCartRow(cart.id, { promo_id: null });
+register("guest", "cart", "remove_promo", async (ctx: CallContext) => {
+  const cart = await getSessionCart(ctx);
+  await updateCartRow(cart.id, { promo_id: null });
   return true;
 });
 
 // --- Client checkout -----------------------------------------------------
 
-register("client", "cart", "checkout", (ctx: CallContext) => {
+register("client", "cart", "checkout", async (ctx: CallContext) => {
   requireClient(ctx);
-  const client = findClientById(ctx.session!.client!.id);
+  const client = await findClientById(ctx.session!.client!.id);
   if (!client) throw new FbError("Client not found");
-  const cart = getSessionCart(ctx);
-  const promo = cart.promo_id ? (findPromoById(cart.promo_id) ?? null) : null;
+  const cart = await getSessionCart(ctx);
+  const promo = cart.promo_id ? (await findPromoById(cart.promo_id) ?? null) : null;
 
   if (promo) {
     if (
       promo.once_per_client &&
-      countPromoRedemptionsForClient(promo.id, client.id) > 0
+      await countPromoRedemptionsForClient(promo.id, client.id) > 0
     ) {
       throw new FbError(
         "You have already used this promo code. Please remove the promo code and checkout again.",
         9874,
       );
     }
-    if (!promoGroupAvailable(promo, client.id)) {
+    if (!await promoGroupAvailable(promo, client.id)) {
       throw new FbError("Promo code cannot be applied to your account");
     }
-    assertPromoCondition(cart, promo);
+    await assertPromoCondition(cart, promo);
   }
 
-  const view = cartArray(cart);
+  const view = await cartArray(cart);
   const items = view["items"] as CartItemView[];
   if (items.length === 0) throw new FbError("Cannot checkout an empty cart");
 
-  const currency = cartCurrency(cart);
+  const currency = await cartCurrency(cart);
   if (!client.currency) {
-    setClientCurrency(client.id, currency.code);
+    await setClientCurrency(client.id, currency.code);
     client.currency = currency.code;
   }
   if (client.currency !== currency.code) {
@@ -448,7 +448,7 @@ register("client", "cart", "checkout", (ctx: CallContext) => {
   }
 
   const rate = currency.conversion_rate;
-  const taxed = isClientTaxable(client);
+  const taxed = await isClientTaxable(client);
   const familyGroups = new Map<string, string>();
   const lastGroupByProduct = new Map<number, string>();
   let familyIndex = 0;
@@ -458,9 +458,9 @@ register("client", "cart", "checkout", (ctx: CallContext) => {
   const invoiceItems: InvoiceItemInput[] = [];
   const discountsByOrder = new Map<number, number>();
 
-  for (const cp of listCartProducts(cart.id)) {
-    const item = cartItemArray(cp, promo);
-    const product = findProductById(cp.product_id);
+  for (const cp of await listCartProducts(cart.id)) {
+    const item = await cartItemArray(cp, promo);
+    const product = await findProductById(cp.product_id);
     if (!product) continue;
     if (product.status !== "enabled") {
       throw new FbError("Unable to complete order. One or more of the selected products are invalid.");
@@ -481,7 +481,7 @@ register("client", "cart", "checkout", (ctx: CallContext) => {
     delete configForOrder[CART_FAMILY_KEY];
     const orderPrice = round2(item.price * rate);
     const orderDiscount = round2(item.discount_price * rate);
-    const orderId = insertOrder({
+    const orderId = await insertOrder({
       client_id: client.id,
       product_id: product.id,
       form_id: product.form_id,
@@ -506,9 +506,9 @@ register("client", "cart", "checkout", (ctx: CallContext) => {
       suspension_grace_days: null,
     });
     orderIds.push(orderId);
-    insertOrderStatus(orderId, "pending_setup", "Order Created");
+    await insertOrderStatus(orderId, "pending_setup", "Order Created");
     if (promo) {
-      incrementPromoUsed(promo.id);
+      await incrementPromoUsed(promo.id);
       discountsByOrder.set(orderId, round2(item.discount_price * rate));
     }
 
@@ -554,21 +554,21 @@ register("client", "cart", "checkout", (ctx: CallContext) => {
   let invoiceId: number | null = null;
   if (total > 0) {
     const gatewayId = ctx.params["gateway_id"] ? Number(ctx.params["gateway_id"]) : null;
-    invoiceId = prepareInvoice(client, invoiceItems, gatewayId);
-    const balance = clientBalanceSum(client.id);
+    invoiceId = await prepareInvoice(client, invoiceItems, gatewayId);
+    const balance = await clientBalanceSum(client.id);
     const useCredits = round2(balance) >= round2(total);
-    issueInvoice(invoiceId, client, { useCredits });
+    await issueInvoice(invoiceId, client, { useCredits });
     // The invoice stays unpaid unless credits covered it in full.
-    if (readInvoiceStatus(invoiceId) !== "paid") {
-      for (const oid of orderIds) updateOrderUnpaidInvoice(oid, invoiceId);
-      invoiceHash = readInvoiceHash(invoiceId);
+    if (await readInvoiceStatus(invoiceId) !== "paid") {
+      for (const oid of orderIds) await updateOrderUnpaidInvoice(oid, invoiceId);
+      invoiceHash = await readInvoiceHash(invoiceId);
     }
   }
 
   if (promo) {
     const status = invoiceId !== null && invoiceHash !== null ? "reserved" : "committed";
     for (const oid of orderIds) {
-      insertPromoRedemption({
+      await insertPromoRedemption({
         promo_id: promo.id,
         client_id: client.id,
         client_order_id: oid,
@@ -581,7 +581,7 @@ register("client", "cart", "checkout", (ctx: CallContext) => {
     }
   }
 
-  deleteCartRow(cart.id);
+  await deleteCartRow(cart.id);
   return {
     gateway_id: ctx.params["gateway_id"] ?? null,
     invoice_hash: invoiceHash,
@@ -590,15 +590,15 @@ register("client", "cart", "checkout", (ctx: CallContext) => {
   };
 });
 
-function readInvoiceStatus(invoiceId: number): string | null {
-  const row = getDb()
+async function readInvoiceStatus(invoiceId: number): Promise<string | null> {
+  const row = await getDb()
     .prepare("SELECT status FROM invoice WHERE id = ?")
     .get(invoiceId) as { status: string } | undefined;
   return row?.status ?? null;
 }
 
-function readInvoiceHash(invoiceId: number): string | null {
-  const row = getDb()
+async function readInvoiceHash(invoiceId: number): Promise<string | null> {
+  const row = await getDb()
     .prepare("SELECT hash FROM invoice WHERE id = ?")
     .get(invoiceId) as { hash: string } | undefined;
   return row?.hash ?? null;
@@ -641,26 +641,26 @@ function normalizeTld(raw: string): string {
 }
 
 /** Servicedomain\Service::tldFindOneByTld (normalized, then dotless). */
-function findTldRow(raw: string): TldRowLocal | undefined {
+async function findTldRow(raw: string): Promise<TldRowLocal | undefined> {
   let normalized: string;
   try {
     normalized = normalizeTld(raw);
   } catch {
     return undefined;
   }
-  return getDb()
+  return await getDb()
     .prepare("SELECT * FROM tld WHERE tld = ? OR tld = ? ORDER BY id ASC LIMIT 1")
     .get(normalized, normalized.slice(1)) as TldRowLocal | undefined;
 }
 
 /** Product\Service::getDomainTldModel. */
-function domainTldForConfig(config: Record<string, unknown>): TldRowLocal {
+async function domainTldForConfig(config: Record<string, unknown>): Promise<TldRowLocal> {
   const action = config["action"];
   if (action === undefined || action === null || action === "") {
     throw new FbError("Could not determine domain price. Domain action is missing", 498);
   }
   const raw = action === "register" ? config["register_tld"] : action === "transfer" ? config["transfer_tld"] : "";
-  const row = typeof raw === "string" ? findTldRow(raw) : undefined;
+  const row = typeof raw === "string" ? await findTldRow(raw) : undefined;
   if (!row) throw new FbError("Unknown TLD. Could not determine registration price");
   return row;
 }
@@ -739,10 +739,10 @@ function requireField(config: Record<string, unknown>, key: string, message: str
 }
 
 /** Registrar availability for the ported adapters: Custom without RDAP. */
-function assertDomainAvailable(tld: TldRowLocal, action: "register" | "transfer"): void {
+async function assertDomainAvailable(tld: TldRowLocal, action: "register" | "transfer"): Promise<void> {
   const reg =
     tld.tld_registrar_id !== null && tld.tld_registrar_id !== undefined
-      ? (getDb().prepare("SELECT * FROM tld_registrar WHERE id = ?").get(tld.tld_registrar_id) as
+      ? (await getDb().prepare("SELECT * FROM tld_registrar WHERE id = ?").get(tld.tld_registrar_id) as
           | { registrar: string | null; config: string | null }
           | undefined)
       : undefined;
@@ -767,7 +767,7 @@ function assertDomainAvailable(tld: TldRowLocal, action: "register" | "transfer"
  * Servicedomain\Service::validateOrderData. Mutates the config: the
  * normalized TLD, period ('NY' / '1Y'), and transfer quantity.
  */
-function validateDomainConfig(config: Record<string, unknown>): void {
+async function validateDomainConfig(config: Record<string, unknown>): Promise<void> {
   const action = config["action"];
   if (phpEmpty(action)) {
     throw new FbError("Are you registering new domain or transferring existing? Action parameter missing");
@@ -791,12 +791,12 @@ function validateDomainConfig(config: Record<string, unknown>): void {
     if (!isSldValid(String(config["transfer_sld"]))) {
       throw new FbError(`Domain name ${config["transfer_sld"]} is invalid`);
     }
-    const row = findTldRow(String(config["transfer_tld"]));
+    const row = await findTldRow(String(config["transfer_tld"]));
     if (!row) throw new FbError("TLD not found");
     if (!row.active) throw new FbError("TLD is not active");
     config["transfer_tld"] = row.tld;
     if (!row.allow_transfer) throw new FbError("Domain cannot be transferred", 403);
-    assertDomainAvailable(row, "transfer");
+    await assertDomainAvailable(row, "transfer");
     if (row.require_transfer_code && String(config["transfer_code"] ?? "").trim() === "") {
       throw new FbError(
         `A transfer code (EPP/auth code) is required to transfer ${config["transfer_sld"]}${row.tld}`,
@@ -813,7 +813,7 @@ function validateDomainConfig(config: Record<string, unknown>): void {
   if (!isSldValid(String(config["register_sld"]))) {
     throw new FbError(`Domain name ${config["register_sld"]} is invalid`);
   }
-  const row = findTldRow(String(config["register_tld"]));
+  const row = await findTldRow(String(config["register_tld"]));
   if (!row) throw new FbError("TLD not found");
   if (!row.active) throw new FbError("TLD is not active");
   config["register_tld"] = row.tld;
@@ -834,7 +834,7 @@ function validateDomainConfig(config: Record<string, unknown>): void {
     throw new FbError(`${row.tld} can be registered for at least ${row.min_years} years`);
   }
   if (!row.allow_register) throw new FbError("Domain cannot be registered", 403);
-  assertDomainAvailable(row, "register");
+  await assertDomainAvailable(row, "register");
   config["period"] = `${years}Y`;
 }
 
@@ -900,13 +900,13 @@ function extractDomain(config: Record<string, unknown>, parent: Record<string, u
   return null;
 }
 
-function validateSelectedAddons(product: ProductRow, addons: Record<string, unknown>): void {
+async function validateSelectedAddons(product: ProductRow, addons: Record<string, unknown>): Promise<void> {
   const valid = jsonList(product.addons).map(Number);
   for (const [addonIdRaw, propsRaw] of Object.entries(addons)) {
     const props = propsRaw && typeof propsRaw === "object" ? (propsRaw as Record<string, unknown>) : {};
     if (!phpSelected(props["selected"])) continue;
     const addonId = Number(addonIdRaw);
-    const addon = findProductById(addonId);
+    const addon = await findProductById(addonId);
     const ok =
       addon !== undefined && addon.is_addon === 1 && addon.status === "enabled" && valid.includes(addonId);
     if (!ok) {
@@ -919,20 +919,20 @@ function validateSelectedAddons(product: ProductRow, addons: Record<string, unkn
   }
 }
 
-function selectedAddonsForCart(
+async function selectedAddonsForCart(
   product: ProductRow,
   addons: Record<string, unknown>,
-): { product: ProductRow; config: Record<string, unknown> }[] {
+): Promise<{ product: ProductRow; config: Record<string, unknown> }[]> {
   const out: { product: ProductRow; config: Record<string, unknown> }[] = [];
   for (const [addonIdRaw, propsRaw] of Object.entries(addons)) {
     const props = propsRaw && typeof propsRaw === "object" ? (propsRaw as Record<string, unknown>) : {};
     if (!phpSelected(props["selected"])) continue;
-    const addon = findProductById(Number(addonIdRaw))!;
-    if (isRecurrent(addon)) {
+    const addon = (await findProductById(Number(addonIdRaw)))!;
+    if (await isRecurrent(addon)) {
       if (phpEmpty(props["period"])) throw new FbError("Addon period parameter not passed");
-      const payment = findProductPayment(addon.product_payment_id!);
+      const payment = await findProductPayment(addon.product_payment_id!);
       const enabled = payment
-        ? listProductPeriods(payment.id).some((p) => p.code === props["period"] && p.enabled)
+        ? (await listProductPeriods(payment.id)).some((p) => p.code === props["period"] && p.enabled)
         : false;
       if (!enabled) throw new FbError("Selected billing period is invalid for the selected add-on");
     }
@@ -963,37 +963,37 @@ function staffBasketClientId(cart: CartRow): number | null {
   return m ? Number(m[1]) : null;
 }
 
-function resolveStaffBasket(ctx: CallContext): { client: NonNullable<ReturnType<typeof findClientById>>; basket: CartRow } {
+async function resolveStaffBasket(ctx: CallContext): Promise<{ client: NonNullable<Awaited<ReturnType<typeof findClientById>>>; basket: CartRow }> {
   const clientIdRaw = ctx.params["client_id"];
   if (!clientIdRaw) throw new FbError("Client ID was not passed");
-  const client = findClientById(Number(clientIdRaw));
+  const client = await findClientById(Number(clientIdRaw));
   if (!client) throw new FbError("Client not found");
   const adminId = ctx.session!.admin!.id;
   const key = staffBasketKey(adminId, client.id);
-  let basket = findCartBySession(key);
+  let basket = await findCartBySession(key);
   if (!basket) {
     // Currency\Service::getCurrencyByClientId, else the default currency.
-    let currency = client.currency ? findCurrencyByCode(client.currency) : undefined;
-    currency ??= findDefaultCurrency();
+    let currency = client.currency ? await findCurrencyByCode(client.currency) : undefined;
+    currency ??= await findDefaultCurrency();
     if (!currency) throw new FbError("Default currency not found");
-    insertCart(key, currency.id);
-    basket = findCartBySession(key);
+    await insertCart(key, currency.id);
+    basket = await findCartBySession(key);
     if (!basket) throw new FbError("Cart could not be created");
   }
   return { client, basket };
 }
 
 /** Product\Service::getPromoStackingMode (system param, best_single default). */
-function promoStackingMode(): string {
-  const mode = getSetting("promo_stacking_mode");
+async function promoStackingMode(): Promise<string> {
+  const mode = await getSetting("promo_stacking_mode");
   return mode === "stack_all_eligible" || mode === "priority_first" ? mode : "best_single";
 }
 
 /** Product\Service::getPromoDiscountTitle. */
-function promoTitle(promo: PromoRow, currencyCode: string): string {
+async function promoTitle(promo: PromoRow, currencyCode: string): Promise<string> {
   if (promo.type === "absolute") {
     const formats: Record<string, string> = {};
-    for (const c of listCurrencies()) {
+    for (const c of await listCurrencies()) {
       if (c.format_pattern) formats[c.code] = c.format_pattern;
     }
     return `Promotional Code: ${promo.code} - ${formatCurrencyValue(promo.value, currencyCode, formats)} Discount`;
@@ -1003,45 +1003,45 @@ function promoTitle(promo: PromoRow, currencyCode: string): string {
 }
 
 /** Cart\Service::getEffectiveCartPromos for a staff view. */
-function effectiveStaffPromos(
+async function effectiveStaffPromos(
   cart: CartRow,
   clientId: number | null,
-): { source: "manual" | "auto" | null; promos: PromoRow[] } {
+): Promise<{ source: "manual" | "auto" | null; promos: PromoRow[] }> {
   if (cart.promo_id) {
-    const promo = findPromoById(cart.promo_id);
+    const promo = await findPromoById(cart.promo_id);
     if (!promo) return { source: "manual", promos: [] };
-    const inCart = new Set(listCartProducts(cart.id).map((cp) => cp.product_id));
+    const inCart = new Set((await listCartProducts(cart.id)).map((cp) => cp.product_id));
     const missing = jsonList(promo.requires_products).map(Number).filter((id) => !inCart.has(id));
     // A manual code whose bundle condition no longer holds contributes
     // no discount, but promo_source stays manual and promocode is shown.
     return { source: "manual", promos: missing.length === 0 ? [promo] : [] };
   }
   if (clientId === null) return { source: null, promos: [] };
-  const lines = listCartProducts(cart.id)
-    .map((cp) => {
-      const product = findProductById(cp.product_id);
+  const lines = (await Promise.all((await listCartProducts(cart.id))
+    .map(async (cp) => {
+      const product = await findProductById(cp.product_id);
       return product ? { product, config: parseConfig(cp.config) } : null;
-    })
+    })))
     .filter((l): l is { product: ProductRow; config: Record<string, unknown> } => !!l);
   if (lines.length === 0) return { source: null, promos: [] };
   const eligible: { promo: PromoRow; discount: number }[] = [];
-  for (const promo of listAutoApplyPromos()) {
+  for (const promo of await listAutoApplyPromos()) {
     if (!promoCanBeApplied(promo)) continue;
-    if (!promoGroupAvailable(promo, clientId)) continue;
-    if (promo.once_per_client && hasActiveCheckoutRedemption(promo.id, clientId)) continue;
+    if (!await promoGroupAvailable(promo, clientId)) continue;
+    if (promo.once_per_client && await hasActiveCheckoutRedemption(promo.id, clientId)) continue;
     const required = jsonList(promo.requires_products).map(Number);
     const inCart = new Set(lines.map((l) => l.product.id));
     if (required.some((id) => !inCart.has(id))) continue;
     let discount = 0;
     for (const line of lines) {
-      discount += staffRawPromoDiscount(promo, line.product, line.config);
+      discount += await staffRawPromoDiscount(promo, line.product, line.config);
     }
     if (discount <= 0) continue;
     eligible.push({ promo, discount });
   }
   if (eligible.length === 0) return { source: null, promos: [] };
   eligible.sort((a, b) => (b.promo.priority ?? 0) - (a.promo.priority ?? 0) || b.discount - a.discount);
-  const mode = promoStackingMode();
+  const mode = await promoStackingMode();
   if (mode === "priority_first") return { source: "auto", promos: [eligible[0].promo] };
   if (mode === "best_single") {
     let best = eligible[0];
@@ -1063,10 +1063,10 @@ function effectiveStaffPromos(
 }
 
 /** Product\Service::getProductDiscount for one staff line (base currency). */
-function staffRawPromoDiscount(promo: PromoRow, product: ProductRow, config: Record<string, unknown>): number {
+async function staffRawPromoDiscount(promo: PromoRow, product: ProductRow, config: Record<string, unknown>): Promise<number> {
   if (product.is_addon) return 0;
   if (!promoAppliesTo(promo, product.id, config)) return 0;
-  const line = staffLinePricing(product, config);
+  const line = await staffLinePricing(product, config);
   const price = line.price * line.qty;
   if (price === 0) return 0;
   if (promo.type === "absolute") return promo.value;
@@ -1079,13 +1079,13 @@ function staffRawPromoDiscount(promo: PromoRow, product: ProductRow, config: Rec
  * capped at the line subtotal, rounded to 2dp, drift folded into the
  * largest share so the shares always reconcile.
  */
-function staffPromoShares(cp: CartProductRow, promos: PromoRow[]): Map<number, number> {
-  const product = findProductById(cp.product_id);
+async function staffPromoShares(cp: CartProductRow, promos: PromoRow[]): Promise<Map<number, number>> {
+  const product = await findProductById(cp.product_id);
   const config = parseConfig(cp.config);
   const raw = new Map<number, number>();
   let rawTotal = 0;
   for (const promo of promos) {
-    const d = product ? staffRawPromoDiscount(promo, product, config) : 0;
+    const d = product ? await staffRawPromoDiscount(promo, product, config) : 0;
     raw.set(promo.id, d);
     rawTotal += d;
   }
@@ -1094,7 +1094,7 @@ function staffPromoShares(cp: CartProductRow, promos: PromoRow[]): Map<number, n
     for (const id of raw.keys()) shares.set(id, 0);
     return shares;
   }
-  const line = product ? staffLinePricing(product, config) : { price: 0, qty: 1 };
+  const line = product ? await staffLinePricing(product, config) : { price: 0, qty: 1 };
   const cappedTotal = Math.min(rawTotal, line.price * line.qty);
   for (const [id, amount] of raw) shares.set(id, round2((amount / rawTotal) * cappedTotal));
   let sum = 0;
@@ -1115,15 +1115,15 @@ function staffPromoShares(cp: CartProductRow, promos: PromoRow[]): Map<number, n
 }
 
 /** Staff line pricing: catalog price, staff override, or TLD pricing. */
-function staffLinePricing(product: ProductRow, config: Record<string, unknown>): {
+async function staffLinePricing(product: ProductRow, config: Record<string, unknown>): Promise<{
   price: number;
   setup: number;
   qty: number;
-} {
+}> {
   if (product.type === "domain") {
     const action = config["action"];
     if (action === "owndomain") return { price: 0, setup: 0, qty: 1 };
-    const tld = domainTldForConfig(config);
+    const tld = await domainTldForConfig(config);
     if (action === "register") {
       const years = domainRegistrationYears(config);
       const total =
@@ -1137,14 +1137,14 @@ function staffLinePricing(product: ProductRow, config: Record<string, unknown>):
     }
     throw new FbError("Could not determine domain price. Domain action is missing", 498);
   }
-  let price = productPrice(product, config);
+  let price = await productPrice(product, config);
   const override = config[STAFF_PRICE_OVERRIDE_KEY];
   if (override !== undefined && override !== null && override !== "") {
     const n = Number(override);
     if (!Number.isNaN(n) && n >= 0) price = n;
   }
   const qty = Math.max(1, parseInt(String(config["quantity"] ?? "1"), 10) || 1);
-  return { price, setup: productSetupPrice(product, config), qty };
+  return { price, setup: await productSetupPrice(product, config), qty };
 }
 
 function staffItemTitle(product: ProductRow, config: Record<string, unknown>): string {
@@ -1160,11 +1160,11 @@ function staffItemTitle(product: ProductRow, config: Record<string, unknown>): s
 }
 
 /** Staff cart line: cartProductToApiArray with the effective promos. */
-function staffCartItemArray(cp: CartProductRow, promos: PromoRow[]): CartItemView {
-  const product = findProductById(cp.product_id);
+async function staffCartItemArray(cp: CartProductRow, promos: PromoRow[]): Promise<CartItemView> {
+  const product = await findProductById(cp.product_id);
   const config = parseConfig(cp.config);
-  const line = product ? staffLinePricing(product, config) : { price: 0, setup: 0, qty: 1 };
-  const shares = staffPromoShares(cp, promos);
+  const line = product ? await staffLinePricing(product, config) : { price: 0, setup: 0, qty: 1 };
+  const shares = await staffPromoShares(cp, promos);
   let discountPrice = 0;
   for (const v of shares.values()) discountPrice += v;
   let discountSetup = 0;
@@ -1199,10 +1199,10 @@ function staffCartItemArray(cp: CartProductRow, promos: PromoRow[]): CartItemVie
 }
 
 /** Cart\Service::toApiArray for a staff basket (client known). */
-function staffCartArray(cart: CartRow, clientId: number | null): Record<string, unknown> {
-  const { source, promos } = effectiveStaffPromos(cart, clientId);
-  const currency = cartCurrency(cart);
-  const items = listCartProducts(cart.id).map((cp) => staffCartItemArray(cp, promos));
+async function staffCartArray(cart: CartRow, clientId: number | null): Promise<Record<string, unknown>> {
+  const { source, promos } = await effectiveStaffPromos(cart, clientId);
+  const currency = await cartCurrency(cart);
+  const items = await Promise.all((await listCartProducts(cart.id)).map(async (cp) => await staffCartItemArray(cp, promos)));
   let subtotal = 0;
   let discount = 0;
   for (const item of items) {
@@ -1211,14 +1211,14 @@ function staffCartArray(cart: CartRow, clientId: number | null): Record<string, 
   }
   const autoPromos =
     source === "auto"
-      ? promos.map((promo) => {
+      ? await Promise.all(promos.map(async (promo) => {
           let total = 0;
-          for (const cp of listCartProducts(cart.id)) total += staffPromoShares(cp, promos).get(promo.id) ?? 0;
-          return { code: promo.code, title: promoTitle(promo, currency.code), discount: total };
-        })
+          for (const cp of await listCartProducts(cart.id)) total += (await staffPromoShares(cp, promos)).get(promo.id) ?? 0;
+          return { code: promo.code, title: await promoTitle(promo, currency.code), discount: total };
+        }))
       : [];
   return {
-    promocode: cart.promo_id ? (findPromoById(cart.promo_id)?.code ?? null) : null,
+    promocode: cart.promo_id ? ((await findPromoById(cart.promo_id))?.code ?? null) : null,
     promo_source: source,
     auto_promos: autoPromos,
     discount,
@@ -1231,12 +1231,12 @@ function staffCartArray(cart: CartRow, clientId: number | null): Record<string, 
 }
 
 
-function staffAddItem(basket: CartRow, product: ProductRow, data: Record<string, unknown>, priceOverride: number | null): boolean {
-  if (isRecurrent(product)) {
+async function staffAddItem(basket: CartRow, product: ProductRow, data: Record<string, unknown>, priceOverride: number | null): Promise<boolean> {
+  if (await isRecurrent(product)) {
     if (phpEmpty(data["period"])) throw new FbError("Period parameter not passed");
-    const payment = product.product_payment_id ? findProductPayment(product.product_payment_id) : undefined;
+    const payment = product.product_payment_id ? await findProductPayment(product.product_payment_id) : undefined;
     const enabled = payment
-      ? listProductPeriods(payment.id).some((p) => p.code === data["period"] && p.enabled)
+      ? (await listProductPeriods(payment.id)).some((p) => p.code === data["period"] && p.enabled)
       : false;
     if (!enabled) throw new FbError("Selected billing period is invalid");
   }
@@ -1257,7 +1257,7 @@ function staffAddItem(basket: CartRow, product: ProductRow, data: Record<string,
     if (nd) domainsBeingAdded.push(nd);
   }
   if (domainsBeingAdded.length > 0) {
-    for (const cp of listCartProducts(basket.id)) {
+    for (const cp of await listCartProducts(basket.id)) {
       const cfg = parseConfig(cp.config);
       const candidates = [extractDomain(cfg)];
       const nestedCfg = cfg["domain"];
@@ -1288,8 +1288,8 @@ function staffAddItem(basket: CartRow, product: ProductRow, data: Record<string,
       if (hostCfg["free_transfer"]) dcCopy["free_transfer"] = true;
       if (hostCfg["free_tlds"] !== undefined) dcCopy["free_tlds"] = hostCfg["free_tlds"];
       if (hostCfg["free_domain_periods"] !== undefined) dcCopy["free_domain_periods"] = hostCfg["free_domain_periods"];
-      validateDomainConfig(dcCopy);
-      const domainProduct = getDb()
+      await validateDomainConfig(dcCopy);
+      const domainProduct = await getDb()
         .prepare("SELECT * FROM product WHERE type = 'domain' AND is_addon = 0 ORDER BY id ASC LIMIT 1")
         .get() as ProductRow | undefined;
       if (!domainProduct) throw new FbError("Could not find main domain product");
@@ -1298,10 +1298,10 @@ function staffAddItem(basket: CartRow, product: ProductRow, data: Record<string,
   }
   const addonsRaw = data["addons"];
   if (addonsRaw && typeof addonsRaw === "object") {
-    lines.push(...selectedAddonsForCart(product, addonsRaw as Record<string, unknown>));
+    lines.push(...await selectedAddonsForCart(product, addonsRaw as Record<string, unknown>));
   }
   const reserved = new Map<number, number>();
-  for (const cp of listCartProducts(basket.id)) {
+  for (const cp of await listCartProducts(basket.id)) {
     const q = Math.max(1, parseInt(String(parseConfig(cp.config)["quantity"] ?? "1"), 10) || 1);
     reserved.set(cp.product_id, (reserved.get(cp.product_id) ?? 0) + q);
   }
@@ -1318,7 +1318,7 @@ function staffAddItem(basket: CartRow, product: ProductRow, data: Record<string,
   let isMain = true;
   for (const line of lines) {
     const cfg: Record<string, unknown> = { ...line.config };
-    if (line.product.type === "domain") validateDomainConfig(cfg);
+    if (line.product.type === "domain") await validateDomainConfig(cfg);
     // Custom-form validation (Servicecustom::validateCustomForm) only
     // applies to products with a form_id; every reference product has
     // form_id NULL, so it is a no-op here (documented gap otherwise).
@@ -1326,59 +1326,59 @@ function staffAddItem(basket: CartRow, product: ProductRow, data: Record<string,
     delete cfg[STAFF_PRICE_OVERRIDE_KEY];
     if (isMain && priceOverride !== null) cfg[STAFF_PRICE_OVERRIDE_KEY] = priceOverride;
     isMain = false;
-    insertCartProduct(basket.id, line.product.id, JSON.stringify(cfg));
+    await insertCartProduct(basket.id, line.product.id, JSON.stringify(cfg));
   }
   return true;
 }
 
-register("admin", "cart", "staff_basket_add_item", (ctx: CallContext) => {
+register("admin", "cart", "staff_basket_add_item", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const data = staffAddParams(ctx);
   if (phpEmpty(data["client_id"])) throw new FbError("Client ID was not passed");
   if (phpEmpty(data["id"])) throw new FbError("Product ID was not passed");
-  const client = findClientById(Number(data["client_id"]));
+  const client = await findClientById(Number(data["client_id"]));
   if (!client) throw new FbError("Client not found");
   const adminId = ctx.session!.admin!.id;
-  let basket = findCartBySession(staffBasketKey(adminId, client.id));
+  let basket = await findCartBySession(staffBasketKey(adminId, client.id));
   if (!basket) {
-    let currency = client.currency ? findCurrencyByCode(client.currency) : undefined;
-    currency ??= findDefaultCurrency();
+    let currency = client.currency ? await findCurrencyByCode(client.currency) : undefined;
+    currency ??= await findDefaultCurrency();
     if (!currency) throw new FbError("Default currency not found");
-    insertCart(staffBasketKey(adminId, client.id), currency.id);
-    basket = findCartBySession(staffBasketKey(adminId, client.id));
+    await insertCart(staffBasketKey(adminId, client.id), currency.id);
+    basket = await findCartBySession(staffBasketKey(adminId, client.id));
     if (!basket) throw new FbError("Cart could not be created");
   }
-  const product = findProductById(Number(data["id"]));
+  const product = await findProductById(Number(data["id"]));
   if (!product) throw new FbError("Product not found");
   if (product.is_addon) throw new FbError("Addon products cannot be added separately.");
   const addonsRaw = data["addons"];
   if (addonsRaw && typeof addonsRaw === "object") {
-    validateSelectedAddons(product, addonsRaw as Record<string, unknown>);
+    await validateSelectedAddons(product, addonsRaw as Record<string, unknown>);
   }
   let priceOverride: number | null = null;
   if (data["price"] !== undefined && data["price"] !== "") {
     const n = Number(data["price"]);
     if (Number.isNaN(n) || n < 0) throw new FbError("Price override must be a non-negative number");
-    const rate = cartCurrency(basket).conversion_rate;
+    const rate = (await cartCurrency(basket)).conversion_rate;
     if (!(rate > 0)) throw new FbError("Basket currency has no valid conversion rate");
     priceOverride = n / rate;
   }
-  return staffAddItem(basket, product, data, priceOverride);
+  return await staffAddItem(basket, product, data, priceOverride);
 });
 
-register("admin", "cart", "staff_basket_get", (ctx: CallContext) => {
+register("admin", "cart", "staff_basket_get", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const { client, basket } = resolveStaffBasket(ctx);
-  return staffCartArray(basket, client.id);
+  const { client, basket } = await resolveStaffBasket(ctx);
+  return await staffCartArray(basket, client.id);
 });
 
-register("admin", "cart", "staff_basket_remove_item", (ctx: CallContext) => {
+register("admin", "cart", "staff_basket_remove_item", async (ctx: CallContext) => {
   requireAdmin(ctx);
   if (phpEmpty(ctx.params["client_id"])) throw new FbError("Client ID was not passed");
   if (phpEmpty(ctx.params["id"])) throw new FbError("Basket item ID was not passed");
-  const { basket } = resolveStaffBasket(ctx);
+  const { basket } = await resolveStaffBasket(ctx);
   const lineId = Number(ctx.params["id"]);
-  const line = listCartProducts(basket.id).find((cp) => cp.id === lineId);
+  const line = (await listCartProducts(basket.id)).find((cp) => cp.id === lineId);
   if (!line) throw new FbError("Product not found");
   // Cart\Service::removeProduct: addon lines of the removed line go too
   // (same parent product id, and the same domain_name when the parent
@@ -1386,53 +1386,53 @@ register("admin", "cart", "staff_basket_remove_item", (ctx: CallContext) => {
   const mainConfig = parseConfig(line.config);
   const domainName = typeof mainConfig["domain_name"] === "string" ? mainConfig["domain_name"] : "";
   const parentProductId = line.product_id;
-  for (const cp of listCartProducts(basket.id)) {
+  for (const cp of await listCartProducts(basket.id)) {
     const cfg = parseConfig(cp.config);
     if (cfg["parent_id"] !== undefined && Number(cfg["parent_id"]) === parentProductId) {
       const addonDomain = typeof cfg["domain_name"] === "string" ? cfg["domain_name"] : "";
       if (domainName && domainName !== addonDomain) continue;
-      deleteCartProductRow(cp.id);
+      await deleteCartProductRow(cp.id);
     }
   }
-  deleteCartProductRow(line.id);
+  await deleteCartProductRow(line.id);
   return true;
 });
 
-register("admin", "cart", "staff_basket_apply_promo", (ctx: CallContext) => {
+register("admin", "cart", "staff_basket_apply_promo", async (ctx: CallContext) => {
   requireAdmin(ctx);
   if (phpEmpty(ctx.params["client_id"])) throw new FbError("Client ID was not passed");
   if (phpEmpty(ctx.params["promocode"])) throw new FbError("Promo code was not passed");
-  const { client, basket } = resolveStaffBasket(ctx);
-  const promo = findPromoByCode(ctx.params["promocode"]);
+  const { client, basket } = await resolveStaffBasket(ctx);
+  const promo = await findPromoByCode(ctx.params["promocode"]);
   if (!promo || !promo.active) {
     throw new FbError("The promo code has expired or does not exist");
   }
-  if (!promoGroupAvailable(promo, client.id)) {
+  if (!await promoGroupAvailable(promo, client.id)) {
     throw new FbError("Promo code cannot be applied to this client account");
   }
   if (!promoCanBeApplied(promo)) {
     throw new FbError("The promo code has expired or does not exist");
   }
   if (basket.promo_id === promo.id) return true;
-  if (listCartProducts(basket.id).length === 0) {
+  if ((await listCartProducts(basket.id)).length === 0) {
     throw new FbError("Add products to your cart before applying promo code");
   }
-  assertPromoCondition(basket, promo);
-  updateCartRow(basket.id, { promo_id: promo.id });
+  await assertPromoCondition(basket, promo);
+  await updateCartRow(basket.id, { promo_id: promo.id });
   return true;
 });
 
-register("admin", "cart", "staff_basket_remove_promo", (ctx: CallContext) => {
+register("admin", "cart", "staff_basket_remove_promo", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const { basket } = resolveStaffBasket(ctx);
-  updateCartRow(basket.id, { promo_id: null });
+  const { basket } = await resolveStaffBasket(ctx);
+  await updateCartRow(basket.id, { promo_id: null });
   return true;
 });
 
-register("admin", "cart", "staff_basket_discard", (ctx: CallContext) => {
+register("admin", "cart", "staff_basket_discard", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const { basket } = resolveStaffBasket(ctx);
-  deleteCartRow(basket.id);
+  const { basket } = await resolveStaffBasket(ctx);
+  await deleteCartRow(basket.id);
   return true;
 });
 
@@ -1448,20 +1448,20 @@ function normalizeBooleanParam(v: unknown): boolean {
   return false;
 }
 
-function staffGatewayRow(id: number): { id: number; gateway: string; name: string | null; enabled: number } | undefined {
-  return getDb()
+async function staffGatewayRow(id: number): Promise<{ id: number; gateway: string; name: string | null; enabled: number } | undefined> {
+  return await getDb()
     .prepare("SELECT id, gateway, name, enabled FROM pay_gateway WHERE id = ?")
     .get(id) as { id: number; gateway: string; name: string | null; enabled: number } | undefined;
 }
 
 /** Invoice\Service::validateAdminMarkAsPaidRequest without an invoice. */
-function validateMarkPaidPreflight(ctx: CallContext): { id: number; gateway: string; name: string | null } {
+async function validateMarkPaidPreflight(ctx: CallContext): Promise<{ id: number; gateway: string; name: string | null }> {
   const raw = ctx.params["gateway_id"];
   const gatewayId = raw !== undefined && raw !== "" ? Number(raw) : 0;
   if (!(gatewayId > 0)) {
     throw new FbError("Payment gateway is required when marking an invoice as paid.");
   }
-  const gw = staffGatewayRow(gatewayId);
+  const gw = await staffGatewayRow(gatewayId);
   if (!gw) throw new FbError("Payment gateway not found");
   if (!gw.enabled) throw new FbError("Payment gateway is not enabled");
   if (gw.gateway === "Custom" && String(ctx.params["transactionId"] ?? "").trim() === "") {
@@ -1478,15 +1478,15 @@ function sortedJson(v: unknown): string {
   return `{${Object.keys(rec).sort().map((k) => `${JSON.stringify(k)}:${sortedJson(rec[k])}`).join(",")}}`;
 }
 
-function invoiceTaxrate(invoiceId: number): string {
-  const row = getDb().prepare("SELECT taxrate FROM invoice WHERE id = ?").get(invoiceId) as
+async function invoiceTaxrate(invoiceId: number): Promise<string> {
+  const row = await getDb().prepare("SELECT taxrate FROM invoice WHERE id = ?").get(invoiceId) as
     | { taxrate: string | null }
     | undefined;
   return String(row?.taxrate ?? "0");
 }
 
-function invoiceCurrencyCode(invoiceId: number): string {
-  const row = getDb().prepare("SELECT currency FROM invoice WHERE id = ?").get(invoiceId) as
+async function invoiceCurrencyCode(invoiceId: number): Promise<string> {
+  const row = await getDb().prepare("SELECT currency FROM invoice WHERE id = ?").get(invoiceId) as
     | { currency: string | null }
     | undefined;
   return row?.currency ?? "USD";
@@ -1500,13 +1500,13 @@ function invoiceCurrencyCode(invoiceId: number): string {
  * reserved-redemption commit (committed_at = the invoice paid_at).
  * The Custom path additionally creates/settles the transaction row.
  */
-function staffMarkInvoicePaid(
+async function staffMarkInvoicePaid(
   invoiceId: number,
   gateway: { id: number; gateway: string; name: string | null },
   transactionId: string | null,
   ctx: CallContext,
   rate: number,
-): void {
+): Promise<void> {
   let txnId: number | null = null;
   if (gateway.gateway === "Custom" && transactionId !== null) {
     const ipn = {
@@ -1517,8 +1517,8 @@ function staffMarkInvoicePaid(
       server: null,
     };
     const hash = createHash("sha256").update(sortedJson(ipn)).digest("hex");
-    let txn = findProcessedTransaction(gateway.id, transactionId);
-    if (!txn) txn = findTransactionByGatewayHash(gateway.id, hash);
+    let txn = await findProcessedTransaction(gateway.id, transactionId);
+    if (!txn) txn = await findTransactionByGatewayHash(gateway.id, hash);
     if (txn) {
       if (txn.invoice_id !== invoiceId) {
         throw new FbError("Transaction ID is already associated with another invoice.");
@@ -1526,34 +1526,30 @@ function staffMarkInvoicePaid(
       txnId = txn.id;
     } else {
       const now = nowTimestamp();
-      const info = getDbWrite()
-        .prepare(
-          `INSERT INTO "transaction" (txn_id, txn_status, s_id, s_period, amount, currency, type, status, ip, error, error_code, ipn, ipn_hash, output, note, created_at, updated_at, invoice_id, gateway_id)
-           VALUES (?, NULL, NULL, NULL, NULL, NULL, NULL, 'received', ?, NULL, NULL, ?, ?, NULL, NULL, ?, ?, ?, ?)`,
-        )
-        .run(transactionId, ctx.ip, JSON.stringify(ipn), hash, now, now, invoiceId, gateway.id);
-      txnId = Number(info.lastInsertRowid);
+      const info = await getDbWrite().insertAndGetId(`INSERT INTO "transaction" (txn_id, txn_status, s_id, s_period, amount, currency, type, status, ip, error, error_code, ipn, ipn_hash, output, note, created_at, updated_at, invoice_id, gateway_id)
+           VALUES (?, NULL, NULL, NULL, NULL, NULL, NULL, 'received', ?, NULL, NULL, ?, ?, NULL, NULL, ?, ?, ?, ?)`, transactionId, ctx.ip, JSON.stringify(ipn), hash, now, now, invoiceId, gateway.id);
+      txnId = Number(info);
     }
   }
-  getDbWrite().prepare("UPDATE invoice SET currency_rate = ? WHERE id = ?").run(rate, invoiceId);
-  markInvoicePaid(invoiceId);
-  getDbWrite()
+  await getDbWrite().prepare("UPDATE invoice SET currency_rate = ? WHERE id = ?").run(rate, invoiceId);
+  await markInvoicePaid(invoiceId);
+  await getDbWrite()
     .prepare("UPDATE client_order SET unpaid_invoice_id = NULL, updated_at = ? WHERE unpaid_invoice_id = ?")
     .run(nowTimestamp(), invoiceId);
-  const paidAtRow = getDb().prepare("SELECT paid_at FROM invoice WHERE id = ?").get(invoiceId) as
+  const paidAtRow = await getDb().prepare("SELECT paid_at FROM invoice WHERE id = ?").get(invoiceId) as
     | { paid_at: string | null }
     | undefined;
   const paidAt = paidAtRow?.paid_at ?? nowTimestamp();
-  getDbWrite()
+  await getDbWrite()
     .prepare("UPDATE promo_redemption SET status = 'committed', committed_at = ?, updated_at = ? WHERE invoice_id = ? AND status = 'reserved'")
     .run(paidAt, nowTimestamp(), invoiceId);
   if (txnId !== null && transactionId !== null) {
-    const { total } = invoiceTotals(listInvoiceItems(invoiceId), invoiceTaxrate(invoiceId));
-    settleTransaction(txnId, total, invoiceCurrencyCode(invoiceId), `${gateway.name ?? gateway.gateway} transaction No: ${transactionId}`);
+    const { total } = invoiceTotals(await listInvoiceItems(invoiceId), await invoiceTaxrate(invoiceId));
+    await settleTransaction(txnId, total, await invoiceCurrencyCode(invoiceId), `${gateway.name ?? gateway.gateway} transaction No: ${transactionId}`);
   }
 }
 
-register("admin", "cart", "staff_basket_checkout", (ctx: CallContext) => {
+register("admin", "cart", "staff_basket_checkout", async (ctx: CallContext) => {
   requireAdmin(ctx);
   if (phpEmpty(ctx.params["client_id"])) throw new FbError("Client ID was not passed");
   // Mark-as-paid validation runs BEFORE basket resolution (Admin API).
@@ -1563,10 +1559,10 @@ register("admin", "cart", "staff_basket_checkout", (ctx: CallContext) => {
   // R2a conditional guard (Cart Admin::staff_basket_checkout): the
   // invoice-access guard fires only when marking the invoice paid, and
   // PHP checks it before validateAdminMarkAsPaidRequest.
-  if (markPaid) requirePermission(ctx, "invoice");
+  if (markPaid) await requirePermission(ctx, "invoice");
   let markGateway: { id: number; gateway: string; name: string | null } | null = null;
-  if (markPaid) markGateway = validateMarkPaidPreflight(ctx);
-  const { client, basket } = resolveStaffBasket(ctx);
+  if (markPaid) markGateway = await validateMarkPaidPreflight(ctx);
+  const { client, basket } = await resolveStaffBasket(ctx);
   const adminId = ctx.session!.admin!.id;
   if (!isStaffBasket(basket) || basket.session_id !== staffBasketKey(adminId, client.id)) {
     throw new FbError("Staff basket does not belong to this admin and client");
@@ -1581,29 +1577,29 @@ register("admin", "cart", "staff_basket_checkout", (ctx: CallContext) => {
         : true;
 
   // checkoutStaffBasket pre-checks (fail fast, before order creation).
-  const manualPromo = basket.promo_id ? (findPromoById(basket.promo_id) ?? null) : null;
+  const manualPromo = basket.promo_id ? (await findPromoById(basket.promo_id) ?? null) : null;
   if (manualPromo) {
     const usable =
       promoCanBeApplied(manualPromo) &&
-      (!manualPromo.once_per_client || !hasActiveCheckoutRedemption(manualPromo.id, client.id));
+      (!manualPromo.once_per_client || !await hasActiveCheckoutRedemption(manualPromo.id, client.id));
     if (!usable) {
       throw new FbError(
         "This client has already used this promo code. Please remove the promo code and checkout again.",
         9874,
       );
     }
-    if (!promoGroupAvailable(manualPromo, client.id)) {
+    if (!await promoGroupAvailable(manualPromo, client.id)) {
       throw new FbError("Promo code cannot be applied to this client account");
     }
-    assertPromoCondition(basket, manualPromo);
+    await assertPromoCondition(basket, manualPromo);
   }
-  const view = staffCartArray(basket, client.id);
+  const view = await staffCartArray(basket, client.id);
   const viewItems = view["items"] as CartItemView[];
   if (viewItems.length === 0) throw new FbError("Cannot checkout an empty cart");
-  const currency = cartCurrency(basket);
+  const currency = await cartCurrency(basket);
   const rate = currency.conversion_rate;
   if (!client.currency) {
-    setClientCurrency(client.id, currency.code);
+    await setClientCurrency(client.id, currency.code);
     client.currency = currency.code;
   }
   if (client.currency !== currency.code) {
@@ -1613,13 +1609,15 @@ register("admin", "cart", "staff_basket_checkout", (ctx: CallContext) => {
   }
   const effectivePromos = manualPromo
     ? [manualPromo]
-    : effectiveStaffPromos(basket, client.id).promos.filter(
-        (p) =>
+    : (await Promise.all((await effectiveStaffPromos(basket, client.id)).promos.map(
+        async (p) =>
           promoCanBeApplied(p) &&
-          (!p.once_per_client || !hasActiveCheckoutRedemption(p.id, client.id)) &&
-          promoGroupAvailable(p, client.id),
-      );
-  const taxed = isClientTaxable(client);
+          (!p.once_per_client || !(await hasActiveCheckoutRedemption(p.id, client.id))) &&
+          (await promoGroupAvailable(p, client.id))
+            ? p
+            : null,
+      ))).filter((p): p is PromoRow => p !== null);
+  const taxed = await isClientTaxable(client);
 
   const familyGroups = new Map<string, string>();
   const lastGroupByProduct = new Map<number, string>();
@@ -1633,9 +1631,9 @@ register("admin", "cart", "staff_basket_checkout", (ctx: CallContext) => {
   const requestedQty = new Map<number, number>();
   let masterOrderId: number | null = null;
 
-  for (const cp of listCartProducts(basket.id)) {
-    const item = staffCartItemArray(cp, effectivePromos);
-    const product = findProductById(cp.product_id);
+  for (const cp of await listCartProducts(basket.id)) {
+    const item = await staffCartItemArray(cp, effectivePromos);
+    const product = await findProductById(cp.product_id);
     if (!product) continue;
     const configForOrder: Record<string, unknown> = { ...item };
     delete configForOrder[CART_FAMILY_KEY];
@@ -1681,7 +1679,7 @@ register("admin", "cart", "staff_basket_checkout", (ctx: CallContext) => {
     const orderPrice = item.price * rate;
     const orderDiscount = item.discount_price * rate;
     const primary = effectivePromos[0] ?? null;
-    const orderId = insertOrder({
+    const orderId = await insertOrder({
       client_id: client.id,
       product_id: product.id,
       form_id: product.form_id,
@@ -1708,17 +1706,17 @@ register("admin", "cart", "staff_basket_checkout", (ctx: CallContext) => {
     orderIds.push(orderId);
     masterOrderId ??= orderId;
     orderRows.push({ id: orderId, price: orderPrice, quantity: item.quantity, discount: orderDiscount, serviceType: product.type });
-    insertOrderStatus(orderId, "pending_setup", "Order Created");
+    await insertOrderStatus(orderId, "pending_setup", "Order Created");
     if (product.stock_control && qty > 0) {
-      getDbWrite()
+      await getDbWrite()
         .prepare("UPDATE product SET quantity_in_stock = quantity_in_stock - ? WHERE id = ?")
         .run(qty, product.id);
     }
     if (effectivePromos.length > 0) {
-      const shares = staffPromoShares(cp, effectivePromos);
+      const shares = await staffPromoShares(cp, effectivePromos);
       const perPromo = new Map<number, number>();
       for (const promo of effectivePromos) {
-        if (!incrementPromoUsedIfAvailable(promo.id)) {
+        if (!await incrementPromoUsedIfAvailable(promo.id)) {
           throw new FbError("This promo code has reached its maximum number of uses.");
         }
         perPromo.set(promo.id, (shares.get(promo.id) ?? 0) * rate);
@@ -1766,30 +1764,30 @@ register("admin", "cart", "staff_basket_checkout", (ctx: CallContext) => {
   let invoiceHash: string | null = null;
   let invoiceUnpaid = false;
   if (total > 0) {
-    invoiceId = prepareInvoice(client, invoiceItems, gatewayIdParam);
+    invoiceId = await prepareInvoice(client, invoiceItems, gatewayIdParam);
     // PHP prepareInvoice leaves currency_rate, base_income and
     // base_refund NULL; the TS helper freezes currency_rate and zeroes
     // the other two at creation. Null them back so unpaid invoices
     // match, and re-freeze base_income/rate at payment time (see
     // staffMarkInvoicePaid). base_refund stays NULL through payment.
-    getDbWrite().prepare(
+    await getDbWrite().prepare(
       "UPDATE invoice SET currency_rate = NULL, base_income = NULL, base_refund = NULL WHERE id = ?",
     ).run(invoiceId);
-    const balance = clientBalanceSum(client.id);
+    const balance = await clientBalanceSum(client.id);
     const useCredits = round2(balance) >= round2(total);
-    issueInvoice(invoiceId, client, { useCredits });
-    if (readInvoiceStatus(invoiceId) !== "paid") {
+    await issueInvoice(invoiceId, client, { useCredits });
+    if (await readInvoiceStatus(invoiceId) !== "paid") {
       invoiceUnpaid = true;
-      for (const oid of orderIds) updateOrderUnpaidInvoice(oid, invoiceId);
-      invoiceHash = readInvoiceHash(invoiceId);
+      for (const oid of orderIds) await updateOrderUnpaidInvoice(oid, invoiceId);
+      invoiceHash = await readInvoiceHash(invoiceId);
     }
   }
   if (effectivePromos.length > 0) {
     const status = invoiceUnpaid ? "reserved" : "committed";
     for (const oid of orderIds) {
-      const createdAt = findOrderById(oid)?.created_at ?? nowTimestamp();
+      const createdAt = (await findOrderById(oid))?.created_at ?? nowTimestamp();
       for (const promo of effectivePromos) {
-        insertPromoRedemption({
+        await insertPromoRedemption({
           promo_id: promo.id,
           client_id: client.id,
           client_order_id: oid,
@@ -1801,7 +1799,7 @@ register("admin", "cart", "staff_basket_checkout", (ctx: CallContext) => {
         });
         // PHP newPromoRedemption stamps created/updated (and
         // committed_at when committed) from the ORDER's created_at.
-        getDbWrite()
+        await getDbWrite()
           .prepare(
             `UPDATE promo_redemption SET created_at = ?, updated_at = ?, committed_at = ?
              WHERE promo_id = ? AND client_order_id = ? AND phase = 'checkout' AND committed_at IS NULL`,
@@ -1812,22 +1810,22 @@ register("admin", "cart", "staff_basket_checkout", (ctx: CallContext) => {
   }
   if (activate) {
     for (const orow of orderRows) {
-      const order = findOrderById(orow.id);
+      const order = await findOrderById(orow.id);
       if (!order) continue;
-      const product = order.product_id ? findProductById(order.product_id) : undefined;
+      const product = order.product_id ? await findProductById(order.product_id) : undefined;
       if (!product) continue;
       const setup = product.setup;
       const net = orow.price * orow.quantity - (orow.discount ?? 0);
-      const isPaid = invoiceId !== null && readInvoiceStatus(invoiceId) === "paid";
+      const isPaid = invoiceId !== null && await readInvoiceStatus(invoiceId) === "paid";
       const shouldActivate =
         setup === "after_order" ||
         (total <= 0 && setup === "after_payment" && net <= 0) ||
         (total > 0 && setup === "after_payment" && isPaid);
       if (!shouldActivate) continue;
       try {
-        activateOrderRow(order);
+        await activateOrderRow(order);
         // Order\Service::sendOrderActivationEmail (AfterAdminOrderActivateEvent).
-        queueTemplatedEmail(
+        await queueTemplatedEmail(
           `mod_service${orow.serviceType}_activated`,
           client.email,
           {
@@ -1839,11 +1837,11 @@ register("admin", "cart", "staff_basket_checkout", (ctx: CallContext) => {
       } catch (e) {
         // PHP catches per order: failed_setup history only, the order
         // row itself stays pending_setup, and checkout continues.
-        insertOrderStatus(orow.id, "failed_setup", `Order could not be activated after checkout due to error: ${e instanceof Error ? e.message : String(e)}.`);
+        await insertOrderStatus(orow.id, "failed_setup", `Order could not be activated after checkout due to error: ${e instanceof Error ? e.message : String(e)}.`);
       }
     }
   }
-  deleteCartRow(basket.id);
+  await deleteCartRow(basket.id);
   const result = {
     gateway_id: gatewayIdParam,
     invoice_id: invoiceId,
@@ -1855,7 +1853,7 @@ register("admin", "cart", "staff_basket_checkout", (ctx: CallContext) => {
   // mark happens — so it stays present even on a marked-paid checkout.
   if (markPaid && invoiceId !== null && invoiceUnpaid && markGateway) {
     const txnId = ctx.params["transactionId"] !== undefined ? String(ctx.params["transactionId"]).trim() : null;
-    staffMarkInvoicePaid(invoiceId, markGateway, markGateway.gateway === "Custom" ? txnId : null, ctx, rate);
+    await staffMarkInvoicePaid(invoiceId, markGateway, markGateway.gateway === "Custom" ? txnId : null, ctx, rate);
   }
   return result;
 });
@@ -1888,45 +1886,45 @@ function cartSortDesc(params: Record<string, string>): boolean {
   return params["direction"] !== undefined && params["direction"].trim().toUpperCase() === "DESC";
 }
 
-register("admin", "cart", "get_list", (ctx: CallContext) => {
+register("admin", "cart", "get_list", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const { page, perPage } = cartPagination(ctx.params);
   const desc = cartSortDesc(ctx.params);
-  const all = listCarts();
+  const all = await listCarts();
   if (desc) all.reverse();
   const total = all.length;
   // PHP Admin::get_list calls toApiArray($cart) with NO client: a manual
   // promo still prices in, but auto promos never resolve here (unlike
   // staff_basket_get, which passes the basket's client).
-  const list = all
+  const list = await Promise.all(all
     .slice((page - 1) * perPage, page * perPage)
-    .map((cart) => staffCartArray(cart, null));
+    .map(async (cart) => await staffCartArray(cart, null)));
   return { pages: Math.ceil(total / perPage), page, per_page: perPage, total, list };
 });
 
-register("admin", "cart", "get", (ctx: CallContext) => {
+register("admin", "cart", "get", async (ctx: CallContext) => {
   requireAdmin(ctx);
   if (phpEmpty(ctx.params["id"])) throw new FbError("Shopping cart ID is missing");
-  const cart = findCartById(Number(ctx.params["id"]));
+  const cart = await findCartById(Number(ctx.params["id"]));
   if (!cart) throw new FbError("Shopping cart not found");
   // Same no-client rule as get_list (PHP Admin::get → toApiArray($cart)).
-  return staffCartArray(cart, null);
+  return await staffCartArray(cart, null);
 });
 
-register("admin", "cart", "batch_expire", (ctx: CallContext) => {
+register("admin", "cart", "batch_expire", async (ctx: CallContext) => {
   requireAdmin(ctx);
   // 'today' in the server timezone (UTC on the seam) minus 7 days.
   const now = new Date();
   const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const cutoff = new Date(todayUtc.getTime() - 7 * 24 * 60 * 60 * 1000);
   const cutoffStr = cutoff.toISOString().slice(0, 19).replace("T", " ");
-  const expired = getDb()
+  const expired = await getDb()
     .prepare("SELECT id FROM cart WHERE created_at < ? AND session_id NOT LIKE 'staff:%'")
     .all(cutoffStr) as { id: number }[];
   const w = getDbWrite();
   for (const row of expired) {
-    w.prepare("DELETE FROM cart_product WHERE cart_id = ?").run(row.id);
-    w.prepare("DELETE FROM cart WHERE id = ?").run(row.id);
+    await w.prepare("DELETE FROM cart_product WHERE cart_id = ?").run(row.id);
+    await w.prepare("DELETE FROM cart WHERE id = ?").run(row.id);
   }
   return true;
 });

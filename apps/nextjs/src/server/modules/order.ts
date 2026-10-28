@@ -59,14 +59,14 @@ function parseConfig(raw: string | null): unknown {
   }
 }
 
-export function orderArray(
+export async function orderArray(
   order: OrderRowFull,
   admin: boolean,
   detail = false,
   listMode = false,
-): Record<string, unknown> {
-  const client = findClientById(order.client_id);
-  const product = order.product_id ? findProductById(order.product_id) : undefined;
+): Promise<Record<string, unknown>> {
+  const client = await findClientById(order.client_id);
+  const product = order.product_id ? await findProductById(order.product_id) : undefined;
   const out: Record<string, unknown> = {
     id: order.id,
     client_id: order.client_id,
@@ -117,7 +117,7 @@ export function orderArray(
     config: parseConfig(order.config),
     total: round2(order.price * order.quantity - (order.discount ?? 0)),
     meta: [],
-    active_tickets: countActiveTicketsForOrder(order.id),
+    active_tickets: await countActiveTicketsForOrder(order.id),
     client: client ? clientBlock(client) : null,
   };
   if (admin) {
@@ -129,10 +129,10 @@ export function orderArray(
   return out;
 }
 
-function getOrderOrThrow(ctx: CallContext, message = "Order Not Found"): OrderRowFull {
+async function getOrderOrThrow(ctx: CallContext, message = "Order Not Found"): Promise<OrderRowFull> {
   const id = ctx.params["id"];
   if (!id) throw new FbError("Order ID was not passed");
-  const order = findOrderById(Number(id));
+  const order = await findOrderById(Number(id));
   if (!order) throw new FbError(message);
   return order;
 }
@@ -165,23 +165,23 @@ export function fmtTs(d: Date): string {
 
 // --- Admin reads ------------------------------------------------------------
 
-register("admin", "order", "get", (ctx: CallContext) => {
+register("admin", "order", "get", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  return orderArray(getOrderOrThrow(ctx), true, true);
+  return await orderArray(await getOrderOrThrow(ctx), true, true);
 });
 
-register("admin", "order", "get_list", (ctx: CallContext) => {
+register("admin", "order", "get_list", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const filters: { client_id?: number; status?: string; product_id?: number } = {};
   if (ctx.params["client_id"]) filters.client_id = Number(ctx.params["client_id"]);
   if (ctx.params["status"]) filters.status = ctx.params["status"];
   if (ctx.params["product_id"]) filters.product_id = Number(ctx.params["product_id"]);
-  return paginateLocal(listOrders(filters).map((o) => orderArray(o, true, false, true)), ctx.params);
+  return paginateLocal(await Promise.all((await listOrders(filters)).map(async (o) => await orderArray(o, true, false, true))), ctx.params);
 });
 
-register("admin", "order", "get_statuses", (ctx: CallContext) => {
+register("admin", "order", "get_statuses", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const counts = orderStatusCounts();
+  const counts = await orderStatusCounts();
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   return {
     total,
@@ -205,31 +205,31 @@ register("admin", "order", "get_status_pairs", (ctx: CallContext) => {
   };
 });
 
-register("admin", "order", "status_history_get_list", (ctx: CallContext) => {
+register("admin", "order", "status_history_get_list", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const order = getOrderOrThrow(ctx);
-  return paginateLocal(listOrderStatusHistory(order.id), ctx.params);
+  const order = await getOrderOrThrow(ctx);
+  return paginateLocal(await listOrderStatusHistory(order.id), ctx.params);
 });
 
-register("admin", "order", "status_history_add", (ctx: CallContext) => {
+register("admin", "order", "status_history_add", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const order = getOrderOrThrow(ctx);
+  const order = await getOrderOrThrow(ctx);
   const status = ctx.params["status"];
   if (!status) throw new FbError("Order status was not passed");
-  return insertOrderStatusReturningId(order.id, status, ctx.params["notes"] ?? "");
+  return await insertOrderStatusReturningId(order.id, status, ctx.params["notes"] ?? "");
 });
 
-register("admin", "order", "status_history_delete", (ctx: CallContext) => {
+register("admin", "order", "status_history_delete", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const id = ctx.params["id"];
   if (!id) throw new FbError("Order history line ID was not passed");
-  deleteOrderStatusRow(Number(id));
+  await deleteOrderStatusRow(Number(id));
   return true;
 });
 
 // --- Admin create / update ----------------------------------------------------
 
-register("admin", "order", "create", (ctx: CallContext) => {
+register("admin", "order", "create", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const clientId = ctx.params["client_id"];
   const productId = ctx.params["product_id"];
@@ -241,7 +241,7 @@ register("admin", "order", "create", (ctx: CallContext) => {
   const promoCode = (ctx.params["promo_code"] ?? "").trim();
   const promoId = ctx.params["promo_id"];
   if (promoCode !== "" || (promoId !== undefined && promoId !== "" && promoId !== "0")) {
-    requirePermission(ctx, "product", "manage_promos");
+    await requirePermission(ctx, "product", "manage_promos");
   }
   const markPaidRaw =
     ctx.rawParams["mark_invoice_paid"] !== undefined ? ctx.rawParams["mark_invoice_paid"] : ctx.params["mark_invoice_paid"];
@@ -253,14 +253,14 @@ register("admin", "order", "create", (ctx: CallContext) => {
         : typeof markPaidRaw === "string"
           ? ["1", "true", "yes", "on"].includes(markPaidRaw.toLowerCase())
           : false;
-  if (markPaid) requirePermission(ctx, "invoice");
-  const client = findClientById(Number(clientId));
+  if (markPaid) await requirePermission(ctx, "invoice");
+  const client = await findClientById(Number(clientId));
   if (!client) throw new FbError("Client not found");
-  const product = findProductById(Number(productId));
+  const product = await findProductById(Number(productId));
   if (!product) throw new FbError("Product not found");
   const period = ctx.params["period"] || null;
   const payment = product.product_payment_id
-    ? findProductPayment(product.product_payment_id)
+    ? await findProductPayment(product.product_payment_id)
     : undefined;
   // Pricing mirrors getProductOrderLineConfig: an explicit price wins;
   // otherwise once -> once_price, recurrent -> the enabled period's
@@ -279,7 +279,7 @@ register("admin", "order", "create", (ctx: CallContext) => {
     if (!period) {
       throw new FbError(`Product ${product.id} payment type is recurrent, but period was not selected`);
     }
-    const pp = listProductPeriods(payment.id).find((x) => x.code === period && x.enabled);
+    const pp = (await listProductPeriods(payment.id)).find((x) => x.code === period && x.enabled);
     if (!pp) throw new FbError("Selected billing period is not available for this product");
     price = pp.price;
   } else {
@@ -292,11 +292,11 @@ register("admin", "order", "create", (ctx: CallContext) => {
   {
     const wanted = ctx.params["currency"] || client.currency || null;
     if (wanted) {
-      const found = findCurrencyByCode(wanted);
+      const found = await findCurrencyByCode(wanted);
       if (!found) throw new FbError("Currency could not be determined for order");
       currency = found.code;
     } else {
-      const def = getDb().prepare("SELECT code FROM currency WHERE is_default = 1").get() as { code: string } | undefined;
+      const def = await getDb().prepare("SELECT code FROM currency WHERE is_default = 1").get() as { code: string } | undefined;
       if (!def) throw new FbError("Currency could not be determined for order");
       currency = def.code;
     }
@@ -307,7 +307,7 @@ register("admin", "order", "create", (ctx: CallContext) => {
   let groupId: string;
   let groupMaster = 1;
   if (ctx.params["group_id"]) {
-    const parent = listOrders({}).find(
+    const parent = (await listOrders({})).find(
       (o) => o.group_id === ctx.params["group_id"] && o.client_id === client.id,
     );
     if (!parent) throw new FbError(`Parent order ${ctx.params["group_id"]} was not found`);
@@ -330,7 +330,7 @@ register("admin", "order", "create", (ctx: CallContext) => {
   }
   if (period) configObj["period"] = period;
   const configJson = Object.keys(configObj).length ? JSON.stringify(configObj) : "[]";
-  const orderId = insertOrder({
+  const orderId = await insertOrder({
     client_id: client.id,
     product_id: product.id,
     form_id: product.form_id,
@@ -354,11 +354,11 @@ register("admin", "order", "create", (ctx: CallContext) => {
     config: configJson,
     suspension_grace_days: null,
   });
-  insertOrderStatus(orderId, "pending_setup", "Order Created");
+  await insertOrderStatus(orderId, "pending_setup", "Order Created");
 
   if (invoiceOption === "issue-invoice") {
     const total = round2(price * quantity);
-    const invoiceId = prepareInvoice(
+    const invoiceId = await prepareInvoice(
       client,
       [
         {
@@ -376,107 +376,107 @@ register("admin", "order", "create", (ctx: CallContext) => {
       ctx.params["gateway_id"] ? Number(ctx.params["gateway_id"]) : null,
     );
     void total;
-    issueInvoice(invoiceId, client, {});
-    updateOrderRow(orderId, { unpaid_invoice_id: invoiceId });
+    await issueInvoice(invoiceId, client, {});
+    await updateOrderRow(orderId, { unpaid_invoice_id: invoiceId });
   }
   return orderId;
 });
 
-register("admin", "order", "update", (ctx: CallContext) => {
+register("admin", "order", "update", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const order = getOrderOrThrow(ctx);
+  const order = await getOrderOrThrow(ctx);
   const fields: Parameters<typeof updateOrderRow>[1] = {};
   if (ctx.params["notes"] !== undefined) fields.notes = ctx.params["notes"];
   if (ctx.params["reason"] !== undefined) fields.reason = ctx.params["reason"];
   if (ctx.params["expires_at"] !== undefined) fields.expires_at = ctx.params["expires_at"];
-  updateOrderRow(order.id, fields);
+  await updateOrderRow(order.id, fields);
   return true;
 });
 
 // --- State machine --------------------------------------------------------------
 
 /** Shared activation path (single activate + invoice batch job). */
-export function activateOrderRow(order: OrderRowFull): void {
+export async function activateOrderRow(order: OrderRowFull): Promise<void> {
   const now = new Date();
   const config = parseConfig(order.config) as Record<string, unknown>;
   const period = order.period ?? (typeof config["period"] === "string" ? config["period"] : null);
   let serviceId = order.service_id;
   if (serviceId === null && order.service_type === "custom") {
-    serviceId = insertCustomService(order.client_id, order.config);
+    serviceId = await insertCustomService(order.client_id, order.config);
   }
   // PHP createFromOrder extends from the order's EXISTING expiry (or
   // now when unset), not unconditionally from now.
   const from = order.expires_at ? new Date(order.expires_at.replace(" ", "T") + "Z") : now;
-  updateOrderRow(order.id, {
+  await updateOrderRow(order.id, {
     status: "active",
     activated_at: fmtTs(now),
     expires_at: period ? fmtTs(addPeriod(from, period)) : order.expires_at,
     service_id: serviceId,
   });
-  insertOrderStatus(order.id, "active", "Order activated");
+  await insertOrderStatus(order.id, "active", "Order activated");
 }
 
-register("admin", "order", "activate", (ctx: CallContext) => {
+register("admin", "order", "activate", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  activateOrderRow(getOrderOrThrow(ctx));
+  await activateOrderRow(await getOrderOrThrow(ctx));
   return true;
 });
 
 // --- Batch jobs (cron) ---------------------------------------------------------
 
-export function runBatchSuspendExpired(): void {
+export async function runBatchSuspendExpired(): Promise<void> {
   const now = fmtTs(new Date());
-  for (const order of listOrders({ status: "active" })) {
+  for (const order of await listOrders({ status: "active" })) {
     if (order.expires_at && order.expires_at < now) {
-      updateOrderRow(order.id, {
+      await updateOrderRow(order.id, {
         status: "suspended",
         suspended_at: now,
         reason: "Expired",
       });
-      insertOrderStatus(order.id, "suspended", "Order suspended (expired)");
+      await insertOrderStatus(order.id, "suspended", "Order suspended (expired)");
     }
   }
 }
 
-export function runBatchCancelSuspended(): boolean {
+export async function runBatchCancelSuspended(): Promise<boolean> {
   const cutoff = fmtTs(new Date(Date.now() - 30 * 24 * 3600 * 1000));
   let any = false;
-  for (const order of listOrders({ status: "suspended" })) {
+  for (const order of await listOrders({ status: "suspended" })) {
     if (order.suspended_at && order.suspended_at < cutoff) {
-      updateOrderRow(order.id, { status: "canceled", canceled_at: fmtTs(new Date()) });
-      insertOrderStatus(order.id, "canceled", "Order canceled (suspended too long)");
+      await updateOrderRow(order.id, { status: "canceled", canceled_at: fmtTs(new Date()) });
+      await insertOrderStatus(order.id, "canceled", "Order canceled (suspended too long)");
       any = true;
     }
   }
   return any;
 }
 
-export function runBatchCancelUnpaid(): boolean {
+export async function runBatchCancelUnpaid(): Promise<boolean> {
   const cutoff = fmtTs(new Date(Date.now() - 7 * 24 * 3600 * 1000));
   let any = false;
-  for (const order of listOrders({ status: "pending_setup" })) {
+  for (const order of await listOrders({ status: "pending_setup" })) {
     if (!order.created_at || order.created_at >= cutoff) continue;
-    updateOrderRow(order.id, { status: "canceled", canceled_at: fmtTs(new Date()) });
-    insertOrderStatus(order.id, "canceled", "Order canceled (unpaid)");
+    await updateOrderRow(order.id, { status: "canceled", canceled_at: fmtTs(new Date()) });
+    await insertOrderStatus(order.id, "canceled", "Order canceled (unpaid)");
     any = true;
   }
   return any;
 }
 
-register("admin", "order", "batch_suspend_expired", (ctx: CallContext) => {
+register("admin", "order", "batch_suspend_expired", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  runBatchSuspendExpired();
+  await runBatchSuspendExpired();
   return true;
 });
 
-register("admin", "order", "batch_cancel_suspended", (ctx: CallContext) => {
+register("admin", "order", "batch_cancel_suspended", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  return runBatchCancelSuspended();
+  return await runBatchCancelSuspended();
 });
 
-register("admin", "order", "batch_cancel_unpaid", (ctx: CallContext) => {
+register("admin", "order", "batch_cancel_unpaid", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  return runBatchCancelUnpaid();
+  return await runBatchCancelUnpaid();
 });
 
 register("admin", "order", "batch_send_suspension_warnings", (ctx: CallContext) => {
@@ -484,54 +484,54 @@ register("admin", "order", "batch_send_suspension_warnings", (ctx: CallContext) 
   return true;
 });
 
-register("admin", "order", "suspend", (ctx: CallContext) => {
+register("admin", "order", "suspend", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const order = getOrderOrThrow(ctx);
+  const order = await getOrderOrThrow(ctx);
   if (order.status !== "active") {
     throw new FbError("Only active orders can be suspended");
   }
-  updateOrderRow(order.id, {
+  await updateOrderRow(order.id, {
     status: "suspended",
     suspended_at: fmtTs(new Date()),
     reason: ctx.params["reason"] ?? order.reason,
   });
-  insertOrderStatus(order.id, "suspended", ctx.params["reason"] ?? "Order suspended");
+  await insertOrderStatus(order.id, "suspended", ctx.params["reason"] ?? "Order suspended");
   return true;
 });
 
-register("admin", "order", "unsuspend", (ctx: CallContext) => {
+register("admin", "order", "unsuspend", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const order = getOrderOrThrow(ctx);
+  const order = await getOrderOrThrow(ctx);
   if (order.status !== "suspended") {
     throw new FbError("Only suspended orders can be unsuspended");
   }
-  updateOrderRow(order.id, { status: "active", unsuspended_at: fmtTs(new Date()) });
-  insertOrderStatus(order.id, "active", "Order unsuspended");
+  await updateOrderRow(order.id, { status: "active", unsuspended_at: fmtTs(new Date()) });
+  await insertOrderStatus(order.id, "active", "Order unsuspended");
   return true;
 });
 
-register("admin", "order", "cancel", (ctx: CallContext) => {
+register("admin", "order", "cancel", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const order = getOrderOrThrow(ctx);
+  const order = await getOrderOrThrow(ctx);
   if (order.status === "pending_setup") {
     throw new FbError("Cannot cancel pending_setup order");
   }
   if (order.status === "canceled") {
     throw new FbError("Order is already canceled");
   }
-  updateOrderRow(order.id, { status: "canceled", canceled_at: fmtTs(new Date()) });
-  insertOrderStatus(order.id, "canceled", ctx.params["reason"] ?? "Order canceled");
+  await updateOrderRow(order.id, { status: "canceled", canceled_at: fmtTs(new Date()) });
+  await insertOrderStatus(order.id, "canceled", ctx.params["reason"] ?? "Order canceled");
   return true;
 });
 
-register("admin", "order", "uncancel", (ctx: CallContext) => {
+register("admin", "order", "uncancel", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const order = getOrderOrThrow(ctx);
+  const order = await getOrderOrThrow(ctx);
   if (order.status !== "canceled") {
     throw new FbError("Only canceled orders can be uncanceled");
   }
-  updateOrderRow(order.id, { status: "active", canceled_at: null });
-  insertOrderStatus(order.id, "active", "Order uncanceled");
+  await updateOrderRow(order.id, { status: "active", canceled_at: null });
+  await insertOrderStatus(order.id, "active", "Order uncanceled");
   return true;
 });
 
@@ -541,79 +541,79 @@ register("admin", "order", "uncancel", (ctx: CallContext) => {
  * Service-module deletes for non-custom types are PHP-side work the
  * TS seam cannot run (documented gap); on this install every order
  * is custom, and null-plugin custom deletes are no-ops in PHP too. */
-export function deleteOrderFull(order: OrderRowFull, forceDelete = false): void {
+export async function deleteOrderFull(order: OrderRowFull, forceDelete = false): Promise<void> {
   const w = getDbWrite();
   void forceDelete; // only changes adapter-error handling, which TS skips
   if (order.status === "pending_setup") {
-    w.prepare("DELETE FROM invoice_item WHERE rel_id = ? AND status = 'pending_payment'").run(String(order.id));
+    await w.prepare("DELETE FROM invoice_item WHERE rel_id = ? AND status = 'pending_payment'").run(String(order.id));
   }
   // Release reserved promo redemptions (any phase) + decrement usage
   // for checkout-phase ones, mirroring releasePromoRedemptions.
-  const reserved = getDb()
+  const reserved = await getDb()
     .prepare("SELECT id, promo_id, phase FROM promo_redemption WHERE client_order_id = ? AND status = 'reserved'")
     .all(order.id) as { id: number; promo_id: number; phase: string }[];
   if (reserved.length) {
     const now = fmtTs(new Date());
     const checkoutCounts = new Map<number, number>();
     for (const r of reserved) {
-      w.prepare("UPDATE promo_redemption SET status = 'released', released_at = ?, release_reason = 'order_deleted', updated_at = ? WHERE id = ?").run(now, now, r.id);
+      await w.prepare("UPDATE promo_redemption SET status = 'released', released_at = ?, release_reason = 'order_deleted', updated_at = ? WHERE id = ?").run(now, now, r.id);
       if (r.phase === "checkout") checkoutCounts.set(r.promo_id, (checkoutCounts.get(r.promo_id) ?? 0) + 1);
     }
     for (const [promoId, count] of checkoutCounts) {
-      w.prepare("UPDATE promo SET used = MAX(COALESCE(used, 0) - ?, 0), updated_at = ? WHERE id = ?").run(count, now, promoId);
+      await w.prepare("UPDATE promo SET used = MAX(COALESCE(used, 0) - ?, 0), updated_at = ? WHERE id = ?").run(count, now, promoId);
     }
   }
   // Release a stock reservation, if one was recorded in order meta.
-  const meta = getDb().prepare("SELECT id, value FROM client_order_meta WHERE client_order_id = ? AND name = 'stock_reserved_qty'").get(order.id) as
+  const meta = await getDb().prepare("SELECT id, value FROM client_order_meta WHERE client_order_id = ? AND name = 'stock_reserved_qty'").get(order.id) as
     | { id: number; value: string }
     | undefined;
   if (meta) {
     const qty = parseInt(meta.value, 10) || 0;
-    w.prepare("DELETE FROM client_order_meta WHERE id = ?").run(meta.id);
+    await w.prepare("DELETE FROM client_order_meta WHERE id = ?").run(meta.id);
     if (qty > 0 && order.product_id) {
-      w.prepare("UPDATE product SET quantity_in_stock = COALESCE(quantity_in_stock, 0) + ? WHERE id = ?").run(qty, order.product_id);
+      await w.prepare("UPDATE product SET quantity_in_stock = COALESCE(quantity_in_stock, 0) + ? WHERE id = ?").run(qty, order.product_id);
     }
   }
-  w.prepare("DELETE FROM client_order_status WHERE client_order_id = ?").run(order.id);
-  w.prepare("DELETE FROM client_order_meta WHERE client_order_id = ?").run(order.id);
+  await w.prepare("DELETE FROM client_order_status WHERE client_order_id = ?").run(order.id);
+  await w.prepare("DELETE FROM client_order_meta WHERE client_order_id = ?").run(order.id);
   if (order.service_type === "custom" && order.service_id !== null) {
-    w.prepare("DELETE FROM service_custom WHERE id = ?").run(order.service_id);
+    await w.prepare("DELETE FROM service_custom WHERE id = ?").run(order.service_id);
   }
-  w.prepare("DELETE FROM client_order WHERE id = ?").run(order.id);
+  await w.prepare("DELETE FROM client_order WHERE id = ?").run(order.id);
 }
 
-register("admin", "order", "delete", (ctx: CallContext) => {
+register("admin", "order", "delete", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const order = getOrderOrThrow(ctx);
+  const order = await getOrderOrThrow(ctx);
   const deleteAddons = normalizeBool(ctx.params["delete_addons"]);
   const forceDelete = normalizeBool(ctx.params["force_delete"]);
   if (deleteAddons) {
-    for (const addon of getOrderAddonsList(order)) {
-      deleteOrderFull(addon, forceDelete);
+    for (const addon of await getOrderAddonsList(order)) {
+      await deleteOrderFull(addon, forceDelete);
     }
   }
-  deleteOrderFull(order, forceDelete);
+  await deleteOrderFull(order, forceDelete);
   return true;
 });
 
 // --- Client -------------------------------------------------------------------
 
-register("client", "order", "get", (ctx: CallContext) => {
+register("client", "order", "get", async (ctx: CallContext) => {
   requireClient(ctx);
-  const order = getOrderOrThrow(ctx, "Order not found");
+  const order = await getOrderOrThrow(ctx, "Order not found");
   if (order.client_id !== ctx.session!.client!.id) {
     throw new FbError("Order not found");
   }
-  return orderArray(order, false);
+  return await orderArray(order, false);
 });
 
-register("client", "order", "get_list", (ctx: CallContext) => {
+register("client", "order", "get_list", async (ctx: CallContext) => {
   requireClient(ctx);
   const filters: { client_id?: number; status?: string } = {
     client_id: ctx.session!.client!.id,
   };
   if (ctx.params["status"]) filters.status = ctx.params["status"];
-  return paginateLocal(listOrders(filters).map((o) => orderArray(o, false, false, true)), ctx.params);
+  return paginateLocal(await Promise.all((await listOrders(filters)).map(async (o) => await orderArray(o, false, false, true))), ctx.params);
 });
 
 /* ------------------------------------------------------------------ */
@@ -629,35 +629,35 @@ function normalizeBool(v: string | undefined): boolean {
   return false;
 }
 
-function getOrderOrThrowAdmin(ctx: CallContext): OrderRowFull {
+async function getOrderOrThrowAdmin(ctx: CallContext): Promise<OrderRowFull> {
   const id = ctx.params["id"];
   if (!id) throw new FbError("Order ID was not passed");
-  const order = findOrderById(Number(id));
+  const order = await findOrderById(Number(id));
   if (!order) throw new FbError("Order Not Found");
   return order;
 }
 
-function getOrderOrThrowClient(ctx: CallContext): OrderRowFull {
+async function getOrderOrThrowClient(ctx: CallContext): Promise<OrderRowFull> {
   const id = ctx.params["id"];
   if (!id) throw new FbError("Order id required");
-  const order = findOrderById(Number(id));
+  const order = await findOrderById(Number(id));
   if (!order || order.client_id !== ctx.session!.client!.id) throw new FbError("Order not found");
   return order;
 }
 
 /** Same group + client, not a master, excluding the order itself. */
-function getOrderAddonsList(order: OrderRowFull): OrderRowFull[] {
+async function getOrderAddonsList(order: OrderRowFull): Promise<OrderRowFull[]> {
   if (!order.group_id) return [];
   // PHP's repository query has no ORDER BY: rowid (id ASC) order.
-  return listOrders({})
+  return (await listOrders({}))
     .filter(
       (o) => o.group_id === order.group_id && o.client_id === order.client_id && o.id !== order.id && !o.group_master,
     )
     .sort((a, b) => a.id - b.id);
 }
 
-function customServiceArray(serviceId: number): Record<string, unknown> | null {
-  const row = getDb().prepare("SELECT id, client_id, plugin, config, created_at, updated_at FROM service_custom WHERE id = ?").get(serviceId) as
+async function customServiceArray(serviceId: number): Promise<Record<string, unknown> | null> {
+  const row = await getDb().prepare("SELECT id, client_id, plugin, config, created_at, updated_at FROM service_custom WHERE id = ?").get(serviceId) as
     | { id: number; client_id: number; plugin: string | null; config: string | null; created_at: string | null; updated_at: string | null }
     | undefined;
   if (!row) return null;
@@ -844,8 +844,8 @@ function hostingHpArray(hp: HostingHpRow): Record<string, unknown> {
   };
 }
 
-function hostingServiceArray(order: OrderRowFull, isAdmin: boolean): Record<string, unknown> | null {
-  const row = getDb()
+async function hostingServiceArray(order: OrderRowFull, isAdmin: boolean): Promise<Record<string, unknown> | null> {
+  const row = await getDb()
     .prepare("SELECT * FROM service_hosting WHERE id = ?")
     .get(String(order.service_id)) as unknown as
     | {
@@ -860,11 +860,11 @@ function hostingServiceArray(order: OrderRowFull, isAdmin: boolean): Record<stri
       }
     | undefined;
   if (!row) return null;
-  const server = getDb()
+  const server = await getDb()
     .prepare("SELECT * FROM service_hosting_server WHERE id = ?")
     .get(String(row.service_hosting_server_id)) as unknown as HostingServerRow | undefined;
   if (!server) throw new FbError("Server not found");
-  const hp = getDb()
+  const hp = await getDb()
     .prepare("SELECT * FROM service_hosting_hp WHERE id = ?")
     .get(String(row.service_hosting_hp_id)) as unknown as HostingHpRow | undefined;
   if (!hp) throw new FbError("Hosting plan not found");
@@ -877,7 +877,7 @@ function hostingServiceArray(order: OrderRowFull, isAdmin: boolean): Record<stri
     const domain = cfg["domain"] as Record<string, unknown> | undefined;
     const action = domain?.["action"];
     if ((action === "register" || action === "transfer") && order.group_id !== null && order.group_id !== undefined) {
-      const rel = getDb()
+      const rel = await getDb()
         .prepare("SELECT id FROM client_order WHERE group_id = ? AND service_type = 'domain' ORDER BY id ASC LIMIT 1")
         .get(String(order.group_id)) as unknown as { id: number } | undefined;
       domainOrderId = rel ? rel.id : null;
@@ -906,8 +906,8 @@ function phpIntCast(v: unknown): number | null {
   return m ? parseInt(m[0], 10) : 0;
 }
 
-function domainServiceArray(order: OrderRowFull, isAdmin: boolean): Record<string, unknown> | null {
-  const row = getDb()
+async function domainServiceArray(order: OrderRowFull, isAdmin: boolean): Promise<Record<string, unknown> | null> {
+  const row = await getDb()
     .prepare("SELECT * FROM service_domain WHERE id = ?")
     .get(String(order.service_id)) as unknown as
     | {
@@ -974,7 +974,7 @@ function domainServiceArray(order: OrderRowFull, isAdmin: boolean): Record<strin
   if (isAdmin) {
     out["transfer_code"] = row.transfer_code;
     const reg = row.tld_registrar_id
-      ? (getDb().prepare("SELECT name FROM tld_registrar WHERE id = ?").get(String(row.tld_registrar_id)) as unknown as
+      ? (await getDb().prepare("SELECT name FROM tld_registrar WHERE id = ?").get(String(row.tld_registrar_id)) as unknown as
           | { name: string | null }
           | undefined)
       : undefined;
@@ -983,8 +983,8 @@ function domainServiceArray(order: OrderRowFull, isAdmin: boolean): Record<strin
   return out;
 }
 
-function licenseServiceArray(order: OrderRowFull, isAdmin: boolean): Record<string, unknown> | null {
-  const row = getDb()
+async function licenseServiceArray(order: OrderRowFull, isAdmin: boolean): Promise<Record<string, unknown> | null> {
+  const row = await getDb()
     .prepare("SELECT * FROM service_license WHERE id = ?")
     .get(String(order.service_id)) as unknown as
     | {
@@ -1018,12 +1018,12 @@ function licenseServiceArray(order: OrderRowFull, isAdmin: boolean): Record<stri
   return out;
 }
 
-function downloadableServiceArray(order: OrderRowFull, isAdmin: boolean): Record<string, unknown> | null {
-  const row = getDb()
+async function downloadableServiceArray(order: OrderRowFull, isAdmin: boolean): Promise<Record<string, unknown> | null> {
+  const row = await getDb()
     .prepare("SELECT id FROM service_downloadable WHERE id = ?")
     .get(String(order.service_id)) as unknown as { id: number } | undefined;
   if (!row) return null;
-  const files = getDb()
+  const files = await getDb()
     .prepare(
       "SELECT * FROM service_downloadable_file WHERE service_downloadable_id = ? ORDER BY sort_order ASC, id ASC",
     )
@@ -1055,19 +1055,19 @@ function downloadableServiceArray(order: OrderRowFull, isAdmin: boolean): Record
   };
 }
 
-function orderServiceData(order: OrderRowFull, isAdmin: boolean): Record<string, unknown> | null {
+async function orderServiceData(order: OrderRowFull, isAdmin: boolean): Promise<Record<string, unknown> | null> {
   if (order.service_id === null) return null;
   switch (order.service_type) {
     case "custom":
-      return customServiceArray(order.service_id);
+      return await customServiceArray(order.service_id);
     case "hosting":
-      return hostingServiceArray(order, isAdmin);
+      return await hostingServiceArray(order, isAdmin);
     case "domain":
-      return domainServiceArray(order, isAdmin);
+      return await domainServiceArray(order, isAdmin);
     case "license":
-      return licenseServiceArray(order, isAdmin);
+      return await licenseServiceArray(order, isAdmin);
     case "downloadable":
-      return downloadableServiceArray(order, isAdmin);
+      return await downloadableServiceArray(order, isAdmin);
     default:
       return null;
   }
@@ -1081,24 +1081,24 @@ register("admin", "order", "get_invoice_options", (ctx: CallContext) => {
   };
 });
 
-register("admin", "order", "service", (ctx: CallContext) => {
+register("admin", "order", "service", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  return orderServiceData(getOrderOrThrowAdmin(ctx), true);
+  return await orderServiceData(await getOrderOrThrowAdmin(ctx), true);
 });
 
-register("admin", "order", "addons", (ctx: CallContext) => {
+register("admin", "order", "addons", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  return getOrderAddonsList(getOrderOrThrowAdmin(ctx)).map((o) => orderArray(o, false));
+  return await Promise.all((await getOrderAddonsList(await getOrderOrThrowAdmin(ctx))).map(async (o) => await orderArray(o, false)));
 });
 
-register("admin", "order", "can_cancel_at_period_end", (ctx: CallContext) => {
+register("admin", "order", "can_cancel_at_period_end", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const order = getOrderOrThrowAdmin(ctx);
+  const order = await getOrderOrThrowAdmin(ctx);
   // Active subscriptions (via invoice items on the order's invoices)
   // with a non-empty sid, whose gateway adapter implements
   // cancelSubscriptionAtPeriodEnd. Only Stripe implements it among
   // the bundled adapters.
-  const subs = getDb().prepare(
+  const subs = await getDb().prepare(
     `SELECT DISTINCT s.sid, s.pay_gateway_id, s.status FROM subscription s
      JOIN invoice_item ii ON ii.invoice_id = s.rel_id
      WHERE s.rel_type = 'invoice' AND ii.type = 'order' AND ii.rel_id = ? AND s.status = 'active'`,
@@ -1106,13 +1106,13 @@ register("admin", "order", "can_cancel_at_period_end", (ctx: CallContext) => {
   if (subs.length === 0) return false;
   for (const sub of subs) {
     if ((sub.sid ?? "").trim() === "") return false;
-    const gw = sub.pay_gateway_id ? getDb().prepare("SELECT gateway FROM pay_gateway WHERE id = ?").get(sub.pay_gateway_id) as { gateway: string } | undefined : undefined;
+    const gw = sub.pay_gateway_id ? await getDb().prepare("SELECT gateway FROM pay_gateway WHERE id = ?").get(sub.pay_gateway_id) as { gateway: string } | undefined : undefined;
     if (!gw || gw.gateway !== "Stripe") return false;
   }
   return true;
 });
 
-register("admin", "order", "update_config", (ctx: CallContext) => {
+register("admin", "order", "update_config", async (ctx: CallContext) => {
   requireAdmin(ctx);
   // Dispatcher RequiredParams runs first: missing/empty config beats
   // a missing id, with the same message either way.
@@ -1129,12 +1129,12 @@ register("admin", "order", "update_config", (ctx: CallContext) => {
     if (Object.keys(scanned).length) config = scanned;
   }
   if (!config || Object.keys(config).length === 0) throw new FbError("Order config not passed");
-  const order = getOrderOrThrowAdmin(ctx);
+  const order = await getOrderOrThrowAdmin(ctx);
   // Form-linked orders merge form answers in PHP (formbuilder is
   // unported); on this install no order has a form_id, so the plain
   // wholesale replacement below is exact. Form orders are a
   // documented gap.
-  getDbWrite().prepare("UPDATE client_order SET config = ?, updated_at = ? WHERE id = ?").run(
+  await getDbWrite().prepare("UPDATE client_order SET config = ?, updated_at = ? WHERE id = ?").run(
     JSON.stringify(config), fmtTs(new Date()), order.id,
   );
   return true;
@@ -1144,9 +1144,9 @@ register("admin", "order", "update_config", (ctx: CallContext) => {
  * the expiry by the order's period (from the current expiry, per the
  * default renewal logic) and re-activates. Service-module renew calls
  * are no-ops for null-plugin custom orders. */
-function renewOrderRow(order: OrderRowFull): void {
+async function renewOrderRow(order: OrderRowFull): Promise<void> {
   if (order.status === "pending_setup" || order.status === "failed_setup") {
-    activateOrderRow(order);
+    await activateOrderRow(order);
     return;
   }
   const from = order.expires_at ? new Date(order.expires_at.replace(" ", "T") + "Z") : new Date();
@@ -1160,18 +1160,18 @@ function renewOrderRow(order: OrderRowFull): void {
   if (period) {
     (updates as Record<string, unknown>)["expires_at"] = fmtTs(addPeriod(from, period));
   }
-  updateOrderRow(order.id, updates);
-  insertOrderStatus(order.id, "active", "Order renewed");
+  await updateOrderRow(order.id, updates);
+  await insertOrderStatus(order.id, "active", "Order renewed");
 }
 
-register("admin", "order", "renew", (ctx: CallContext) => {
+register("admin", "order", "renew", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const order = getOrderOrThrowAdmin(ctx);
-  renewOrderRow(order);
+  const order = await getOrderOrThrowAdmin(ctx);
+  await renewOrderRow(order);
   return true;
 });
 
-register("admin", "order", "batch_delete", (ctx: CallContext) => {
+register("admin", "order", "batch_delete", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const raw = ctx.rawParams?.["ids"];
   let ids: unknown[] | undefined;
@@ -1189,14 +1189,14 @@ register("admin", "order", "batch_delete", (ctx: CallContext) => {
   const deleteAddons = normalizeBool(ctx.params["delete_addons"]);
   const forceDelete = normalizeBool(ctx.params["force_delete"]);
   for (const id of ids) {
-    const order = findOrderById(Number(id));
+    const order = await findOrderById(Number(id));
     if (!order) throw new FbError("Order Not Found");
     if (deleteAddons) {
-      for (const addon of getOrderAddonsList(order)) {
-        deleteOrderFull(addon, forceDelete);
+      for (const addon of await getOrderAddonsList(order)) {
+        await deleteOrderFull(addon, forceDelete);
       }
     }
-    deleteOrderFull(order, forceDelete);
+    await deleteOrderFull(order, forceDelete);
   }
   return true;
 });
@@ -1205,22 +1205,22 @@ register("admin", "order", "batch_delete", (ctx: CallContext) => {
 // download, like client/invoice export_csv; it stays PHP-served
 // through the proxy (binary-safe since the arrayBuffer fix).
 
-register("client", "order", "addons", (ctx: CallContext) => {
+register("client", "order", "addons", async (ctx: CallContext) => {
   requireClient(ctx);
-  return getOrderAddonsList(getOrderOrThrowClient(ctx)).map((o) => orderArray(o, false));
+  return await Promise.all((await getOrderAddonsList(await getOrderOrThrowClient(ctx))).map(async (o) => await orderArray(o, false)));
 });
 
-register("client", "order", "service", (ctx: CallContext) => {
+register("client", "order", "service", async (ctx: CallContext) => {
   requireClient(ctx);
-  const order = getOrderOrThrowClient(ctx);
+  const order = await getOrderOrThrowClient(ctx);
   if (order.status !== "active") throw new FbError("Order is not active");
-  return orderServiceData(order, false);
+  return await orderServiceData(order, false);
 });
 
-register("client", "order", "upgradables", (ctx: CallContext) => {
+register("client", "order", "upgradables", async (ctx: CallContext) => {
   requireClient(ctx);
-  const order = getOrderOrThrowClient(ctx);
-  const product = order.product_id ? findProductById(order.product_id) : undefined;
+  const order = await getOrderOrThrowClient(ctx);
+  const product = order.product_id ? await findProductById(order.product_id) : undefined;
   if (!product) return [];
   let upgradeIds: unknown[] = [];
   try {
@@ -1228,20 +1228,20 @@ register("client", "order", "upgradables", (ctx: CallContext) => {
     upgradeIds = Array.isArray(parsed) ? parsed : [];
   } catch { /* keep [] */ }
   const out: Record<string, string> = {};
-  for (const p of listAllProducts()) {
+  for (const p of await listAllProducts()) {
     if (upgradeIds.map(Number).includes(p.id) && p.id !== product.id) out[String(p.id)] = p.title;
   }
   // PHP's empty array encodes as [], not {}.
   return Object.keys(out).length ? out : [];
 });
 
-register("client", "order", "delete", (ctx: CallContext) => {
+register("client", "order", "delete", async (ctx: CallContext) => {
   requireClient(ctx);
-  const order = getOrderOrThrowClient(ctx);
+  const order = await getOrderOrThrowClient(ctx);
   if (order.status !== "pending_setup" && order.status !== "failed_setup") {
     throw new FbError("Only pending and failed setup orders can be deleted.");
   }
-  deleteOrderFull(order);
+  await deleteOrderFull(order);
   return true;
 });
 
@@ -1260,9 +1260,9 @@ const ORDER_DEFAULT_EXPORT = [
   "period", "quantity", "price", "discount", "status", "reason", "notes",
 ];
 
-register("admin", "order", "export_csv", (ctx: CallContext) => {
+register("admin", "order", "export_csv", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  return exportCsvResponse(
+  return await exportCsvResponse(
     "client_order",
     "orders.csv",
     ORDER_EXPORTABLE,

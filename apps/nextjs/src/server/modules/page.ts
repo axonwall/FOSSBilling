@@ -25,9 +25,9 @@ function labelFor(fileName: string): string {
     .join(" ");
 }
 
-register("admin", "page", "get_pairs", (ctx) => {
+register("admin", "page", "get_pairs", async (ctx) => {
   requireAdmin(ctx);
-  const theme = getSetting("theme");
+  const theme = await getSetting("theme");
   const themeCode = theme && theme !== "" ? theme : "default/client";
   const src = process.env.FOSSBILLING_PHP_SRC ?? "";
   const dirs = src

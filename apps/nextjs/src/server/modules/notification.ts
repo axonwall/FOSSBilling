@@ -26,23 +26,23 @@ function metaToApi(r: MetaRow) {
   };
 }
 
-function baseRows(): MetaRow[] {
-  return getDb().prepare(
+async function baseRows(): Promise<MetaRow[]> {
+  return await getDb().prepare(
     "SELECT * FROM extension_meta WHERE extension = 'mod_notification' AND meta_key = 'message'"
   ).all() as unknown as MetaRow[];
 }
 
-function getOrThrow(id: number): MetaRow {
-  const row = getDb().prepare(
+async function getOrThrow(id: number): Promise<MetaRow> {
+  const row = await getDb().prepare(
     "SELECT * FROM extension_meta WHERE extension = 'mod_notification' AND meta_key = 'message' AND id = ?"
   ).get(id) as unknown as MetaRow | undefined;
   if (!row) throw new FbError("Notification message was not found");
   return row;
 }
 
-register("admin", "notification", "get_list", (ctx) => {
+register("admin", "notification", "get_list", async (ctx) => {
   requireAdmin(ctx);
-  let rows = baseRows();
+  let rows = await baseRows();
   const p = ctx.params;
   if (p.id) rows = rows.filter((r) => r.id === parseInt(p.id, 10));
   if (p.search) rows = rows.filter((r) => String(r.meta_value ?? "").toLowerCase().includes(p.search.toLowerCase()));
@@ -70,34 +70,32 @@ register("admin", "notification", "get_list", (ctx) => {
   return pagerOut;
 });
 
-register("admin", "notification", "get", (ctx) => {
+register("admin", "notification", "get", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params.id) throw new FbError("Notification ID was not passed");
-  return metaToApi(getOrThrow(parseInt(ctx.params.id, 10)));
+  return metaToApi(await getOrThrow(parseInt(ctx.params.id, 10)));
 });
 
-register("admin", "notification", "add", (ctx) => {
+register("admin", "notification", "add", async (ctx) => {
   requireAdmin(ctx);
   // PHP returns false (not an error) when no message was passed.
   if (ctx.params.message === undefined || ctx.params.message === null) return false;
   const now = nowTimestamp();
-  const info = getDbWrite().prepare(
-    `INSERT INTO extension_meta (client_id, extension, rel_type, rel_id, meta_key, meta_value, created_at, updated_at)
-     VALUES (NULL, 'mod_notification', 'staff', '1', 'message', ?, ?, ?)`
-  ).run(ctx.params.message, now, now);
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId(`INSERT INTO extension_meta (client_id, extension, rel_type, rel_id, meta_key, meta_value, created_at, updated_at)
+     VALUES (NULL, 'mod_notification', 'staff', '1', 'message', ?, ?, ?)`, ctx.params.message, now, now);
+  return Number(info);
 });
 
-register("admin", "notification", "delete", (ctx) => {
+register("admin", "notification", "delete", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params.id) throw new FbError("Notification ID was not passed");
-  const row = getOrThrow(parseInt(ctx.params.id, 10));
-  getDbWrite().prepare("DELETE FROM extension_meta WHERE id = ?").run(row.id);
+  const row = await getOrThrow(parseInt(ctx.params.id, 10));
+  await getDbWrite().prepare("DELETE FROM extension_meta WHERE id = ?").run(row.id);
   return true;
 });
 
-register("admin", "notification", "delete_all", (ctx) => {
+register("admin", "notification", "delete_all", async (ctx) => {
   requireAdmin(ctx);
-  getDbWrite().prepare("DELETE FROM extension_meta WHERE extension = 'mod_notification' AND meta_key = 'message'").run();
+  await getDbWrite().prepare("DELETE FROM extension_meta WHERE extension = 'mod_notification' AND meta_key = 'message'").run();
   return true;
 });

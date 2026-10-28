@@ -86,8 +86,8 @@ function namedParams(sql: string, params: Record<string, string>): Record<string
   return out;
 }
 
-function countWhere(table: string, where: string, params: Record<string, string>): number {
-  const row = getDb().prepare(`SELECT COUNT(1) AS c FROM ${table} WHERE ${where}`).get(namedParams(where, params)) as { c: number };
+async function countWhere(table: string, where: string, params: Record<string, string>): Promise<number> {
+  const row = await getDb().prepare(`SELECT COUNT(1) AS c FROM ${table} WHERE ${where}`).get(namedParams(where, params)) as { c: number };
   return row.c;
 }
 
@@ -132,41 +132,41 @@ function keyValue(rows: { [k: string]: unknown }[], keyCol: string, valCol: stri
   return out;
 }
 
-register("admin", "stats", "get_summary", (ctx) => {
+register("admin", "stats", "get_summary", async (ctx) => {
   requireAdmin(ctx);
   const b = dayBoundaries();
   const stats: Record<string, number> = {};
   for (const [table, prefix] of [["client", "clients"], ["client_order", "orders"], ["invoice", "invoices"], ["support_ticket", "tickets"]] as const) {
-    const total = getDb().prepare(`SELECT COUNT(1) AS c FROM ${table}`).get() as { c: number };
+    const total = await getDb().prepare(`SELECT COUNT(1) AS c FROM ${table}`).get() as { c: number };
     stats[`${prefix}_total`] = total.c;
-    stats[`${prefix}_today`] = countWhere(table, "created_at >= :today_start AND created_at < :tomorrow_start", b);
-    stats[`${prefix}_yesterday`] = countWhere(table, "created_at >= :yesterday_start AND created_at < :today_start", b);
-    stats[`${prefix}_this_month`] = countWhere(table, "created_at >= :month_start AND created_at < :next_month_start", b);
-    stats[`${prefix}_last_month`] = countWhere(table, "created_at >= :last_month_start AND created_at < :month_start", b);
+    stats[`${prefix}_today`] = await countWhere(table, "created_at >= :today_start AND created_at < :tomorrow_start", b);
+    stats[`${prefix}_yesterday`] = await countWhere(table, "created_at >= :yesterday_start AND created_at < :today_start", b);
+    stats[`${prefix}_this_month`] = await countWhere(table, "created_at >= :month_start AND created_at < :next_month_start", b);
+    stats[`${prefix}_last_month`] = await countWhere(table, "created_at >= :last_month_start AND created_at < :month_start", b);
   }
   return stats;
 });
 
-register("admin", "stats", "get_summary_income", (ctx) => {
+register("admin", "stats", "get_summary_income", async (ctx) => {
   requireAdmin(ctx);
   const b = dayBoundaries();
   const base = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE issued = 1 AND (status = 'paid' OR status = 'refunded')";
-  const sum = (where: string, params: Record<string, string>): number => {
-    const row = getDb().prepare(`${base} ${where}`).get(namedParams(where, params)) as { income: number };
+  const sum = async (where: string, params: Record<string, string>): Promise<number> => {
+    const row = await getDb().prepare(`${base} ${where}`).get(namedParams(where, params)) as { income: number };
     return row.income;
   };
   return {
-    total: sum("", {}),
-    today: sum("AND paid_at >= :today_start AND paid_at < :tomorrow_start", b),
-    yesterday: sum("AND paid_at >= :yesterday_start AND paid_at < :today_start", b),
-    this_month: sum("AND paid_at >= :month_start AND paid_at < :next_month_start", b),
-    last_month: sum("AND paid_at >= :last_month_start AND paid_at < :month_start", b),
+    total: await sum("", {}),
+    today: await sum("AND paid_at >= :today_start AND paid_at < :tomorrow_start", b),
+    yesterday: await sum("AND paid_at >= :yesterday_start AND paid_at < :today_start", b),
+    this_month: await sum("AND paid_at >= :month_start AND paid_at < :next_month_start", b),
+    last_month: await sum("AND paid_at >= :last_month_start AND paid_at < :month_start", b),
   };
 });
 
-register("admin", "stats", "get_orders_statuses", (ctx) => {
+register("admin", "stats", "get_orders_statuses", async (ctx) => {
   requireAdmin(ctx);
-  const c = orderStatusCounts();
+  const c = await orderStatusCounts();
   const { total: _total, ...rest } = c;
   void _total;
   return {
@@ -179,35 +179,35 @@ register("admin", "stats", "get_orders_statuses", (ctx) => {
   };
 });
 
-register("admin", "stats", "get_product_summary", (ctx) => {
+register("admin", "stats", "get_product_summary", async (ctx) => {
   requireAdmin(ctx);
-  const rows = getDb().prepare(
+  const rows = await getDb().prepare(
     "SELECT p.id AS id, p.title AS title, COUNT(o.id) AS orders FROM product p JOIN client_order o ON o.product_id = p.id WHERE o.status = 'active' GROUP BY o.product_id ORDER BY orders DESC",
   ).all() as { id: number; title: string; orders: number }[];
   return rows.map((r) => ({ id: r.id, title: r.title, orders: r.orders }));
 });
 
-register("admin", "stats", "get_product_sales", (ctx) => {
+register("admin", "stats", "get_product_sales", async (ctx) => {
   requireAdmin(ctx);
   const [from, to] = dateInterval(ctx);
-  const rows = getDb().prepare(
+  const rows = await getDb().prepare(
     "SELECT title, COUNT(product_id) AS sales FROM client_order WHERE status = 'active' AND created_at BETWEEN :date_from AND :date_to GROUP BY product_id",
   ).all({ date_from: fmtDate(from), date_to: fmtDate(to) }) as { title: string; sales: number }[];
   return keyValue(rows, "title", "sales");
 });
 
-register("admin", "stats", "get_income_vs_refunds", (ctx) => {
+register("admin", "stats", "get_income_vs_refunds", async (ctx) => {
   requireAdmin(ctx);
-  const row = getDb().prepare(
+  const row = await getDb().prepare(
     "SELECT COALESCE(SUM(base_refund), 0) AS refund, COALESCE(SUM(base_income), 0) AS income FROM invoice WHERE issued = 1 AND (status = 'paid' OR status = 'refunded')",
   ).get() as { refund: number; income: number };
   return { refund: row.refund, income: row.income };
 });
 
-register("admin", "stats", "get_refunds", (ctx) => {
+register("admin", "stats", "get_refunds", async (ctx) => {
   requireAdmin(ctx);
   const [from, to] = dateInterval(ctx);
-  const rows = getDb().prepare(
+  const rows = await getDb().prepare(
     "SELECT substr(created_at, 1, 10) AS date, COALESCE(SUM(base_refund), 0) AS refund FROM invoice WHERE created_at BETWEEN :date_from AND :date_to AND issued = 1 AND (status = 'refunded' OR (status = 'paid' AND base_refund > 0)) GROUP BY date",
   ).all({ date_from: fmtDate(from), date_to: fmtDate(to) }) as { date: string; refund: number }[];
   const map: Record<string, number> = {};
@@ -215,10 +215,10 @@ register("admin", "stats", "get_refunds", (ctx) => {
   return flotFloat(map, from, to);
 });
 
-register("admin", "stats", "get_income", (ctx) => {
+register("admin", "stats", "get_income", async (ctx) => {
   requireAdmin(ctx);
   const [from, to] = dateInterval(ctx);
-  const rows = getDb().prepare(
+  const rows = await getDb().prepare(
     "SELECT substr(paid_at, 1, 10) AS date, (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE paid_at BETWEEN :date_from AND :date_to AND issued = 1 AND (status = 'paid' OR status = 'refunded') GROUP BY date",
   ).all({ date_from: fmtDate(from), date_to: fmtDate(to) }) as { date: string; income: number }[];
   const map: Record<string, number> = {};
@@ -226,10 +226,10 @@ register("admin", "stats", "get_income", (ctx) => {
   return flotFloat(map, from, to);
 });
 
-function tableStats(table: string, ctx: { params: Record<string, string> }): [number, number][] {
+async function tableStats(table: string, ctx: { params: Record<string, string> }): Promise<[number, number][]> {
   if (!(TABLES as readonly string[]).includes(table)) throw new FbError(`Invalid table name: ${table}`);
   const [from, to] = dateInterval(ctx);
-  const rows = getDb().prepare(
+  const rows = await getDb().prepare(
     `SELECT substr(created_at, 1, 10) AS date, COUNT(1) AS count FROM ${table} WHERE created_at BETWEEN :date_from AND :date_to GROUP BY date`,
   ).all({ date_from: fmtDate(from), date_to: fmtDate(to) }) as { date: string; count: number }[];
   const map: Record<string, number> = {};
@@ -237,39 +237,39 @@ function tableStats(table: string, ctx: { params: Record<string, string> }): [nu
   return flotInt(map, from, to);
 }
 
-register("admin", "stats", "get_orders", (ctx) => {
+register("admin", "stats", "get_orders", async (ctx) => {
   requireAdmin(ctx);
-  return tableStats("client_order", ctx);
+  return await tableStats("client_order", ctx);
 });
 
-register("admin", "stats", "get_clients", (ctx) => {
+register("admin", "stats", "get_clients", async (ctx) => {
   requireAdmin(ctx);
-  return tableStats("client", ctx);
+  return await tableStats("client", ctx);
 });
 
-register("admin", "stats", "get_invoices", (ctx) => {
+register("admin", "stats", "get_invoices", async (ctx) => {
   requireAdmin(ctx);
-  return tableStats("invoice", ctx);
+  return await tableStats("invoice", ctx);
 });
 
-register("admin", "stats", "get_tickets", (ctx) => {
+register("admin", "stats", "get_tickets", async (ctx) => {
   requireAdmin(ctx);
-  return tableStats("support_ticket", ctx);
+  return await tableStats("support_ticket", ctx);
 });
 
-register("admin", "stats", "client_countries", (ctx) => {
+register("admin", "stats", "client_countries", async (ctx) => {
   requireAdmin(ctx);
   const limit = parseInt(ctx.params["limit"] ?? "10", 10) || 0;
-  const rows = getDb().prepare(
+  const rows = await getDb().prepare(
     `SELECT country, COUNT(id) AS clients FROM client GROUP BY country ORDER BY clients DESC LIMIT ${limit}`,
   ).all() as { country: string | null; clients: number }[];
   return keyValue(rows, "country", "clients");
 });
 
-register("admin", "stats", "sales_countries", (ctx) => {
+register("admin", "stats", "sales_countries", async (ctx) => {
   requireAdmin(ctx);
   const limit = parseInt(ctx.params["limit"] ?? "10", 10) || 0;
-  const rows = getDb().prepare(
+  const rows = await getDb().prepare(
     `SELECT buyer_country, COUNT(id) AS sales FROM invoice WHERE status = 'paid' GROUP BY buyer_country ORDER BY sales DESC LIMIT ${limit}`,
   ).all() as { buyer_country: string | null; sales: number }[];
   return keyValue(rows, "buyer_country", "sales");

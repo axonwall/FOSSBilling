@@ -84,9 +84,9 @@ function groupArray(g: AdminGroupRow, all: AdminGroupRow[]) {
   };
 }
 
-export function staffArray(row: AdminFullRow) {
-  const all = listAdminGroups();
-  const groups = adminGroupIdsFor(row.id)
+export async function staffArray(row: AdminFullRow) {
+  const all = await listAdminGroups();
+  const groups = (await adminGroupIdsFor(row.id))
     .map((id) => all.find((g) => g.id === id))
     .filter((g): g is AdminGroupRow => !!g)
     .map((g) => groupArray(g, all));
@@ -104,31 +104,31 @@ export function staffArray(row: AdminFullRow) {
   };
 }
 
-register("admin", "staff", "get_list", (ctx: CallContext) => {
+register("admin", "staff", "get_list", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  return paginate(listAdmins().map(staffArray), ctx.params);
+  return paginate(await Promise.all((await listAdmins()).map(staffArray)), ctx.params);
 });
 
-register("admin", "staff", "get", (ctx: CallContext) => {
+register("admin", "staff", "get", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const id = ctx.params["id"];
   if (!id) throw new FbError("Staff ID was not passed");
-  const row = findAdminFullById(Number(id));
+  const row = await findAdminFullById(Number(id));
   if (!row) throw new FbError("Staff member not found");
-  return staffArray(row);
+  return await staffArray(row);
 });
 
-register("admin", "staff", "get_pairs", (ctx: CallContext) => {
+register("admin", "staff", "get_pairs", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const out: Record<string, string> = {};
-  for (const p of listAdminPairs()) out[String(p.id)] = p.name ?? "";
+  for (const p of await listAdminPairs()) out[String(p.id)] = p.name ?? "";
   return out;
 });
 
-register("admin", "staff", "is_super_administrator", (ctx: CallContext) => {
+register("admin", "staff", "is_super_administrator", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const all = listAdminGroups();
-  const mine = adminGroupIdsFor(ctx.session!.admin!.id);
+  const all = await listAdminGroups();
+  const mine = await adminGroupIdsFor(ctx.session!.admin!.id);
   return mine.some((id) => all.find((g) => g.id === id)?.system_name === "super_admin");
 });
 
@@ -138,15 +138,15 @@ register("admin", "staff", "is_super_administrator", (ctx: CallContext) => {
 // (bcrypt $2y$ cost 12); bcryptjs emits $2b$, which PHP's
 // password_verify accepts — new hashes are interchangeable.
 
-function isSuperAdmin(ctx: CallContext): boolean {
-  const all = listAdminGroups();
-  return adminGroupIdsFor(ctx.session!.admin!.id).some(
+async function isSuperAdmin(ctx: CallContext): Promise<boolean> {
+  const all = await listAdminGroups();
+  return (await adminGroupIdsFor(ctx.session!.admin!.id)).some(
     (id) => all.find((g) => g.id === id)?.system_name === "super_admin",
   );
 }
 
-function requireSuperAdminGroups(ctx: CallContext) {
-  if (!isSuperAdmin(ctx)) {
+async function requireSuperAdminGroups(ctx: CallContext) {
+  if (!await isSuperAdmin(ctx)) {
     throw new FbError("Only super administrators can manage staff groups", 403);
   }
 }
@@ -165,15 +165,15 @@ function requireSuperAdminGroups(ctx: CallContext) {
 // here. Order inside handlers mirrors PHP: after the load, after the
 // method guard (which the route already enforced), before mutation.
 
-function actorBypassesHierarchy(ctx: CallContext): boolean {
-  const actor = findAdminFullById(ctx.session!.admin!.id);
+async function actorBypassesHierarchy(ctx: CallContext): Promise<boolean> {
+  const actor = await findAdminFullById(ctx.session!.admin!.id);
   if (actor?.system_name === "cron") return true;
-  return isSuperAdmin(ctx);
+  return await isSuperAdmin(ctx);
 }
 
 /** Strict descendants of the given groups (children, grandchildren, …). */
-function descendantGroupIds(groupIds: number[]): number[] {
-  const all = listAdminGroups();
+async function descendantGroupIds(groupIds: number[]): Promise<number[]> {
+  const all = await listAdminGroups();
   const childrenByParent = new Map<number, number[]>();
   for (const g of all) {
     const key = g.parent_id ?? 0;
@@ -194,41 +194,42 @@ function descendantGroupIds(groupIds: number[]): number[] {
   return out;
 }
 
-function assertCanManageGroup(ctx: CallContext, groupId: number): void {
-  if (actorBypassesHierarchy(ctx)) return;
-  const descendants = descendantGroupIds(adminGroupIdsFor(ctx.session!.admin!.id));
+async function assertCanManageGroup(ctx: CallContext, groupId: number): Promise<void> {
+  if (await actorBypassesHierarchy(ctx)) return;
+  const descendants = await descendantGroupIds(await adminGroupIdsFor(ctx.session!.admin!.id));
   if (!descendants.includes(groupId)) {
     throw new FbError("You can only manage lower staff groups");
   }
 }
 
-function assertCanManageAdmin(ctx: CallContext, target: AdminFullRow): void {
-  if (actorBypassesHierarchy(ctx)) return;
+async function assertCanManageAdmin(ctx: CallContext, target: AdminFullRow): Promise<void> {
+  if (await actorBypassesHierarchy(ctx)) return;
   if (target.id === ctx.session!.admin!.id) {
     throw new FbError("You cannot manage your own staff account here");
   }
   if (target.system_name === "cron") {
     throw new FbError("You can only manage staff accounts in lower groups");
   }
-  const targetGroups = adminGroupIdsFor(target.id);
+  const targetGroups = await adminGroupIdsFor(target.id);
   if (targetGroups.length === 0) {
     throw new FbError("You can only manage staff accounts in lower groups");
   }
-  const descendants = descendantGroupIds(adminGroupIdsFor(ctx.session!.admin!.id));
+  const descendants = await descendantGroupIds(await adminGroupIdsFor(ctx.session!.admin!.id));
   if (targetGroups.some((id) => !descendants.includes(id))) {
     throw new FbError("You can only manage staff accounts in lower groups");
   }
 }
 
-function assertCanRemoveActiveSuperAdministrator(target: AdminFullRow): void {
+async function assertCanRemoveActiveSuperAdministrator(target: AdminFullRow): Promise<void> {
   if (target.status !== "active") return;
-  const all = listAdminGroups();
+  const all = await listAdminGroups();
   const superGroup = all.find((g) => g.system_name === "super_admin");
   if (!superGroup) return;
-  if (!adminGroupIdsFor(target.id).includes(superGroup.id)) return;
-  const activeCount = listAdmins().filter(
-    (a) => a.status === "active" && adminGroupIdsFor(a.id).includes(superGroup.id),
-  ).length;
+  if (!(await adminGroupIdsFor(target.id)).includes(superGroup.id)) return;
+  let activeCount = 0;
+  for (const a of await listAdmins()) {
+    if (a.status === "active" && (await adminGroupIdsFor(a.id)).includes(superGroup.id)) activeCount += 1;
+  }
   if (activeCount <= 1) {
     throw new FbError("Cannot remove the last active super administrator");
   }
@@ -243,21 +244,21 @@ function assertStrongPassword(pw: string | undefined) {
   if (!/[A-Z]/.test(pw)) throw new FbError("Password must include at least one uppercase letter.");
 }
 
-function getStaffOrThrow(idRaw: string | undefined): AdminFullRow {
+async function getStaffOrThrow(idRaw: string | undefined): Promise<AdminFullRow> {
   if (!idRaw) throw new FbError("ID was not passed");
-  const row = findAdminFullById(Number(idRaw));
+  const row = await findAdminFullById(Number(idRaw));
   if (!row) throw new FbError("Staff member not found");
   return row;
 }
 
-function getGroupOrThrow(idRaw: string | undefined): AdminGroupRow {
+async function getGroupOrThrow(idRaw: string | undefined): Promise<AdminGroupRow> {
   if (!idRaw) throw new FbError("Group ID was not passed");
-  const row = findAdminGroupById(Number(idRaw));
+  const row = await findAdminGroupById(Number(idRaw));
   if (!row) throw new FbError("Group not found");
   return row;
 }
 
-register("admin", "staff", "create", (ctx: CallContext) => {
+register("admin", "staff", "create", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const email = ctx.params["email"];
   if (!email) throw new FbError("Email was not passed");
@@ -268,13 +269,13 @@ register("admin", "staff", "create", (ctx: CallContext) => {
   const groupIdRaw = ctx.params["group_id"];
   if (!groupIdRaw) throw new FbError("Group ID was not passed");
   assertStrongPassword(password);
-  const group = findAdminGroupById(Number(groupIdRaw));
+  const group = await findAdminGroupById(Number(groupIdRaw));
   if (!group) throw new FbError("Group not found");
-  assertCanManageGroup(ctx, group.id);
-  if (findAdminByEmail(email)) {
+  await assertCanManageGroup(ctx, group.id);
+  if (await findAdminByEmail(email)) {
     throw new FbError(`Staff member with email ${email} is already registered.`, 788954);
   }
-  const id = insertAdmin({
+  const id = await insertAdmin({
     email,
     pass: bcrypt.hashSync(password, 12),
     name,
@@ -282,13 +283,13 @@ register("admin", "staff", "create", (ctx: CallContext) => {
     signature: ctx.params["signature"] ?? null,
     timezone: ctx.params["timezone"] ?? null,
   });
-  addAdminToGroup(id, group.id);
+  await addAdminToGroup(id, group.id);
   return id;
 });
 
-register("admin", "staff", "update", (ctx: CallContext) => {
+register("admin", "staff", "update", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const row = getStaffOrThrow(ctx.params["id"]);
+  const row = await getStaffOrThrow(ctx.params["id"]);
   const fields: Parameters<typeof updateAdminRow>[1] = {};
   let newStatus = row.status ?? "active";
   if (ctx.params["status"] !== undefined) {
@@ -300,7 +301,7 @@ register("admin", "staff", "update", (ctx: CallContext) => {
     fields.status = newStatus;
   }
   if (ctx.params["email"] !== undefined) {
-    const clash = findAdminByEmail(ctx.params["email"]);
+    const clash = await findAdminByEmail(ctx.params["email"]);
     if (clash && clash.id !== row.id) {
       throw new FbError(
         `Staff member with email ${ctx.params["email"]} is already registered.`,
@@ -312,32 +313,32 @@ register("admin", "staff", "update", (ctx: CallContext) => {
   if (ctx.params["name"] !== undefined) fields.name = ctx.params["name"];
   if (ctx.params["signature"] !== undefined) fields.signature = ctx.params["signature"];
   if (ctx.params["timezone"] !== undefined) fields.timezone = ctx.params["timezone"];
-  assertCanManageAdmin(ctx, row);
+  await assertCanManageAdmin(ctx, row);
   const deactivating = row.status === "active" && newStatus !== "active";
-  if (deactivating) assertCanRemoveActiveSuperAdministrator(row);
+  if (deactivating) await assertCanRemoveActiveSuperAdministrator(row);
   // PHP clears the API token whenever the resulting status is inactive
   // (not only on the active->inactive transition); sessions are
   // invalidated only on the transition itself.
   if (newStatus !== "active") fields.api_token = null;
-  updateAdminRow(row.id, fields);
-  if (deactivating) invalidateAdminSessions(row.id);
+  await updateAdminRow(row.id, fields);
+  if (deactivating) await invalidateAdminSessions(row.id);
   return true;
 });
 
-register("admin", "staff", "delete", (ctx: CallContext) => {
+register("admin", "staff", "delete", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const row = getStaffOrThrow(ctx.params["id"]);
+  const row = await getStaffOrThrow(ctx.params["id"]);
   if (row.system_name === "cron") {
     throw new FbError("The cron administrator account cannot be removed");
   }
-  assertCanManageAdmin(ctx, row);
-  assertCanRemoveActiveSuperAdministrator(row);
-  deleteAdminPasswordResets(row.id);
-  deleteAdminRow(row.id);
+  await assertCanManageAdmin(ctx, row);
+  await assertCanRemoveActiveSuperAdministrator(row);
+  await deleteAdminPasswordResets(row.id);
+  await deleteAdminRow(row.id);
   return true;
 });
 
-register("admin", "staff", "change_password", (ctx: CallContext) => {
+register("admin", "staff", "change_password", async (ctx: CallContext) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("ID was not passed");
   const password = ctx.params["password"];
@@ -346,44 +347,44 @@ register("admin", "staff", "change_password", (ctx: CallContext) => {
   if (!confirm) throw new FbError("Password confirmation required");
   if (password !== confirm) throw new FbError("Passwords do not match.");
   assertStrongPassword(password);
-  const row = getStaffOrThrow(ctx.params["id"]);
-  assertCanManageAdmin(ctx, row);
-  updateAdminRow(row.id, { pass: bcrypt.hashSync(password, 12) });
-  invalidateAdminSessions(row.id);
+  const row = await getStaffOrThrow(ctx.params["id"]);
+  await assertCanManageAdmin(ctx, row);
+  await updateAdminRow(row.id, { pass: bcrypt.hashSync(password, 12) });
+  await invalidateAdminSessions(row.id);
   return true;
 });
 
-register("admin", "staff", "group_create", (ctx: CallContext) => {
+register("admin", "staff", "group_create", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  requireSuperAdminGroups(ctx);
+  await requireSuperAdminGroups(ctx);
   const name = ctx.params["name"];
   if (!name) throw new FbError("Group name was not passed");
   let parentId: number;
   if (ctx.params["parent_id"]) {
-    parentId = getGroupOrThrow(ctx.params["parent_id"]).id;
+    parentId = (await getGroupOrThrow(ctx.params["parent_id"])).id;
   } else {
-    const root = listAdminGroups().find((g) => g.system_name === "super_admin");
+    const root = (await listAdminGroups()).find((g) => g.system_name === "super_admin");
     parentId = root ? root.id : 0;
   }
-  return insertAdminGroup(name, parentId);
+  return await insertAdminGroup(name, parentId);
 });
 
-register("admin", "staff", "group_get", (ctx: CallContext) => {
+register("admin", "staff", "group_get", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const group = getGroupOrThrow(ctx.params["id"]);
-  return groupArray(group, listAdminGroups());
+  const group = await getGroupOrThrow(ctx.params["id"]);
+  return groupArray(group, await listAdminGroups());
 });
 
-register("admin", "staff", "group_get_list", (ctx: CallContext) => {
+register("admin", "staff", "group_get_list", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const all = listAdminGroups();
+  const all = await listAdminGroups();
   return { list: all.map((g) => groupArray(g, all)) };
 });
 
-register("admin", "staff", "group_update", (ctx: CallContext) => {
+register("admin", "staff", "group_update", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  requireSuperAdminGroups(ctx);
-  const group = getGroupOrThrow(ctx.params["id"]);
+  await requireSuperAdminGroups(ctx);
+  const group = await getGroupOrThrow(ctx.params["id"]);
   if (group.protected) throw new FbError("Protected staff groups cannot be modified");
   const fields: Parameters<typeof updateAdminGroupRow>[1] = {};
   if (ctx.params["name"] !== undefined) fields.name = ctx.params["name"];
@@ -413,74 +414,76 @@ register("admin", "staff", "group_update", (ctx: CallContext) => {
   if (Object.keys(bracket).length > 0) {
     fields.permissions = JSON.stringify(bracket);
   }
-  updateAdminGroupRow(group.id, fields);
+  await updateAdminGroupRow(group.id, fields);
   return true;
 });
 
-register("admin", "staff", "group_delete", (ctx: CallContext) => {
+register("admin", "staff", "group_delete", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  requireSuperAdminGroups(ctx);
-  const group = getGroupOrThrow(ctx.params["id"]);
+  await requireSuperAdminGroups(ctx);
+  const group = await getGroupOrThrow(ctx.params["id"]);
   if (group.protected) throw new FbError("Protected staff groups cannot be removed");
-  if (countAdminGroupMembers(group.id) > 0) {
+  if (await countAdminGroupMembers(group.id) > 0) {
     throw new FbError("Cannot remove group which has staff members");
   }
-  if (listAdminGroups().some((g) => g.parent_id === group.id)) {
+  if ((await listAdminGroups()).some((g) => g.parent_id === group.id)) {
     throw new FbError("Cannot remove group which has child groups");
   }
-  deleteAdminGroupRow(group.id);
+  await deleteAdminGroupRow(group.id);
   return true;
 });
 
-register("admin", "staff", "group_member_add", (ctx: CallContext) => {
+register("admin", "staff", "group_member_add", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const adminId = ctx.params["admin_id"];
   if (!adminId) throw new FbError("Staff member ID was not passed");
-  const group = getGroupOrThrow(ctx.params["group_id"]);
-  const staff = getStaffOrThrow(adminId);
-  assertCanManageAdmin(ctx, staff);
-  assertCanManageGroup(ctx, group.id);
-  if (!adminGroupIdsFor(staff.id).includes(group.id)) addAdminToGroup(staff.id, group.id);
+  const group = await getGroupOrThrow(ctx.params["group_id"]);
+  const staff = await getStaffOrThrow(adminId);
+  await assertCanManageAdmin(ctx, staff);
+  await assertCanManageGroup(ctx, group.id);
+  if (!(await adminGroupIdsFor(staff.id)).includes(group.id)) await addAdminToGroup(staff.id, group.id);
   return true;
 });
 
-register("admin", "staff", "group_member_remove", (ctx: CallContext) => {
+register("admin", "staff", "group_member_remove", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const adminId = ctx.params["admin_id"];
   if (!adminId) throw new FbError("Staff member ID was not passed");
-  const group = getGroupOrThrow(ctx.params["group_id"]);
-  const staff = getStaffOrThrow(adminId);
-  assertCanManageAdmin(ctx, staff);
-  assertCanManageGroup(ctx, group.id);
+  const group = await getGroupOrThrow(ctx.params["group_id"]);
+  const staff = await getStaffOrThrow(adminId);
+  await assertCanManageAdmin(ctx, staff);
+  await assertCanManageGroup(ctx, group.id);
   // PHP returns true before the super-admin check when not a member.
-  if (!adminGroupIdsFor(staff.id).includes(group.id)) return true;
-  if (group.system_name === "super_admin") assertCanRemoveActiveSuperAdministrator(staff);
-  removeAdminFromGroup(staff.id, group.id);
+  if (!(await adminGroupIdsFor(staff.id)).includes(group.id)) return true;
+  if (group.system_name === "super_admin") await assertCanRemoveActiveSuperAdministrator(staff);
+  await removeAdminFromGroup(staff.id, group.id);
   return true;
 });
 
-register("admin", "staff", "group_member_get_list", (ctx: CallContext) => {
+register("admin", "staff", "group_member_get_list", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const group = getGroupOrThrow(ctx.params["group_id"]);
-  return listAdmins()
-    .filter((a) => adminGroupIdsFor(a.id).includes(group.id))
-    .map(staffArray);
+  const group = await getGroupOrThrow(ctx.params["group_id"]);
+  const members = [];
+  for (const a of await listAdmins()) {
+    if ((await adminGroupIdsFor(a.id)).includes(group.id)) members.push(a);
+  }
+  return await Promise.all(members.map(staffArray));
 });
 
-register("admin", "staff", "admin_group_get_list", (ctx: CallContext) => {
+register("admin", "staff", "admin_group_get_list", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const adminId = ctx.params["admin_id"];
   if (!adminId) throw new FbError("Staff member ID was not passed");
-  const all = listAdminGroups();
-  return adminGroupIdsFor(Number(adminId))
+  const all = await listAdminGroups();
+  return (await adminGroupIdsFor(Number(adminId)))
     .map((id) => all.find((g) => g.id === id))
     .filter((g): g is AdminGroupRow => !!g)
     .map((g) => groupArray(g, all));
 });
 
-register("admin", "staff", "login_history_get_list", (ctx: CallContext) => {
+register("admin", "staff", "login_history_get_list", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const items = listAdminLoginHistory().map((h) => {
+  const items = (await listAdminLoginHistory()).map((h) => {
     const item: Record<string, unknown> = { id: h.id, ip: h.ip, created_at: h.created_at };
     if (h.staff_id !== null && h.staff_id !== undefined) {
       item["staff"] = { id: h.staff_id, name: h.staff_name, email: h.staff_email };
@@ -490,18 +493,18 @@ register("admin", "staff", "login_history_get_list", (ctx: CallContext) => {
   return paginate(items, ctx.params);
 });
 
-register("admin", "staff", "group_get_pairs", (ctx: CallContext) => {
+register("admin", "staff", "group_get_pairs", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const all = listAdminGroups();
+  const all = await listAdminGroups();
   const out: Record<string, string> = {};
   for (const g of all) out[String(g.id)] = groupArray(g, all).path;
   return out;
 });
 
-register("admin", "staff", "login_history_get", (ctx: CallContext) => {
+register("admin", "staff", "login_history_get", async (ctx: CallContext) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("Event ID was not passed");
-  const row = findAdminLoginHistoryById(Number(ctx.params["id"]));
+  const row = await findAdminLoginHistoryById(Number(ctx.params["id"]));
   if (!row) throw new FbError("Event not found");
   const out: Record<string, unknown> = { id: row.id, ip: row.ip, created_at: row.created_at };
   if (row.staff_id !== null && row.staff_id !== undefined) {
@@ -537,8 +540,8 @@ function parseBcryptCost(hash: string | null): number | null {
 }
 
 /** Profile\Service::invalidateSessions for staff identities. */
-function invalidateAdminSessions(adminId: number): void {
-  for (const row of listSessionRows()) {
+async function invalidateAdminSessions(adminId: number): Promise<void> {
+  for (const row of await listSessionRows()) {
     let admin: unknown;
     try {
       const attrs = parseSessionContent(row.content)["_sf2_attributes"];
@@ -550,12 +553,12 @@ function invalidateAdminSessions(adminId: number): void {
       continue;
     }
     if (admin && typeof admin === "object" && (admin as Record<string, unknown>)["id"] === adminId) {
-      deleteSessionRow(row.id);
+      await deleteSessionRow(row.id);
     }
   }
 }
 
-register("guest", "staff", "login", (ctx: CallContext) => {
+register("guest", "staff", "login", async (ctx: CallContext) => {
   const email = ctx.params["email"];
   if (!email) throw new FbError("Email required");
   const password = ctx.params["password"];
@@ -563,7 +566,7 @@ register("guest", "staff", "login", (ctx: CallContext) => {
   if (!isValidEmail(email)) throw new FbError("Email address is invalid");
   // IP allowlist: skipped — the reference install has no mod_staff
   // config row, so PHP skips the check too (documented).
-  const auth = findAdminAuthByEmail(email);
+  const auth = await findAdminAuthByEmail(email);
   if (!auth || auth.status !== "active" || auth.system_name === "cron") {
     // PHP runs a dummy verify for timing; the envelope is identical
     // either way, so no dummy hash work is done here.
@@ -574,25 +577,25 @@ register("guest", "staff", "login", (ctx: CallContext) => {
   }
   // PHP rehashes when password_needs_rehash (bcrypt cost 12 default).
   if (parseBcryptCost(auth.pass) !== 12) {
-    updateAdminRow(auth.id, { pass: bcrypt.hashSync(password, 12) });
+    await updateAdminRow(auth.id, { pass: bcrypt.hashSync(password, 12) });
   }
-  insertAdminLoginHistory(auth.id, ctx.ip);
-  loginAsAdmin(ctx, { id: auth.id, email: auth.email, name: auth.name });
+  await insertAdminLoginHistory(auth.id, ctx.ip);
+  await loginAsAdmin(ctx, { id: auth.id, email: auth.email, name: auth.name });
   return { id: auth.id, email: auth.email, name: auth.name };
 });
 
-register("guest", "staff", "passwordreset", (ctx: CallContext) => {
+register("guest", "staff", "passwordreset", async (ctx: CallContext) => {
   const email = ctx.params["email"];
   if (!email) throw new FbError("Email required");
   if (!isValidEmail(email)) throw new FbError("Email address is invalid");
   // Rate limiters are disabled on the reference install and the
   // antispam captcha is unset (checkCaptcha no-op) — both skipped.
-  const admin = findAdminByEmail(email);
+  const admin = await findAdminByEmail(email);
   if (!admin || admin.status !== "active" || admin.system_name === "cron") return true;
   const hash = createHash("sha256").update(randomBytes(32)).digest("hex");
-  replaceAdminPasswordReset(admin.id, hash, ctx.ip);
-  getOrCreateTemplateId("mod_staff_password_reset_request", {});
-  queueTemplatedEmail(
+  await replaceAdminPasswordReset(admin.id, hash, ctx.ip);
+  await getOrCreateTemplateId("mod_staff_password_reset_request", {});
+  await queueTemplatedEmail(
     "mod_staff_password_reset_request",
     admin.email,
     {
@@ -604,7 +607,7 @@ register("guest", "staff", "passwordreset", (ctx: CallContext) => {
   return true;
 });
 
-register("guest", "staff", "update_password", (ctx: CallContext) => {
+register("guest", "staff", "update_password", async (ctx: CallContext) => {
   const code = ctx.params["code"];
   if (!code) throw new FbError("Code required");
   const password = ctx.params["password"];
@@ -613,7 +616,7 @@ register("guest", "staff", "update_password", (ctx: CallContext) => {
   if (!confirm) throw new FbError("Password confirmation required");
   if (password !== confirm) throw new FbError("Passwords do not match.");
   assertStrongPassword(password);
-  const reset = findAdminPasswordResetByHash(code);
+  const reset = await findAdminPasswordResetByHash(code);
   if (!reset) {
     throw new FbError("The link has expired or you have already confirmed the password reset.");
   }
@@ -621,15 +624,15 @@ register("guest", "staff", "update_password", (ctx: CallContext) => {
   if (Number.isNaN(createdMs) || createdMs + 900 * 1000 < Date.now()) {
     throw new FbError("The link has expired or you have already confirmed the password reset.");
   }
-  const admin = reset.admin_id ? findAdminFullById(reset.admin_id) : undefined;
+  const admin = reset.admin_id ? await findAdminFullById(reset.admin_id) : undefined;
   if (!admin || admin.status !== "active" || admin.system_name === "cron") {
     throw new FbError("The link has expired or you have already confirmed the password reset.");
   }
-  deleteAdminPasswordResets(admin.id);
-  updateAdminRow(admin.id, { pass: bcrypt.hashSync(password, 12) });
-  invalidateAdminSessions(admin.id);
-  getOrCreateTemplateId("mod_staff_password_reset_approve", {});
-  queueTemplatedEmail(
+  await deleteAdminPasswordResets(admin.id);
+  await updateAdminRow(admin.id, { pass: bcrypt.hashSync(password, 12) });
+  await invalidateAdminSessions(admin.id);
+  await getOrCreateTemplateId("mod_staff_password_reset_approve", {});
+  await queueTemplatedEmail(
     "mod_staff_password_reset_approve",
     admin.email,
     {

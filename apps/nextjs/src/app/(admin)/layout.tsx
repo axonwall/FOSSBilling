@@ -79,10 +79,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   let sessionAdminId: number | null = null;
   try {
     const opts = await sessionOpts();
-    const session = readSession(opts.cookieHeader ?? null);
+    const session = await readSession(opts.cookieHeader ?? null);
     if (session?.admin) {
       sessionAdminId = session.admin.id;
-      nav = buildAdminNavigation(session.admin.id) as Record<string, NavGroup>;
+      nav = (await buildAdminNavigation(session.admin.id)) as Record<string, NavGroup>;
     }
   } catch {
     nav = null;
@@ -137,9 +137,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // Fail closed: if the permission lookup throws, no Staff section.
   if (sessionAdminId !== null) {
     try {
-      if (hasPermission(sessionAdminId, "staff")) {
+      if (await hasPermission(sessionAdminId, "staff")) {
         const links = [{ label: "Staff", href: "/admin/staff" }];
-        if (hasPermission(sessionAdminId, "staff", "manage_groups")) {
+        if (await hasPermission(sessionAdminId, "staff", "manage_groups")) {
           links.push({ label: "Groups", href: "/admin/staff/groups" });
         }
         sections.push({ label: "Staff", links });

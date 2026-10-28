@@ -52,8 +52,8 @@ export default async function AdminGroupDetailPage({ params }: { params: Promise
   }
   let superAdmin = false;
   try {
-    const session = readSession(opts.cookieHeader ?? null);
-    if (session?.admin) superAdmin = isSuperAdmin(session.admin.id);
+    const session = await readSession(opts.cookieHeader ?? null);
+    if (session?.admin) superAdmin = await isSuperAdmin(session.admin.id);
   } catch {
     superAdmin = false;
   }

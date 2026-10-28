@@ -127,7 +127,7 @@ export default async function StatsPage() {
   // Logged-out viewers get the sign-in link; logged-in viewers without
   // stats access get the API error itself (a sign-in link would be
   // wrong for them — they are signed in, just denied).
-  const session = readSession(opts.cookieHeader ?? null);
+  const session = await readSession(opts.cookieHeader ?? null);
   const allFailed = [
     incomeSummary,
     incomeVsRefunds,

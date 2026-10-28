@@ -64,12 +64,12 @@ export function validateEmail(email: string): string {
   return clean;
 }
 
-function deleteSessionRow(id: string): void {
-  getDbWrite().prepare("DELETE FROM session WHERE id = ?").run(id);
+async function deleteSessionRow(id: string): Promise<void> {
+  await getDbWrite().prepare("DELETE FROM session WHERE id = ?").run(id);
 }
 
-export function invalidateSessions(type: "admin" | "client", id: number): void {
-  const rows = getDb().prepare("SELECT id, content FROM session").all() as unknown as { id: string; content: string | Uint8Array }[];
+export async function invalidateSessions(type: "admin" | "client", id: number): Promise<void> {
+  const rows = await getDb().prepare("SELECT id, content FROM session").all() as unknown as { id: string; content: string | Uint8Array }[];
   for (const row of rows) {
     const content = typeof row.content === "string" ? row.content : new TextDecoder().decode(row.content);
     let attrs: Record<string, unknown> = {};
@@ -81,31 +81,31 @@ export function invalidateSessions(type: "admin" | "client", id: number): void {
     }
     if (type === "admin") {
       const admin = attrs["admin"] as { id?: unknown } | undefined;
-      if (admin && typeof admin.id === "number" && admin.id === id) deleteSessionRow(row.id);
+      if (admin && typeof admin.id === "number" && admin.id === id) await deleteSessionRow(row.id);
     } else if (attrs["client_id"] === id) {
-      deleteSessionRow(row.id);
+      await deleteSessionRow(row.id);
     } else {
       const client = attrs["client"] as { id?: unknown } | undefined;
-      if (client && typeof client.id === "number" && client.id === id) deleteSessionRow(row.id);
+      if (client && typeof client.id === "number" && client.id === id) await deleteSessionRow(row.id);
     }
   }
 }
 
-function adminPassHash(id: number): string | null {
-  const row = getDb().prepare("SELECT pass FROM admin WHERE id = ?").get(id) as { pass: string } | undefined;
+async function adminPassHash(id: number): Promise<string | null> {
+  const row = await getDb().prepare("SELECT pass FROM admin WHERE id = ?").get(id) as { pass: string } | undefined;
   return row?.pass ?? null;
 }
 
-function clientPassHash(id: number): string | null {
-  const row = getDb().prepare("SELECT pass FROM client WHERE id = ?").get(id) as { pass: string } | undefined;
+async function clientPassHash(id: number): Promise<string | null> {
+  const row = await getDb().prepare("SELECT pass FROM client WHERE id = ?").get(id) as { pass: string } | undefined;
   return row?.pass ?? null;
 }
 
 // ---------------------------------------------------------------- admin
 
-register("admin", "profile", "update", (ctx) => {
+register("admin", "profile", "update", async (ctx) => {
   requireAdmin(ctx);
-  const admin = findAdminById(ctx.session!.admin!.id);
+  const admin = await findAdminById(ctx.session!.admin!.id);
   if (!admin) throw new FbError("Admin not found");
   const fields: { email?: string; name?: string; signature?: string | null; timezone?: string | null } = {};
   if (ctx.params["email"] !== undefined) fields.email = validateEmail(ctx.params["email"]);
@@ -115,55 +115,55 @@ register("admin", "profile", "update", (ctx) => {
     validateTimezone(ctx.params["timezone"]);
     fields.timezone = ctx.params["timezone"];
   }
-  updateAdminRow(admin.id, fields);
+  await updateAdminRow(admin.id, fields);
   return true;
 });
 
-register("admin", "profile", "generate_api_key", (ctx) => {
+register("admin", "profile", "generate_api_key", async (ctx) => {
   requireAdmin(ctx);
-  const admin = findAdminById(ctx.session!.admin!.id);
+  const admin = await findAdminById(ctx.session!.admin!.id);
   if (!admin) throw new FbError("Admin not found");
-  getDbWrite().prepare("UPDATE admin SET api_token = ?, updated_at = ? WHERE id = ?").run(generateToken(32), nowTimestamp(), admin.id);
-  invalidateSessions("admin", admin.id);
+  await getDbWrite().prepare("UPDATE admin SET api_token = ?, updated_at = ? WHERE id = ?").run(generateToken(32), nowTimestamp(), admin.id);
+  await invalidateSessions("admin", admin.id);
   return true;
 });
 
-register("admin", "profile", "change_password", (ctx) => {
+register("admin", "profile", "change_password", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["current_password"]) throw new FbError("Current password is required");
   if (!ctx.params["new_password"]) throw new FbError("New password is required");
   if (!ctx.params["confirm_password"]) throw new FbError("New password confirmation is required");
   assertPasswordStrong(ctx.params["new_password"]);
   if (ctx.params["new_password"] !== ctx.params["confirm_password"]) throw new FbError("Passwords do not match");
-  const admin = findAdminById(ctx.session!.admin!.id);
+  const admin = await findAdminById(ctx.session!.admin!.id);
   if (!admin) throw new FbError("Admin not found");
-  const hash = adminPassHash(admin.id);
+  const hash = await adminPassHash(admin.id);
   if (!hash || !bcrypt.compareSync(ctx.params["current_password"], hash)) throw new FbError("Current password incorrect");
-  invalidateSessions("admin", admin.id);
-  updateAdminRow(admin.id, { pass: bcrypt.hashSync(ctx.params["new_password"], 12) });
+  await invalidateSessions("admin", admin.id);
+  await updateAdminRow(admin.id, { pass: bcrypt.hashSync(ctx.params["new_password"], 12) });
   return true;
 });
 
-register("admin", "profile", "destroy_sessions", (ctx) => {
+register("admin", "profile", "destroy_sessions", async (ctx) => {
   requireAdmin(ctx);
-  invalidateSessions("admin", ctx.session!.admin!.id);
+  await invalidateSessions("admin", ctx.session!.admin!.id);
   return true;
 });
 
-register("admin", "profile", "api_key_reset", (ctx) => {
+register("admin", "profile", "api_key_reset", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("Client ID was not passed");
-  const client = findClientById(parseInt(ctx.params["id"], 10));
+  const client = await findClientById(parseInt(ctx.params["id"], 10));
   if (!client) throw new FbError("Client not found");
   const token = generateToken(32);
-  getDbWrite().prepare("UPDATE client SET api_token = ? WHERE id = ?").run(token, client.id);
-  invalidateSessions("client", client.id);
+  await getDbWrite().prepare("UPDATE client SET api_token = ? WHERE id = ?").run(token, client.id);
+  await invalidateSessions("client", client.id);
   return token;
 });
 
-register("admin", "profile", "logout", (ctx) => {
+register("admin", "profile", "logout", async (ctx) => {
   requireAdmin(ctx);
-  if (ctx.session) deleteSessionRow(ctx.session.id);
+  if (ctx.session) await deleteSessionRow(ctx.session.id);
   ctx.setCookies.push("fossbilling_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT");
   return true;
 });
@@ -179,25 +179,25 @@ const CLIENT_UPDATE_COLS: Record<string, string> = {
 };
 for (let i = 1; i <= 20; i++) CLIENT_UPDATE_COLS[`custom_${i}`] = `custom_${i}`;
 
-register("client", "profile", "update", (ctx) => {
+register("client", "profile", "update", async (ctx) => {
   requireClient(ctx);
-  const client = findClientById(ctx.session!.client!.id);
+  const client = await findClientById(ctx.session!.client!.id);
   if (!client) throw new FbError("Client not found");
   const db = getDbWrite();
   if (ctx.params["email"] !== undefined) {
     const email = validateEmail(ctx.params["email"]);
-    const other = findClientByEmail(email);
+    const other = await findClientByEmail(email);
     if (other && other.id !== client.id) throw new FbError("This email address is already registered.");
     if (client.email !== email) {
-      db.prepare("UPDATE client SET email = ?, email_approved = NULL WHERE id = ?").run(email, client.id);
+      await db.prepare("UPDATE client SET email = ?, email_approved = NULL WHERE id = ?").run(email, client.id);
       // PHP revokes pending confirmations stored as extension_meta
       // rows (extension mod_client, meta_key confirm_email).
-      db.prepare("DELETE FROM extension_meta WHERE extension = 'mod_client' AND client_id = ? AND meta_key = 'confirm_email'").run(client.id);
+      await db.prepare("DELETE FROM extension_meta WHERE extension = 'mod_client' AND client_id = ? AND meta_key = 'confirm_email'").run(client.id);
     }
   }
   if (ctx.params["billing_email"] !== undefined) {
     const be = ctx.params["billing_email"] === "" ? null : validateEmail(ctx.params["billing_email"]);
-    db.prepare("UPDATE client SET billing_email = ? WHERE id = ?").run(be, client.id);
+    await db.prepare("UPDATE client SET billing_email = ? WHERE id = ?").run(be, client.id);
   }
   const sets: string[] = [];
   const values: (string | null)[] = [];
@@ -209,64 +209,64 @@ register("client", "profile", "update", (ctx) => {
     }
   }
   if (sets.length > 0) {
-    db.prepare(`UPDATE client SET ${sets.join(", ")} WHERE id = ?`).run(...values, client.id);
+    await db.prepare(`UPDATE client SET ${sets.join(", ")} WHERE id = ?`).run(...values, client.id);
   }
   return true;
 });
 
-register("client", "profile", "api_key_get", (ctx) => {
+register("client", "profile", "api_key_get", async (ctx) => {
   requireClient(ctx);
-  const client = findClientById(ctx.session!.client!.id);
+  const client = await findClientById(ctx.session!.client!.id);
   if (!client) throw new FbError("Client not found");
-  const row = getDb().prepare("SELECT api_token FROM client WHERE id = ?").get(client.id) as { api_token: string | null } | undefined;
+  const row = await getDb().prepare("SELECT api_token FROM client WHERE id = ?").get(client.id) as { api_token: string | null } | undefined;
   return row?.api_token ?? null;
 });
 
-register("client", "profile", "api_key_reset", (ctx) => {
+register("client", "profile", "api_key_reset", async (ctx) => {
   requireClient(ctx);
-  const client = findClientById(ctx.session!.client!.id);
+  const client = await findClientById(ctx.session!.client!.id);
   if (!client) throw new FbError("Client not found");
   const token = generateToken(32);
-  getDbWrite().prepare("UPDATE client SET api_token = ? WHERE id = ?").run(token, client.id);
-  invalidateSessions("client", client.id);
+  await getDbWrite().prepare("UPDATE client SET api_token = ? WHERE id = ?").run(token, client.id);
+  await invalidateSessions("client", client.id);
   return token;
 });
 
-register("client", "profile", "change_password", (ctx) => {
+register("client", "profile", "change_password", async (ctx) => {
   requireClient(ctx);
   if (!ctx.params["current_password"]) throw new FbError("Current password required");
   if (!ctx.params["new_password"]) throw new FbError("New password required");
   if (!ctx.params["confirm_password"]) throw new FbError("New password confirmation required");
   assertPasswordStrong(ctx.params["new_password"]);
   if (ctx.params["new_password"] !== ctx.params["confirm_password"]) throw new FbError("Passwords do not match.");
-  const client = findClientById(ctx.session!.client!.id);
+  const client = await findClientById(ctx.session!.client!.id);
   if (!client) throw new FbError("Client not found");
-  const hash = clientPassHash(client.id);
+  const hash = await clientPassHash(client.id);
   if (!hash || !bcrypt.compareSync(ctx.params["current_password"], hash)) throw new FbError("Current password incorrect");
-  invalidateSessions("client", client.id);
-  getDbWrite().prepare("UPDATE client SET pass = ? WHERE id = ?").run(bcrypt.hashSync(ctx.params["new_password"], 12), client.id);
+  await invalidateSessions("client", client.id);
+  await getDbWrite().prepare("UPDATE client SET pass = ? WHERE id = ?").run(bcrypt.hashSync(ctx.params["new_password"], 12), client.id);
   return true;
 });
 
-register("client", "profile", "logout", (ctx) => {
+register("client", "profile", "logout", async (ctx) => {
   requireClient(ctx);
-  if (ctx.session) deleteSessionRow(ctx.session.id);
+  if (ctx.session) await deleteSessionRow(ctx.session.id);
   ctx.setCookies.push("fossbilling_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT");
   return true;
 });
 
-register("client", "profile", "destroy_sessions", (ctx) => {
+register("client", "profile", "destroy_sessions", async (ctx) => {
   requireClient(ctx);
-  invalidateSessions("client", ctx.session!.client!.id);
+  await invalidateSessions("client", ctx.session!.client!.id);
   return true;
 });
 
 // ---------------------------------------------------------------- mop-ups
 
-register("admin", "support", "kb_category_get_pairs", (ctx) => {
+register("admin", "support", "kb_category_get_pairs", async (ctx) => {
   requireAdmin(ctx);
   const out: Record<string, string> = {};
-  for (const c of getDb().prepare("SELECT * FROM support_kb_article_category ORDER BY id ASC").all() as unknown as { id: number; title: string }[]) out[String(c.id)] = c.title;
+  for (const c of await getDb().prepare("SELECT * FROM support_kb_article_category ORDER BY id ASC").all() as unknown as { id: number; title: string }[]) out[String(c.id)] = c.title;
   return out;
 });
 
@@ -281,23 +281,23 @@ register("guest", "support", "kb_suggestions_enabled", (ctx) => {
 
 register("guest", "support", "public_tickets_enabled", () => true);
 
-register("admin", "cron", "save_settings", (ctx) => {
+register("admin", "cron", "save_settings", async (ctx) => {
   requireAdmin(ctx);
   const guestCron = ctx.params["guest_cron"] ? true : false;
-  setSettingValue("cron_guest_enabled", guestCron ? "1" : "0");
+  await setSettingValue("cron_guest_enabled", guestCron ? "1" : "0");
   if (guestCron) {
-    const existing = getDb().prepare("SELECT value FROM setting WHERE param = 'cron_hash'").get() as { value: string | null } | undefined;
-    if (!existing?.value) setSettingValue("cron_hash", randomBytes(32).toString("hex"));
+    const existing = await getDb().prepare("SELECT value FROM setting WHERE param = 'cron_hash'").get() as { value: string | null } | undefined;
+    if (!existing?.value) await setSettingValue("cron_hash", randomBytes(32).toString("hex"));
   } else {
-    setSettingValue("cron_hash", "");
+    await setSettingValue("cron_hash", "");
   }
   return true;
 });
 
-register("admin", "cron", "regenerate_cron_hash", (ctx) => {
+register("admin", "cron", "regenerate_cron_hash", async (ctx) => {
   requireAdmin(ctx);
   const hash = randomBytes(32).toString("hex");
-  setSettingValue("cron_hash", hash);
+  await setSettingValue("cron_hash", hash);
   return { cron_hash: hash };
 });
 

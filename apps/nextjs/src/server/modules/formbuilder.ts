@@ -195,9 +195,9 @@ function decodeFieldRowForForm(row: FormFieldRow): Record<string, unknown> {
   };
 }
 
-function addNewField(ctx: CallContext, field: Record<string, unknown>): number {
+async function addNewField(ctx: CallContext, field: Record<string, unknown>): Promise<number> {
   const formId = field["form_id"];
-  const fieldNumber = countFormFields(phpInt(formId)) + 1;
+  const fieldNumber = await countFormFields(phpInt(formId)) + 1;
   const type = String(field["type"]);
   const label = (field["label"] as string | undefined) ?? `${FIELD_TYPES[type]} ${fieldNumber}`;
   const name = (field["name"] as string | undefined) ?? `${slugify(`new_${type}`)}_${fieldNumber}`;
@@ -214,7 +214,7 @@ function addNewField(ctx: CallContext, field: Record<string, unknown>): number {
   let defaultValue = field["default_value"] as unknown;
   if (Array.isArray(defaultValue)) defaultValue = forceObject(defaultValue);
   else if (defaultValue !== undefined && defaultValue !== null) defaultValue = String(defaultValue);
-  return insertFormField({
+  return await insertFormField({
     form_id: phpInt(formId),
     name,
     label,
@@ -236,8 +236,8 @@ function addNewField(ctx: CallContext, field: Record<string, unknown>): number {
   });
 }
 
-function getForm(id: number): Record<string, unknown> {
-  const row = findForm(id);
+async function getForm(id: number): Promise<Record<string, unknown>> {
+  const row = await findForm(id);
   if (!row) throw new FbError("Form was not found");
   let style: unknown = phpJsonDecodeAssoc(row.style);
   if (!style || typeof style !== "object" || Array.isArray(style)) {
@@ -249,7 +249,7 @@ function getForm(id: number): Record<string, unknown> {
     style,
     created_at: row.created_at,
     updated_at: row.updated_at,
-    fields: listFormFields(row.id).map(decodeFieldRowForForm),
+    fields: (await listFormFields(row.id)).map(decodeFieldRowForForm),
   };
 }
 
@@ -268,7 +268,7 @@ function fieldInput(ctx: CallContext): Record<string, unknown> {
   return out;
 }
 
-register("admin", "formbuilder", "create_form", (ctx) => {
+register("admin", "formbuilder", "create_form", async (ctx) => {
   requireAdmin(ctx);
   const name = requireParam(ctx.params, "name", "Form name was not provided");
   const type = ctx.params["type"];
@@ -276,10 +276,10 @@ register("admin", "formbuilder", "create_form", (ctx) => {
     throw new FbError("Form style was not found in predefined list", 3657);
   }
   const style = JSON.stringify({ type: type ?? "horizontal", show_title: ctx.params["show_title"] ?? "0" });
-  return insertForm(name, style);
+  return await insertForm(name, style);
 });
 
-register("admin", "formbuilder", "add_field", (ctx) => {
+register("admin", "formbuilder", "add_field", async (ctx) => {
   requireAdmin(ctx);
   const type = requireParam(ctx.params, "type", "Form field type is invalid");
   const formId = requireParam(ctx.params, "form_id", "Form id was not passed");
@@ -292,30 +292,30 @@ register("admin", "formbuilder", "add_field", (ctx) => {
       throw new FbError("This input type must have unique values", 3658);
     }
   }
-  return addNewField(ctx, { ...input, type, form_id: formId });
+  return await addNewField(ctx, { ...input, type, form_id: formId });
 });
 
-register("admin", "formbuilder", "get_form", (ctx) => {
+register("admin", "formbuilder", "get_form", async (ctx) => {
   requireAdmin(ctx);
   const id = requireParam(ctx.params, "id", "Form id was not passed", 2391);
-  return getForm(phpInt(id));
+  return await getForm(phpInt(id));
 });
 
-register("guest", "formbuilder", "get", (ctx) => {
+register("guest", "formbuilder", "get", async (ctx) => {
   const id = requireParam(ctx.params, "id", "Form ID was not passed");
-  return getForm(phpInt(id));
+  return await getForm(phpInt(id));
 });
 
-register("admin", "formbuilder", "get_form_fields", (ctx) => {
+register("admin", "formbuilder", "get_form_fields", async (ctx) => {
   requireAdmin(ctx);
   const formId = requireParam(ctx.params, "form_id", "Form id was not passed", 1822);
-  return listFormFields(phpInt(formId));
+  return await listFormFields(phpInt(formId));
 });
 
-register("admin", "formbuilder", "get_field", (ctx) => {
+register("admin", "formbuilder", "get_field", async (ctx) => {
   requireAdmin(ctx);
   const id = requireParam(ctx.params, "id", "Field id was not passed", 3547);
-  const row = findFormField(phpInt(id));
+  const row = await findFormField(phpInt(id));
   if (!row) throw new FbError("Field was not found");
   const out: Record<string, unknown> = { ...row };
   const opts = row.options;
@@ -325,36 +325,36 @@ register("admin", "formbuilder", "get_field", (ctx) => {
   return out;
 });
 
-register("admin", "formbuilder", "get_forms", (ctx) => {
+register("admin", "formbuilder", "get_forms", async (ctx) => {
   requireAdmin(ctx);
-  return listFormsWithCounts();
+  return await listFormsWithCounts();
 });
 
-register("admin", "formbuilder", "get_pairs", (ctx) => {
+register("admin", "formbuilder", "get_pairs", async (ctx) => {
   requireAdmin(ctx);
-  const pairs = listFormPairs();
+  const pairs = await listFormPairs();
   if (pairs.length === 0) return [];
   const out: Record<string, string> = {};
   for (const p of pairs) out[String(p.id)] = p.name ?? "";
   return out;
 });
 
-register("admin", "formbuilder", "delete_form", (ctx) => {
+register("admin", "formbuilder", "delete_form", async (ctx) => {
   requireAdmin(ctx);
   const id = requireParam(ctx.params, "id", "Form id was not passed", 9958);
-  deleteFormCascade(phpInt(id));
+  await deleteFormCascade(phpInt(id));
   return true;
 });
 
-register("admin", "formbuilder", "delete_field", (ctx) => {
+register("admin", "formbuilder", "delete_field", async (ctx) => {
   requireAdmin(ctx);
   const id = requireParam(ctx.params, "id", "Field id was not passed", 9959);
-  const deleted = deleteFormFieldRow(phpInt(id));
+  const deleted = await deleteFormFieldRow(phpInt(id));
   if (deleted === 0) throw new FbError("Field was not found");
   return true;
 });
 
-register("admin", "formbuilder", "update_field", (ctx) => {
+register("admin", "formbuilder", "update_field", async (ctx) => {
   requireAdmin(ctx);
   const id = requireParam(ctx.params, "id", "Field id was not passed", 9958);
   const input = fieldInput(ctx);
@@ -369,10 +369,10 @@ register("admin", "formbuilder", "update_field", (ctx) => {
   // slugify BEFORE the lookup, mirroring Service::updateField.
   const label = (input["label"] as string | undefined) ?? "New field";
   const name = slugify(input["name"]);
-  const current = findFormField(fieldId);
+  const current = await findFormField(fieldId);
   if (!current) throw new FbError("Field was not found");
   const formId = current.form_id;
-  if (countFormFieldsNamed(formId, name, fieldId) > 0) {
+  if (await countFormFieldsNamed(formId, name, fieldId) > 0) {
     throw new FbError(
       "Unfortunately field with this name exists in this form already. Form must have different field names.",
       7628,
@@ -447,7 +447,7 @@ register("admin", "formbuilder", "update_field", (ctx) => {
     });
     optionsOut = forceObject(combined);
   }
-  updateFormFieldRow(fieldId, {
+  await updateFormFieldRow(fieldId, {
     name,
     label,
     hide_label: toBoolInt(input["hide_label"]),
@@ -468,19 +468,19 @@ register("admin", "formbuilder", "update_field", (ctx) => {
   return fieldId;
 });
 
-register("admin", "formbuilder", "copy_form", (ctx) => {
+register("admin", "formbuilder", "copy_form", async (ctx) => {
   requireAdmin(ctx);
   const formId = requireParam(ctx.params, "form_id", "Form id was not passed");
   const name = requireParam(ctx.params, "name", "Form name was not passed");
-  const fields = listFormFields(phpInt(formId));
-  const newFormId = insertForm(name, JSON.stringify({ type: "horizontal", show_title: "0" }));
+  const fields = await listFormFields(phpInt(formId));
+  const newFormId = await insertForm(name, JSON.stringify({ type: "horizontal", show_title: "0" }));
   for (const f of fields) {
-    addNewField(ctx, { ...(f as unknown as Record<string, unknown>), form_id: newFormId });
+    await addNewField(ctx, { ...(f as unknown as Record<string, unknown>), form_id: newFormId });
   }
   return newFormId;
 });
 
-register("admin", "formbuilder", "update_form_settings", (ctx) => {
+register("admin", "formbuilder", "update_form_settings", async (ctx) => {
   requireAdmin(ctx);
   const formId = requireParam(ctx.params, "form_id", "Form id was not passed");
   const formName = requireParam(ctx.params, "form_name", "Form name was not passed");
@@ -489,6 +489,6 @@ register("admin", "formbuilder", "update_form_settings", (ctx) => {
     throw new FbError("Field type not supported", 3207);
   }
   const style = JSON.stringify({ type, show_title: ctx.params["show_title"] ?? "1" });
-  updateFormRow(phpInt(formId), formName, style);
+  await updateFormRow(phpInt(formId), formName, style);
   return true;
 });

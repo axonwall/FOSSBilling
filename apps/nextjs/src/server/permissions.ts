@@ -34,11 +34,11 @@ const CAN_ALWAYS_ACCESS = new Set(["page", "profile"]);
 
 export type PermissionMap = Record<string, Record<string, unknown>>;
 
-export function getAdminPermissions(adminId: number): PermissionMap {
-  const groups = listAdminGroups();
+export async function getAdminPermissions(adminId: number): Promise<PermissionMap> {
+  const groups = await listAdminGroups();
   const byId = new Map(groups.map((g) => [g.id, g]));
   const merged: PermissionMap = {};
-  for (const groupId of adminGroupIdsFor(adminId)) {
+  for (const groupId of await adminGroupIdsFor(adminId)) {
     const group = byId.get(groupId);
     if (!group || !group.permissions) continue;
     let parsed: unknown;
@@ -59,24 +59,24 @@ export function getAdminPermissions(adminId: number): PermissionMap {
   return merged;
 }
 
-export function isSuperAdmin(adminId: number): boolean {
-  const groups = listAdminGroups();
+export async function isSuperAdmin(adminId: number): Promise<boolean> {
+  const groups = await listAdminGroups();
   const byId = new Map(groups.map((g) => [g.id, g]));
-  return adminGroupIdsFor(adminId).some((id) => byId.get(id)?.system_name === "super_admin");
+  return (await adminGroupIdsFor(adminId)).some((id) => byId.get(id)?.system_name === "super_admin");
 }
 
-export function hasPermission(
+export async function hasPermission(
   adminId: number,
   module: string,
   key: string | null = null,
   constraint: unknown = null,
-): boolean {
-  const admin = findAdminFullById(adminId);
+): Promise<boolean> {
+  const admin = await findAdminFullById(adminId);
   if (!admin) return false;
   if (admin.system_name === "cron") return true;
   if (ALWAYS_ALLOWED.has(module)) return true;
-  if (isSuperAdmin(adminId)) return true;
-  const permissions = getAdminPermissions(adminId);
+  if (await isSuperAdmin(adminId)) return true;
+  const permissions = await getAdminPermissions(adminId);
   if (!CAN_ALWAYS_ACCESS.has(module)) {
     const modPerms = permissions[module];
     if (!modPerms || !modPerms["access"]) return false;
@@ -97,11 +97,11 @@ export function hasPermission(
  * to perform this action` or `You need the "mod.key" permission ...`,
  * code 403.
  */
-export function requirePermission(ctx: CallContext, module: string, key?: string | null) {
+export async function requirePermission(ctx: CallContext, module: string, key?: string | null) {
   const admin = ctx.session?.admin;
   if (!admin) throw new FbError("Authentication Failed", 201);
   const k = key ?? null;
-  if (!hasPermission(admin.id, module, k)) {
+  if (!await hasPermission(admin.id, module, k)) {
     const required = k === null ? module : `${module}.${k}`;
     throw new FbError(`You need the "${required}" permission to perform this action`, 403);
   }

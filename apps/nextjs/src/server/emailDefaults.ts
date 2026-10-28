@@ -131,7 +131,7 @@ export function syncBuiltinChanges(row: TemplateRowFull, def: DefaultTemplate): 
   return out;
 }
 
-export function applyRowChanges(id: number, changes: Partial<TemplateRowFull>): void {
+export async function applyRowChanges(id: number, changes: Partial<TemplateRowFull>): Promise<void> {
   const keys = Object.keys(changes) as (keyof TemplateRowFull)[];
   if (!keys.length) return;
   const sets = keys.map((k) => `${k} = ?`).join(", ");
@@ -139,21 +139,19 @@ export function applyRowChanges(id: number, changes: Partial<TemplateRowFull>): 
     const v = changes[k] as unknown;
     return v === null || v === undefined ? null : (v as string | number);
   });
-  getDbWrite().prepare(`UPDATE email_template SET ${sets} WHERE id = ?`).run(...vals, id);
+  await getDbWrite().prepare(`UPDATE email_template SET ${sets} WHERE id = ?`).run(...vals, id);
 }
 
 /** Create a built-in record; staff-category templates get all groups. */
-export function createBuiltinRecord(code: string, def: DefaultTemplate): number {
-  const info = getDbWrite().prepare(
-    `INSERT INTO email_template (action_code, category, enabled, is_custom, is_overridden, subject, content, description, vars, last_error)
-     VALUES (?, ?, ?, 0, 0, ?, ?, ?, NULL, NULL)`
-  ).run(code, def.category, def.enabled, def.subject, def.content, def.description);
-  const id = Number(info.lastInsertRowid);
+export async function createBuiltinRecord(code: string, def: DefaultTemplate): Promise<number> {
+  const info = await getDbWrite().insertAndGetId(`INSERT INTO email_template (action_code, category, enabled, is_custom, is_overridden, subject, content, description, vars, last_error)
+     VALUES (?, ?, ?, 0, 0, ?, ?, ?, NULL, NULL)`, code, def.category, def.enabled, def.subject, def.content, def.description);
+  const id = Number(info);
   if (def.category === "staff") {
-    const groups = getDb().prepare("SELECT id FROM admin_group ORDER BY id ASC").all() as unknown as { id: number }[];
+    const groups = await getDb().prepare("SELECT id FROM admin_group ORDER BY id ASC").all() as unknown as { id: number }[];
     const now = nowTimestamp();
     for (const g of groups) {
-      getDbWrite().prepare(
+      await getDbWrite().prepare(
         "INSERT INTO email_template_group (admin_group_id, created_at, email_template_id) VALUES (?, ?, ?)"
       ).run(g.id, now, id);
     }
@@ -166,25 +164,23 @@ export function createBuiltinRecord(code: string, def: DefaultTemplate): number 
  * built-in record when a file default exists, else a custom record from
  * the caller's defaults. Returns the row id.
  */
-export function getOrCreateTemplateId(code: string, data: Record<string, unknown>): number {
-  const existing = getDb().prepare("SELECT * FROM email_template WHERE action_code = ?").get(code) as unknown as TemplateRowFull | undefined;
+export async function getOrCreateTemplateId(code: string, data: Record<string, unknown>): Promise<number> {
+  const existing = await getDb().prepare("SELECT * FROM email_template WHERE action_code = ?").get(code) as unknown as TemplateRowFull | undefined;
   if (existing) {
     if (!existing.is_custom) {
       const def = getDefaultTemplate(code, data);
-      if (def) applyRowChanges(existing.id, syncBuiltinChanges(existing, def));
+      if (def) await applyRowChanges(existing.id, syncBuiltinChanges(existing, def));
     }
     return existing.id;
   }
   const def = getDefaultTemplate(code, data);
-  if (def) return createBuiltinRecord(code, def);
+  if (def) return await createBuiltinRecord(code, def);
   // No file default: a custom record from the caller's defaults, always
   // disabled (PHP _getDefaults leaves enabled=0 without a content block).
   const fallback = computeDefaults(code, data);
-  const info = getDbWrite().prepare(
-    `INSERT INTO email_template (action_code, category, enabled, is_custom, is_overridden, subject, content, description)
-     VALUES (?, ?, 0, 1, 0, ?, ?, ?)`
-  ).run(code, fallback.category, fallback.subject, fallback.content, fallback.description);
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId(`INSERT INTO email_template (action_code, category, enabled, is_custom, is_overridden, subject, content, description)
+     VALUES (?, ?, 0, 1, 0, ?, ?, ?)`, code, fallback.category, fallback.subject, fallback.content, fallback.description);
+  return Number(info);
 }
 
 function deepMerge(base: Record<string, unknown>, over: Record<string, unknown>): Record<string, unknown> {
@@ -201,7 +197,7 @@ function deepMerge(base: Record<string, unknown>, over: Record<string, unknown>)
 }
 
 /** Stored vars (decrypted) with PHP's getVars defaults merged underneath. */
-export function templateVars(row: TemplateRowFull): Record<string, unknown> {
+export async function templateVars(row: TemplateRowFull): Promise<Record<string, unknown>> {
   let stored: Record<string, unknown> = {};
   if (row.vars) {
     const plain = decryptV2(row.vars);
@@ -217,7 +213,7 @@ export function templateVars(row: TemplateRowFull): Record<string, unknown> {
     const invoice = (stored.invoice && typeof stored.invoice === "object" && !Array.isArray(stored.invoice))
       ? { ...(stored.invoice as Record<string, unknown>) } : {};
     if (invoice.total === undefined || invoice.total === null) invoice.total = 0;
-    if (!invoice.currency) invoice.currency = findDefaultCurrency()?.code ?? "USD";
+    if (!invoice.currency) invoice.currency = (await findDefaultCurrency())?.code ?? "USD";
     stored = { ...stored, invoice };
   }
   const staff = { id: 1, email: "staff@example.com", name: "Staff Member", signature: "" };
@@ -253,9 +249,9 @@ export function templateVars(row: TemplateRowFull): Record<string, unknown> {
   return deepMerge(defaults, stored);
 }
 
-export function isModuleActive(moduleLower: string): boolean {
+export async function isModuleActive(moduleLower: string): Promise<boolean> {
   if (CORE_MODULES.has(moduleLower)) return true;
-  const row = getDb().prepare("SELECT status FROM extension WHERE type = 'mod' AND name = ?").get(moduleLower) as unknown as { status: string } | undefined;
+  const row = await getDb().prepare("SELECT status FROM extension WHERE type = 'mod' AND name = ?").get(moduleLower) as unknown as { status: string } | undefined;
   return row?.status === "installed";
 }
 

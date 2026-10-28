@@ -42,13 +42,13 @@ export interface PricingView {
   recurrent: Record<string, { price: number; setup: number; enabled: boolean; title: string }> | never[];
 }
 
-export function pricingView(product: ProductRow, admin = false): PricingView | Record<string, unknown> {
-  if (product.type === "domain") return domainPricing(admin);
-  const payment = product.product_payment_id ? findProductPayment(product.product_payment_id) : undefined;
+export async function pricingView(product: ProductRow, admin = false): Promise<PricingView | Record<string, unknown>> {
+  if (product.type === "domain") return await domainPricing(admin);
+  const payment = product.product_payment_id ? await findProductPayment(product.product_payment_id) : undefined;
   const type = payment?.type ?? "once";
   const recurrent: PricingView["recurrent"] = {};
   if (payment && type === "recurrent") {
-    for (const p of listProductPeriods(payment.id)) {
+    for (const p of await listProductPeriods(payment.id)) {
       (recurrent as Record<string, unknown>)[p.code] = {
         price: p.price,
         setup: p.setup_price,
@@ -68,8 +68,8 @@ export function pricingView(product: ProductRow, admin = false): PricingView | R
   };
 }
 
-function domainPricing(admin: boolean): Record<string, unknown> {
-  const rows = listTlds();
+async function domainPricing(admin: boolean): Promise<Record<string, unknown>> {
+  const rows = await listTlds();
   const out: Record<string, unknown> = {};
   for (const r of rows) {
     const entry: Record<string, unknown> = {
@@ -84,7 +84,7 @@ function domainPricing(admin: boolean): Record<string, unknown> {
       active: true,
     };
     if (admin && r.tld_registrar_id) {
-      const reg = findTldRegistrar(r.tld_registrar_id);
+      const reg = await findTldRegistrar(r.tld_registrar_id);
       if (reg) entry["registrar"] = { id: reg.id, title: reg.title };
     }
     out[r.tld] = entry;
@@ -92,15 +92,15 @@ function domainPricing(admin: boolean): Record<string, unknown> {
   return out;
 }
 
-export function priceStartingFrom(product: ProductRow): number {
+export async function priceStartingFrom(product: ProductRow): Promise<number> {
   if (product.type === "domain") {
-    const prices = listTlds().map((r) => parseFloat(r.price_registration));
+    const prices = (await listTlds()).map((r) => parseFloat(r.price_registration));
     return prices.length ? Math.min(...prices) : 0;
   }
-  const payment = product.product_payment_id ? findProductPayment(product.product_payment_id) : undefined;
+  const payment = product.product_payment_id ? await findProductPayment(product.product_payment_id) : undefined;
   if (!payment) return 0;
   if (payment.type === "recurrent") {
-    const prices = listProductPeriods(payment.id)
+    const prices = (await listProductPeriods(payment.id))
       .filter((p) => p.enabled)
       .map((p) => p.price);
     return prices.length ? Math.min(...prices) : 0;
@@ -135,7 +135,7 @@ export function productUnit(product: ProductRow): string | null {
 }
 
 /** Addon-embedded shape (Product\\Service::toAddonArray). */
-function addonArray(product: ProductRow, admin: boolean): Record<string, unknown> {
+async function addonArray(product: ProductRow, admin: boolean): Promise<Record<string, unknown>> {
   const config = parseJsonObject(product.config);
   const out: Record<string, unknown> = {
     id: product.id,
@@ -149,7 +149,7 @@ function addonArray(product: ProductRow, admin: boolean): Record<string, unknown
     created_at: product.created_at,
     updated_at: product.updated_at,
     icon_url: product.icon_url,
-    pricing: pricingView(product, admin),
+    pricing: await pricingView(product, admin),
     config: Object.keys(config).length ? config : [],
   };
   if (!admin) {
@@ -160,14 +160,14 @@ function addonArray(product: ProductRow, admin: boolean): Record<string, unknown
   return out;
 }
 
-export function productArray(product: ProductRow, admin: boolean): Record<string, unknown> {
+export async function productArray(product: ProductRow, admin: boolean): Promise<Record<string, unknown>> {
   const config = parseJsonObject(product.config);
   const addonIds = parseJsonArray(product.addons)
     .map((v) => Number(v))
     .filter((n) => Number.isInteger(n) && n > 0);
-  const addons = listAllProducts()
+  const addons = await Promise.all((await listAllProducts())
     .filter((p) => p.is_addon && addonIds.includes(p.id) && (admin || p.status === "enabled"))
-    .map((p) => addonArray(p, admin));
+    .map(async (p) => await addonArray(p, admin)));
   const out: Record<string, unknown> = {
     id: product.id,
     product_category_id: product.product_category_id,
@@ -177,10 +177,10 @@ export function productArray(product: ProductRow, admin: boolean): Record<string
     description: product.description,
     unit: productUnit(product),
     priority: product.priority,
-    pricing: pricingView(product, admin),
+    pricing: await pricingView(product, admin),
     config: Object.keys(config).length ? config : [],
     addons,
-    price_starting_from: priceStartingFrom(product),
+    price_starting_from: await priceStartingFrom(product),
     icon_url: product.icon_url,
     allow_quantity_select: !!product.allow_quantity_select,
     form_id: product.form_id,
@@ -197,7 +197,7 @@ export function productArray(product: ProductRow, admin: boolean): Record<string
       .map((v) => Number(v))
       .filter((n) => Number.isInteger(n) && n > 0 && n !== product.id);
     const upgrades: Record<string, string> = {};
-    for (const p of listAllProducts()) {
+    for (const p of await listAllProducts()) {
       if (upgradeIds.includes(p.id)) upgrades[String(p.id)] = p.title;
     }
     out["upgrades"] = Object.keys(upgrades).length ? upgrades : [];
@@ -207,43 +207,43 @@ export function productArray(product: ProductRow, admin: boolean): Record<string
     // The category key appears ONLY when the product has a category
     // (capture20's category-less product omits it; capture9's product
     // with a category includes it).
-    const cat = listCategories().find((c) => c.id === product.product_category_id);
+    const cat = (await listCategories()).find((c) => c.id === product.product_category_id);
     if (cat) out["category"] = { id: cat.id, title: cat.title };
   }
   return out;
 }
 
-function visibleProducts(): ProductRow[] {
-  return listAllProducts().filter((p) => p.active === 1 && p.status === "enabled" && !p.is_addon);
+async function visibleProducts(): Promise<ProductRow[]> {
+  return (await listAllProducts()).filter((p) => p.active === 1 && p.status === "enabled" && !p.is_addon);
 }
 
-register("guest", "product", "get_list", (ctx: CallContext) => {
-  let items = visibleProducts().filter((p) => !p.hidden);
+register("guest", "product", "get_list", async (ctx: CallContext) => {
+  let items = (await visibleProducts()).filter((p) => !p.hidden);
   const categoryId = ctx.params["category_id"] ?? ctx.params["product_category_id"];
   if (categoryId) items = items.filter((p) => p.product_category_id === Number(categoryId));
   if (ctx.params["type"]) items = items.filter((p) => p.type === ctx.params["type"]);
-  return paginate(items.map((p) => productArray(p, false)), ctx.params);
+  return paginate(await Promise.all(items.map(async (p) => await productArray(p, false))), ctx.params);
 });
 
-register("guest", "product", "get_pairs", () => {
+register("guest", "product", "get_pairs", async () => {
   const out: Record<string, string> = {};
-  for (const p of visibleProducts()) out[String(p.id)] = p.title;
+  for (const p of await visibleProducts()) out[String(p.id)] = p.title;
   return out;
 });
 
-register("guest", "product", "get", (ctx: CallContext) => {
+register("guest", "product", "get", async (ctx: CallContext) => {
   const idRaw = ctx.params["id"];
   const slug = ctx.params["slug"];
   let product: ProductRow | undefined;
-  if (idRaw) product = findProductById(Number(idRaw));
-  if (!product && slug) product = listAllProducts().find((p) => p.slug === slug);
+  if (idRaw) product = await findProductById(Number(idRaw));
+  if (!product && slug) product = (await listAllProducts()).find((p) => p.slug === slug);
   if (!product || product.active !== 1) throw new FbError("Product not found");
-  return productArray(product, false);
+  return await productArray(product, false);
 });
 
-register("guest", "product", "category_get_list", (ctx: CallContext) => {
-  const cats = listCategories().map((c) => {
-    const inCat = visibleProducts().filter((p) => p.product_category_id === c.id && !p.hidden);
+register("guest", "product", "category_get_list", async (ctx: CallContext) => {
+  const cats = await Promise.all((await listCategories()).map(async (c) => {
+    const inCat = (await visibleProducts()).filter((p) => p.product_category_id === c.id && !p.hidden);
     return {
       id: c.id,
       title: c.title,
@@ -252,26 +252,26 @@ register("guest", "product", "category_get_list", (ctx: CallContext) => {
       priority: c.priority,
       created_at: c.created_at,
       updated_at: c.updated_at,
-      price_starting_from: inCat.length ? Math.min(...inCat.map(priceStartingFrom)) : 0,
+      price_starting_from: inCat.length ? Math.min(...await Promise.all(inCat.map(priceStartingFrom))) : 0,
       type: inCat[0]?.type ?? null,
-      products: inCat.map((p) => productArray(p, false)),
+      products: await Promise.all(inCat.map(async (p) => await productArray(p, false))),
     };
-  });
+  }));
   return paginate(cats, ctx.params);
 });
 
-register("guest", "product", "category_get_pairs", () => {
+register("guest", "product", "category_get_pairs", async () => {
   const out: Record<string, string> = {};
-  for (const c of listCategories()) out[String(c.id)] = c.title;
+  for (const c of await listCategories()) out[String(c.id)] = c.title;
   return out;
 });
 
-register("admin", "product", "get_list", (ctx: CallContext) => {
+register("admin", "product", "get_list", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  let items = listAllProducts();
+  let items = await listAllProducts();
   if (ctx.params["type"]) items = items.filter((p) => p.type === ctx.params["type"]);
   if (ctx.params["status"]) items = items.filter((p) => p.status === ctx.params["status"]);
-  return paginate(items.map((p) => productArray(p, true)), ctx.params);
+  return paginate(await Promise.all(items.map(async (p) => await productArray(p, true))), ctx.params);
 });
 
 /** admin/product/get_pairs: Repository::getPairs — products_only and
@@ -279,7 +279,7 @@ register("admin", "product", "get_list", (ctx: CallContext) => {
  * (PHP falsy), while any other non-empty value keeps it. Empty
  * results encode as [] (not {}), matching PHP's empty array. Unlike
  * the guest pairs, hidden products are NOT filtered here. */
-register("admin", "product", "get_pairs", (ctx: CallContext) => {
+register("admin", "product", "get_pairs", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const rawVal = (k: string): unknown =>
     ctx.rawParams && k in ctx.rawParams ? ctx.rawParams[k] : ctx.params[k];
@@ -289,7 +289,7 @@ register("admin", "product", "get_pairs", (ctx: CallContext) => {
     if (typeof v === "number") return v !== 0;
     return v !== "" && v !== "0";
   };
-  const pairs = listProductPairs({
+  const pairs = await listProductPairs({
     productsOnly: phpTruthy(rawVal("products_only"), true),
     activeOnly: phpTruthy(rawVal("active_only"), true),
     type: ctx.params["type"] ?? null,
@@ -300,13 +300,13 @@ register("admin", "product", "get_pairs", (ctx: CallContext) => {
   return out;
 });
 
-register("admin", "product", "get", (ctx: CallContext) => {
+register("admin", "product", "get", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const idRaw = ctx.params["id"];
   if (!idRaw) throw new FbError("Product ID was not passed");
-  const product = findProductById(Number(idRaw));
+  const product = await findProductById(Number(idRaw));
   if (!product) throw new FbError("Product not found");
-  return productArray(product, true);
+  return await productArray(product, true);
 });
 
 /* ------------------------------------------------------------------ */
@@ -365,31 +365,29 @@ function validateIconUrl(iconUrl: string | undefined): void {
   }
 }
 
-function uniqueSlug(title: string): string {
+async function uniqueSlug(title: string): Promise<string> {
   const base = slugify(title);
   let slug = base;
-  const taken = new Set(listAllProducts().map((p) => p.slug));
+  const taken = new Set((await listAllProducts()).map((p) => p.slug));
   while (taken.has(slug)) {
     slug = `${base}-${Math.floor(Math.random() * 9999) + 1}`;
   }
   return slug;
 }
 
-function findCategory(id: number) {
-  const cat = getDb().prepare("SELECT id, title, description, icon_url, priority, created_at, updated_at FROM product_category WHERE id = ?").get(id) as
+async function findCategory(id: number) {
+  const cat = await getDb().prepare("SELECT id, title, description, icon_url, priority, created_at, updated_at FROM product_category WHERE id = ?").get(id) as
     | { id: number; title: string; description: string | null; icon_url: string | null; priority: number | null; created_at: string | null; updated_at: string | null }
     | undefined;
   return cat;
 }
 
-function insertPayment(type: string): number {
-  const info = getDbWrite()
-    .prepare("INSERT INTO product_payment (type, once_price, once_setup_price) VALUES (?, 0, 0)")
-    .run(type);
-  return Number(info.lastInsertRowid);
+async function insertPayment(type: string): Promise<number> {
+  const info = await getDbWrite().insertAndGetId("INSERT INTO product_payment (type, once_price, once_setup_price) VALUES (?, 0, 0)", type);
+  return Number(info);
 }
 
-function createProductRow(opts: {
+async function createProductRow(opts: {
   title: string;
   type: string;
   isAddon: boolean;
@@ -398,29 +396,12 @@ function createProductRow(opts: {
   iconUrl?: string | null;
   status: string;
   priority: number | null;
-}): number {
-  const paymentId = insertPayment("free");
+}): Promise<number> {
+  const paymentId = await insertPayment("free");
   const now = nowStr();
-  const info = getDbWrite()
-    .prepare(
-      `INSERT INTO product (form_id, title, slug, description, unit, active, status, hidden, is_addon, setup, addons, icon_url, allow_quantity_select, stock_control, quantity_in_stock, suspension_grace_days, plugin, plugin_config, upgrades, priority, config, type, created_at, updated_at, product_category_id, product_payment_id)
-       VALUES (NULL, ?, ?, ?, 'product', 1, ?, 0, ?, 'after_payment', NULL, ?, 0, 0, 0, 0, NULL, NULL, NULL, ?, NULL, ?, ?, ?, ?, ?)`
-    )
-    .run(
-      opts.title,
-      uniqueSlug(opts.title),
-      opts.description ?? null,
-      opts.status,
-      opts.isAddon ? 1 : 0,
-      opts.iconUrl ?? null,
-      opts.priority,
-      opts.type,
-      now,
-      now,
-      opts.categoryId,
-      paymentId
-    );
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId(`INSERT INTO product (form_id, title, slug, description, unit, active, status, hidden, is_addon, setup, addons, icon_url, allow_quantity_select, stock_control, quantity_in_stock, suspension_grace_days, plugin, plugin_config, upgrades, priority, config, type, created_at, updated_at, product_category_id, product_payment_id)
+       VALUES (NULL, ?, ?, ?, 'product', 1, ?, 0, ?, 'after_payment', NULL, ?, 0, 0, 0, 0, NULL, NULL, NULL, ?, NULL, ?, ?, ?, ?, ?)`, opts.title, await uniqueSlug(opts.title), opts.description ?? null, opts.status, opts.isAddon ? 1 : 0, opts.iconUrl ?? null, opts.priority, opts.type, now, now, opts.categoryId, paymentId);
+  return Number(info);
 }
 
 const PERIOD_RANGES: Record<string, [number, number]> = { D: [1, 90], W: [1, 52], M: [1, 24], Y: [1, 5] };
@@ -434,17 +415,17 @@ function validatePeriod(code: string): void {
   if (!range || qty < range[0] || qty > range[1]) throw new FbError(`Invalid billing period ${code}`);
 }
 
-function applyPricing(product: ProductRow, pricing: Record<string, unknown>): void {
+async function applyPricing(product: ProductRow, pricing: Record<string, unknown>): Promise<void> {
   const type = pricing["type"];
   if (typeof type !== "string" || !["free", "once", "recurrent"].includes(type)) {
     throw new FbError("Pricing type is required");
   }
   const db = getDbWrite();
-  const payment = product.product_payment_id ? findProductPayment(product.product_payment_id) : undefined;
+  const payment = product.product_payment_id ? await findProductPayment(product.product_payment_id) : undefined;
   if (!payment) throw new FbError("Product not found");
   if (type === "once") {
     const once = (pricing["once"] ?? {}) as Record<string, unknown>;
-    db.prepare("UPDATE product_payment SET type = 'once', once_price = ?, once_setup_price = ? WHERE id = ?").run(
+    await db.prepare("UPDATE product_payment SET type = 'once', once_price = ?, once_setup_price = ? WHERE id = ?").run(
       Number(once["price"] ?? 0) || 0,
       Number(once["setup"] ?? 0) || 0,
       payment.id
@@ -452,7 +433,7 @@ function applyPricing(product: ProductRow, pricing: Record<string, unknown>): vo
     return;
   }
   if (type === "free") {
-    db.prepare("UPDATE product_payment SET type = 'free' WHERE id = ?").run(payment.id);
+    await db.prepare("UPDATE product_payment SET type = 'free' WHERE id = ?").run(payment.id);
     return;
   }
   // Recurrent: submitted periods REPLACE the set.
@@ -462,7 +443,7 @@ function applyPricing(product: ProductRow, pricing: Record<string, unknown>): vo
   if (codes.length === 0) {
     throw new FbError("At least one billing period must be configured for a recurring product");
   }
-  const existing = listProductPeriods(payment.id);
+  const existing = await listProductPeriods(payment.id);
   const byCode = new Map(existing.map((p) => [p.code, p]));
   let maxSort = existing.reduce((m, p) => Math.max(m, p.sort_order ?? 0), 0);
   for (const code of codes) {
@@ -472,25 +453,25 @@ function applyPricing(product: ProductRow, pricing: Record<string, unknown>): vo
     const enabled = row["enabled"] !== undefined ? (toBool(row["enabled"]) ? 1 : 0) : 0;
     const prev = byCode.get(code);
     if (prev) {
-      db.prepare("UPDATE product_payment_period SET price = ?, setup_price = ?, enabled = ? WHERE id = ?").run(price, setup, enabled, prev.id);
+      await db.prepare("UPDATE product_payment_period SET price = ?, setup_price = ?, enabled = ? WHERE id = ?").run(price, setup, enabled, prev.id);
     } else {
       maxSort += 1;
-      db.prepare("INSERT INTO product_payment_period (code, price, setup_price, enabled, sort_order, product_payment_id) VALUES (?, ?, ?, ?, ?, ?)").run(
+      await db.prepare("INSERT INTO product_payment_period (code, price, setup_price, enabled, sort_order, product_payment_id) VALUES (?, ?, ?, ?, ?, ?)").run(
         code, price, setup, enabled, maxSort, payment.id
       );
     }
   }
   for (const row of existing) {
     if (!codes.includes(row.code)) {
-      db.prepare("DELETE FROM product_payment_period WHERE id = ?").run(row.id);
+      await db.prepare("DELETE FROM product_payment_period WHERE id = ?").run(row.id);
     }
   }
-  db.prepare("UPDATE product_payment SET type = 'recurrent' WHERE id = ?").run(payment.id);
+  await db.prepare("UPDATE product_payment SET type = 'recurrent' WHERE id = ?").run(payment.id);
 }
 
-function getProductOrThrow(idRaw: string | undefined, missingMsg: string): ProductRow {
+async function getProductOrThrow(idRaw: string | undefined, missingMsg: string): Promise<ProductRow> {
   if (!idRaw) throw new FbError(missingMsg);
-  const product = findProductById(Number(idRaw));
+  const product = await findProductById(Number(idRaw));
   if (!product) throw new FbError("Product not found");
   return product;
 }
@@ -502,7 +483,7 @@ register("admin", "product", "get_types", (ctx: CallContext) => {
   return { custom: "Custom", license: "License", downloadable: "Downloadable", hosting: "Hosting", domain: "Domain" };
 });
 
-register("admin", "product", "prepare", (ctx: CallContext) => {
+register("admin", "product", "prepare", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const title = ctx.params["title"];
   if (!title) throw new FbError("You must specify a title");
@@ -511,21 +492,21 @@ register("admin", "product", "prepare", (ctx: CallContext) => {
   const known = ["custom", "license", "downloadable", "hosting", "domain"];
   // PHP: 'Product type :type is not registered.' (space, not colon).
   if (!known.includes(type)) throw new FbError(`Product type ${type} is not registered.`, 413);
-  if (type === "domain" && listAllProducts().some((p) => p.type === "domain")) {
+  if (type === "domain" && (await listAllProducts()).some((p) => p.type === "domain")) {
     throw new FbError("You have already created domain product.", 413);
   }
   let categoryId: number | null = null;
   if (ctx.params["product_category_id"]) {
-    const cat = findCategory(Number(ctx.params["product_category_id"]));
+    const cat = await findCategory(Number(ctx.params["product_category_id"]));
     if (!cat) throw new FbError("Category not found");
     categoryId = cat.id;
   }
-  return createProductRow({ title, type, isAddon: false, categoryId, status: "disabled", priority: (listAllProducts().reduce((m, p) => Math.max(m, p.priority ?? 0), 0)) + 10 });
+  return await createProductRow({ title, type, isAddon: false, categoryId, status: "disabled", priority: ((await listAllProducts()).reduce((m, p) => Math.max(m, p.priority ?? 0), 0)) + 10 });
 });
 
-register("admin", "product", "update", (ctx: CallContext) => {
+register("admin", "product", "update", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const product = getProductOrThrow(ctx.params["id"], "Product ID was not passed");
+  const product = await getProductOrThrow(ctx.params["id"], "Product ID was not passed");
   validateIconUrl(ctx.params["icon_url"]);
   const db = getDbWrite();
   const now = nowStr();
@@ -537,10 +518,10 @@ register("admin", "product", "update", (ctx: CallContext) => {
     if (!graceOk) {
       throw new FbError("Suspension grace days must be a non-negative integer.");
     }
-    db.prepare("UPDATE product SET suspension_grace_days = ? WHERE id = ?").run(parseInt(String(rawGrace), 10), product.id);
+    await db.prepare("UPDATE product SET suspension_grace_days = ? WHERE id = ?").run(parseInt(String(rawGrace), 10), product.id);
   }
   const pricing = nestedParam(ctx, "pricing");
-  if (pricing) applyPricing(product, pricing);
+  if (pricing) await applyPricing(product, pricing);
   const sets: string[] = [];
   const vals: (string | number | null)[] = [];
   const set = (col: string, v: unknown) => {
@@ -564,7 +545,7 @@ register("admin", "product", "update", (ctx: CallContext) => {
     if (p["product_category_id"] === "" || p["product_category_id"] === "0") {
       set("product_category_id", null);
     } else {
-      const cat = findCategory(Number(p["product_category_id"]));
+      const cat = await findCategory(Number(p["product_category_id"]));
       if (!cat) throw new FbError("Category not found");
       set("product_category_id", cat.id);
     }
@@ -594,29 +575,29 @@ register("admin", "product", "update", (ctx: CallContext) => {
     }
   }
   if (sets.length) {
-    db.prepare(`UPDATE product SET ${sets.join(", ")}, updated_at = ? WHERE id = ?`).run(...vals, now, product.id);
+    await db.prepare(`UPDATE product SET ${sets.join(", ")}, updated_at = ? WHERE id = ?`).run(...vals, now, product.id);
   } else {
-    db.prepare("UPDATE product SET updated_at = ? WHERE id = ?").run(now, product.id);
+    await db.prepare("UPDATE product SET updated_at = ? WHERE id = ?").run(now, product.id);
   }
   return true;
 });
 
-register("admin", "product", "update_priority", (ctx: CallContext) => {
+register("admin", "product", "update_priority", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const map = nestedParam(ctx, "priority");
   if (!map) throw new FbError("priority params is missing");
   const db = getDbWrite();
   const now = nowStr();
   for (const [id, value] of Object.entries(map)) {
-    if (!findProductById(Number(id))) continue;
-    db.prepare("UPDATE product SET priority = ?, updated_at = ? WHERE id = ?").run(parseInt(String(value), 10) || 0, now, Number(id));
+    if (!await findProductById(Number(id))) continue;
+    await db.prepare("UPDATE product SET priority = ?, updated_at = ? WHERE id = ?").run(parseInt(String(value), 10) || 0, now, Number(id));
   }
   return true;
 });
 
-register("admin", "product", "update_config", (ctx: CallContext) => {
+register("admin", "product", "update_config", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const product = getProductOrThrow(ctx.params["id"], "Product ID was not passed");
+  const product = await getProductOrThrow(ctx.params["id"], "Product ID was not passed");
   const current = parseJsonObject(product.config);
   const submitted = nestedParam(ctx, "config");
   let next: Record<string, unknown> = { ...current };
@@ -638,28 +619,28 @@ register("admin", "product", "update_config", (ctx: CallContext) => {
   const name = ctx.params["new_config_name"];
   const value = ctx.params["new_config_value"];
   if (name && value) next[name] = value;
-  getDbWrite().prepare("UPDATE product SET config = ?, updated_at = ? WHERE id = ?").run(JSON.stringify(next), nowStr(), product.id);
+  await getDbWrite().prepare("UPDATE product SET config = ?, updated_at = ? WHERE id = ?").run(JSON.stringify(next), nowStr(), product.id);
   return true;
 });
 
-register("admin", "product", "delete", (ctx: CallContext) => {
+register("admin", "product", "delete", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const product = getProductOrThrow(ctx.params["id"], "Product ID was not passed");
-  const orders = getDb().prepare("SELECT COUNT(1) AS c FROM client_order WHERE product_id = ?").get(product.id) as { c: number };
+  const product = await getProductOrThrow(ctx.params["id"], "Product ID was not passed");
+  const orders = await getDb().prepare("SELECT COUNT(1) AS c FROM client_order WHERE product_id = ?").get(product.id) as { c: number };
   if (orders.c > 0) throw new FbError("Cannot remove product which has active orders.");
   // Only the product row is deleted; its product_payment row is orphaned.
-  getDbWrite().prepare("DELETE FROM product WHERE id = ?").run(product.id);
+  await getDbWrite().prepare("DELETE FROM product WHERE id = ?").run(product.id);
   return true;
 });
 
-register("admin", "product", "addon_create", (ctx: CallContext) => {
+register("admin", "product", "addon_create", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const title = ctx.params["title"];
   if (!title) throw new FbError("You must specify a title");
   validateIconUrl(ctx.params["icon_url"]);
   // createAddon does not set status/priority: entity defaults apply
   // (status 'enabled', priority NULL) — captures20 pin.
-  return createProductRow({
+  return await createProductRow({
     title,
     type: "custom",
     isAddon: true,
@@ -671,16 +652,16 @@ register("admin", "product", "addon_create", (ctx: CallContext) => {
   });
 });
 
-register("admin", "product", "addon_get", (ctx: CallContext) => {
+register("admin", "product", "addon_get", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const product = getProductOrThrow(ctx.params["id"], "Addon ID was not passed");
+  const product = await getProductOrThrow(ctx.params["id"], "Addon ID was not passed");
   if (!product.is_addon) throw new FbError("Addon not found");
-  return productArray(product, true);
+  return await productArray(product, true);
 });
 
-register("admin", "product", "addon_update", (ctx: CallContext) => {
+register("admin", "product", "addon_update", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const product = getProductOrThrow(ctx.params["id"], "Addon ID was not passed");
+  const product = await getProductOrThrow(ctx.params["id"], "Addon ID was not passed");
   if (!product.is_addon) throw new FbError("Addon not found");
   validateIconUrl(ctx.params["icon_url"]);
   const db = getDbWrite();
@@ -700,32 +681,32 @@ register("admin", "product", "addon_update", (ctx: CallContext) => {
     vals.push(p["description"]);
   }
   const pricing = nestedParam(ctx, "pricing");
-  if (pricing) applyPricing(product, pricing);
+  if (pricing) await applyPricing(product, pricing);
   if (sets.length) {
-    db.prepare(`UPDATE product SET ${sets.join(", ")}, updated_at = ? WHERE id = ?`).run(...vals, nowStr(), product.id);
+    await db.prepare(`UPDATE product SET ${sets.join(", ")}, updated_at = ? WHERE id = ?`).run(...vals, nowStr(), product.id);
   }
   return true;
 });
 
-register("admin", "product", "addon_delete", (ctx: CallContext) => {
+register("admin", "product", "addon_delete", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  const product = getProductOrThrow(ctx.params["id"], "Addon ID was not passed");
+  const product = await getProductOrThrow(ctx.params["id"], "Addon ID was not passed");
   if (!product.is_addon) throw new FbError("Addon not found");
-  getDbWrite().prepare("DELETE FROM product WHERE id = ?").run(product.id);
+  await getDbWrite().prepare("DELETE FROM product WHERE id = ?").run(product.id);
   return true;
 });
 
-register("admin", "product", "addon_get_pairs", (ctx: CallContext) => {
+register("admin", "product", "addon_get_pairs", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const out: Record<string, string> = {};
-  for (const p of listAllProducts().filter((x) => x.is_addon)) out[String(p.id)] = p.title;
+  for (const p of (await listAllProducts()).filter((x) => x.is_addon)) out[String(p.id)] = p.title;
   return out;
 });
 
 /* ------------------------------ Categories ------------------------------ */
 
-function categoryArray(cat: { id: number; title: string; description: string | null; icon_url: string | null; priority: number | null; created_at: string | null; updated_at: string | null }): Record<string, unknown> {
-  const inCat = listAllProducts().filter((p) => p.product_category_id === cat.id);
+async function categoryArray(cat: { id: number; title: string; description: string | null; icon_url: string | null; priority: number | null; created_at: string | null; updated_at: string | null }): Promise<Record<string, unknown>> {
+  const inCat = (await listAllProducts()).filter((p) => p.product_category_id === cat.id);
   return {
     id: cat.id,
     title: cat.title,
@@ -734,13 +715,13 @@ function categoryArray(cat: { id: number; title: string; description: string | n
     priority: cat.priority,
     created_at: cat.created_at,
     updated_at: cat.updated_at,
-    price_starting_from: inCat.length ? Math.min(...inCat.map(priceStartingFrom)) : 0,
+    price_starting_from: inCat.length ? Math.min(...await Promise.all(inCat.map(priceStartingFrom))) : 0,
     type: inCat[0]?.type ?? null,
-    products: inCat.map((p) => productArray(p, false)),
+    products: await Promise.all(inCat.map(async (p) => await productArray(p, false))),
   };
 }
 
-register("admin", "product", "category_create", (ctx: CallContext) => {
+register("admin", "product", "category_create", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const title = ctx.params["title"];
   if (!title) throw new FbError("Category title is required");
@@ -748,31 +729,29 @@ register("admin", "product", "category_create", (ctx: CallContext) => {
   const priorityRaw = ctx.params["priority"];
   let priority: number;
   if (priorityRaw === undefined || priorityRaw === "" || priorityRaw === null) {
-    priority = listCategories().reduce((m, c) => Math.max(m, c.priority ?? 0), 0) + 10;
+    priority = (await listCategories()).reduce((m, c) => Math.max(m, c.priority ?? 0), 0) + 10;
   } else {
     priority = parseInt(priorityRaw, 10) || 0;
   }
   const now = nowStr();
-  const info = getDbWrite()
-    .prepare("INSERT INTO product_category (title, description, icon_url, priority, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)")
-    .run(title, ctx.params["description"] ?? null, ctx.params["icon_url"] ?? null, priority, now, now);
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId("INSERT INTO product_category (title, description, icon_url, priority, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)", title, ctx.params["description"] ?? null, ctx.params["icon_url"] ?? null, priority, now, now);
+  return Number(info);
 });
 
-register("admin", "product", "category_get", (ctx: CallContext) => {
+register("admin", "product", "category_get", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const idRaw = ctx.params["id"];
   if (!idRaw) throw new FbError("Category ID was not passed");
-  const cat = findCategory(Number(idRaw));
+  const cat = await findCategory(Number(idRaw));
   if (!cat) throw new FbError("Category not found");
-  return categoryArray(cat);
+  return await categoryArray(cat);
 });
 
-register("admin", "product", "category_update", (ctx: CallContext) => {
+register("admin", "product", "category_update", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const idRaw = ctx.params["id"];
   if (!idRaw) throw new FbError("Category ID was not passed");
-  const cat = findCategory(Number(idRaw));
+  const cat = await findCategory(Number(idRaw));
   if (!cat) throw new FbError("Category not found");
   validateIconUrl(ctx.params["icon_url"]);
   const db = getDbWrite();
@@ -795,11 +774,11 @@ register("admin", "product", "category_update", (ctx: CallContext) => {
     sets.push("priority = ?");
     vals.push(parseInt(p["priority"], 10) || 0);
   }
-  db.prepare(`UPDATE product_category SET ${sets.join(", ")}${sets.length ? ", " : ""}updated_at = ? WHERE id = ?`).run(...vals, nowStr(), cat.id);
+  await db.prepare(`UPDATE product_category SET ${sets.join(", ")}${sets.length ? ", " : ""}updated_at = ? WHERE id = ?`).run(...vals, nowStr(), cat.id);
   return true;
 });
 
-register("admin", "product", "category_update_priority", (ctx: CallContext) => {
+register("admin", "product", "category_update_priority", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const map = nestedParam(ctx, "priority");
   if (!map) throw new FbError("priority params is missing");
@@ -814,15 +793,15 @@ register("admin", "product", "category_update_priority", (ctx: CallContext) => {
   const db = getDbWrite();
   const now = nowStr();
   for (const [id, value] of Object.entries(map)) {
-    if (!findCategory(Number(id))) continue;
-    db.prepare("UPDATE product_category SET priority = ?, updated_at = ? WHERE id = ?").run(parseInt(String(value), 10), now, Number(id));
+    if (!await findCategory(Number(id))) continue;
+    await db.prepare("UPDATE product_category SET priority = ?, updated_at = ? WHERE id = ?").run(parseInt(String(value), 10), now, Number(id));
   }
   return true;
 });
 
-register("admin", "product", "category_get_list", (ctx: CallContext) => {
+register("admin", "product", "category_get_list", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  let cats = listCategories();
+  let cats = await listCategories();
   if (ctx.params["search"]) {
     const q = ctx.params["search"].toLowerCase();
     cats = cats.filter((c) => c.title.toLowerCase().includes(q));
@@ -843,22 +822,22 @@ register("admin", "product", "category_get_list", (ctx: CallContext) => {
   return cats.map((c) => ({ id: c.id, title: c.title, priority: c.priority }));
 });
 
-register("admin", "product", "category_get_pairs", (ctx: CallContext) => {
+register("admin", "product", "category_get_pairs", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const out: Record<string, string> = {};
-  for (const c of listCategories()) out[String(c.id)] = c.title;
+  for (const c of await listCategories()) out[String(c.id)] = c.title;
   return out;
 });
 
-register("admin", "product", "category_delete", (ctx: CallContext) => {
+register("admin", "product", "category_delete", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const idRaw = ctx.params["id"];
   if (!idRaw) throw new FbError("Category ID was not passed");
-  const cat = findCategory(Number(idRaw));
+  const cat = await findCategory(Number(idRaw));
   if (!cat) throw new FbError("Category not found");
-  const count = getDb().prepare("SELECT COUNT(1) AS c FROM product WHERE product_category_id = ?").get(cat.id) as { c: number };
+  const count = await getDb().prepare("SELECT COUNT(1) AS c FROM product WHERE product_category_id = ?").get(cat.id) as { c: number };
   if (count.c > 0) throw new FbError("Cannot remove product category with products");
-  getDbWrite().prepare("DELETE FROM product_category WHERE id = ?").run(cat.id);
+  await getDbWrite().prepare("DELETE FROM product_category WHERE id = ?").run(cat.id);
   return true;
 });
 
@@ -891,8 +870,8 @@ interface PromoRow {
 
 const PROMO_COLS = "id, code, description, type, value, maxuses, used, freesetup, once_per_client, recurring, active, products, periods, client_groups, requires_products, start_at, end_at, auto_apply, priority, stackable, created_at, updated_at";
 
-function findPromo(id: number): PromoRow | undefined {
-  return getDb().prepare(`SELECT ${PROMO_COLS} FROM promo WHERE id = ?`).get(id) as PromoRow | undefined;
+async function findPromo(id: number): Promise<PromoRow | undefined> {
+  return await getDb().prepare(`SELECT ${PROMO_COLS} FROM promo WHERE id = ?`).get(id) as PromoRow | undefined;
 }
 
 function decodePromoSelection(raw: string | null): unknown[] | null {
@@ -911,20 +890,20 @@ function encodePromoSelection(arr: unknown[] | undefined): string | null {
   return filtered.length ? JSON.stringify(filtered) : null;
 }
 
-function promoRedemptionCount(promoId: number): number {
-  return (getDb().prepare("SELECT COUNT(1) AS c FROM promo_redemption WHERE promo_id = ?").get(promoId) as { c: number }).c;
+async function promoRedemptionCount(promoId: number): Promise<number> {
+  return ((await getDb().prepare("SELECT COUNT(1) AS c FROM promo_redemption WHERE promo_id = ?").get(promoId)) as { c: number }).c;
 }
 
-function promoLinkedOrderCount(promoId: number): number {
-  return (getDb().prepare("SELECT COUNT(1) AS c FROM client_order WHERE promo_id = ?").get(promoId) as { c: number }).c;
+async function promoLinkedOrderCount(promoId: number): Promise<number> {
+  return ((await getDb().prepare("SELECT COUNT(1) AS c FROM client_order WHERE promo_id = ?").get(promoId)) as { c: number }).c;
 }
 
-function promoHasHistory(promoId: number): boolean {
-  return promoRedemptionCount(promoId) > 0 || promoLinkedOrderCount(promoId) > 0;
+async function promoHasHistory(promoId: number): Promise<boolean> {
+  return await promoRedemptionCount(promoId) > 0 || await promoLinkedOrderCount(promoId) > 0;
 }
 
-function promoUsageStats(promo: PromoRow): Record<string, unknown> {
-  const rows = getDb().prepare("SELECT phase, status, client_id, client_order_id FROM promo_redemption WHERE promo_id = ?").all(promo.id) as { phase: string; status: string; client_id: number | null; client_order_id: number | null }[];
+async function promoUsageStats(promo: PromoRow): Promise<Record<string, unknown>> {
+  const rows = await getDb().prepare("SELECT phase, status, client_id, client_order_id FROM promo_redemption WHERE promo_id = ?").all(promo.id) as { phase: string; status: string; client_id: number | null; client_order_id: number | null }[];
   const count = (pred: (r: (typeof rows)[number]) => boolean) => rows.filter(pred).length;
   const maxUses = promo.maxuses ?? null;
   return {
@@ -943,7 +922,7 @@ function promoUsageStats(promo: PromoRow): Record<string, unknown> {
   };
 }
 
-function promoArray(promo: PromoRow, deep: boolean): Record<string, unknown> {
+async function promoArray(promo: PromoRow, deep: boolean): Promise<Record<string, unknown>> {
   const products = decodePromoSelection(promo.products);
   const requires = decodePromoSelection(promo.requires_products);
   const cgroupsRaw = decodePromoSelection(promo.client_groups);
@@ -951,24 +930,24 @@ function promoArray(promo: PromoRow, deep: boolean): Record<string, unknown> {
   // decoded list fields below are [] in that case) — captures20 pin.
   const appliesTo: Record<string, string> | null = products && products.length
     ? Object.fromEntries(
-        products
-          .map((id) => findProductById(Number(id)))
+        (await Promise.all(products
+          .map(async (id) => await findProductById(Number(id)))))
           .filter((p): p is ProductRow => !!p)
           .map((p) => [String(p.id), p.title])
       )
     : null;
   const requiresMap: Record<string, string> | null = requires && requires.length
     ? Object.fromEntries(
-        requires
-          .map((id) => findProductById(Number(id)))
+        (await Promise.all(requires
+          .map(async (id) => await findProductById(Number(id)))))
           .filter((p): p is ProductRow => !!p)
           .map((p) => [String(p.id), p.title])
       )
     : null;
   const cgroupsMap: Record<string, string> | null = cgroupsRaw && cgroupsRaw.length
     ? Object.fromEntries(
-        cgroupsRaw
-          .map((id) => getDb().prepare("SELECT id, title FROM client_group WHERE id = ?").get(Number(id)) as { id: number; title: string } | undefined)
+        (await Promise.all(cgroupsRaw
+          .map(async (id) => await getDb().prepare("SELECT id, title FROM client_group WHERE id = ?").get(Number(id)) as { id: number; title: string } | undefined)))
           .filter((g): g is { id: number; title: string } => !!g)
           .map((g) => [String(g.id), g.title])
       )
@@ -999,10 +978,10 @@ function promoArray(promo: PromoRow, deep: boolean): Record<string, unknown> {
     applies_to: appliesTo,
     requires: requiresMap,
     cgroups: cgroupsMap,
-    redemption_count: promoRedemptionCount(promo.id),
-    can_be_deleted: !promoHasHistory(promo.id),
+    redemption_count: await promoRedemptionCount(promo.id),
+    can_be_deleted: !await promoHasHistory(promo.id),
   };
-  if (deep) out["usage_stats"] = promoUsageStats(promo);
+  if (deep) out["usage_stats"] = await promoUsageStats(promo);
   return out;
 }
 
@@ -1015,7 +994,7 @@ function normalizePromoDate(v: unknown): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString().replace("T", " ").slice(0, 19);
 }
 
-function applyPromoData(promo: PromoRow, ctx: CallContext, isCreate: boolean): void {
+async function applyPromoData(promo: PromoRow, ctx: CallContext, isCreate: boolean): Promise<void> {
   const p = ctx.params;
   const raw = ctx.rawParams ?? {};
   const db = getDbWrite();
@@ -1057,61 +1036,59 @@ function applyPromoData(promo: PromoRow, ctx: CallContext, isCreate: boolean): v
   if (p["start_at"] !== undefined) set("start_at", normalizePromoDate(p["start_at"]));
   if (p["end_at"] !== undefined) set("end_at", normalizePromoDate(p["end_at"]));
   if (!isCreate && sets.length === 0) {
-    db.prepare("UPDATE promo SET updated_at = ? WHERE id = ?").run(nowStr(), promo.id);
+    await db.prepare("UPDATE promo SET updated_at = ? WHERE id = ?").run(nowStr(), promo.id);
     return;
   }
-  db.prepare(`UPDATE promo SET ${sets.join(", ")}${sets.length ? ", " : ""}updated_at = ? WHERE id = ?`).run(...vals, nowStr(), promo.id);
+  await db.prepare(`UPDATE promo SET ${sets.join(", ")}${sets.length ? ", " : ""}updated_at = ? WHERE id = ?`).run(...vals, nowStr(), promo.id);
 }
 
-register("admin", "product", "promo_create", (ctx: CallContext) => {
+register("admin", "product", "promo_create", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const code = ctx.params["code"];
   if (!code) throw new FbError("Promo code is missing");
   if (!ctx.params["type"]) throw new FbError("Promo type is missing");
   if (ctx.params["value"] === undefined || ctx.params["value"] === "") throw new FbError("Promo value is missing");
-  const dup = getDb().prepare("SELECT id FROM promo WHERE code = ?").get(code) as { id: number } | undefined;
+  const dup = await getDb().prepare("SELECT id FROM promo WHERE code = ?").get(code) as { id: number } | undefined;
   if (dup) throw new FbError("This promotion code already exists.");
   const now = nowStr();
-  const info = getDbWrite()
-    .prepare("INSERT INTO promo (code, description, type, value, maxuses, used, freesetup, once_per_client, recurring, active, products, periods, client_groups, requires_products, start_at, end_at, auto_apply, priority, stackable, created_at, updated_at) VALUES (?, ?, ?, ?, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, ?, ?)")
-    .run(code, ctx.params["description"] ?? null, ctx.params["type"], Number(ctx.params["value"]), now, now);
-  const promo = findPromo(Number(info.lastInsertRowid))!;
-  applyPromoData(promo, ctx, true);
+  const info = await getDbWrite().insertAndGetId("INSERT INTO promo (code, description, type, value, maxuses, used, freesetup, once_per_client, recurring, active, products, periods, client_groups, requires_products, start_at, end_at, auto_apply, priority, stackable, created_at, updated_at) VALUES (?, ?, ?, ?, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, ?, ?)", code, ctx.params["description"] ?? null, ctx.params["type"], Number(ctx.params["value"]), now, now);
+  const promo = (await findPromo(Number(info)))!;
+  await applyPromoData(promo, ctx, true);
   return promo.id;
 });
 
-register("admin", "product", "promo_get", (ctx: CallContext) => {
+register("admin", "product", "promo_get", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const idRaw = ctx.params["id"];
   if (!idRaw) throw new FbError("Promo ID was not passed");
-  const promo = findPromo(Number(idRaw));
+  const promo = await findPromo(Number(idRaw));
   if (!promo) throw new FbError("Promo not found");
-  return promoArray(promo, true);
+  return await promoArray(promo, true);
 });
 
-register("admin", "product", "promo_update", (ctx: CallContext) => {
+register("admin", "product", "promo_update", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const idRaw = ctx.params["id"];
   if (!idRaw) throw new FbError("Promo ID was not passed");
-  const promo = findPromo(Number(idRaw));
+  const promo = await findPromo(Number(idRaw));
   if (!promo) throw new FbError("Promo not found");
   const newCode = ctx.params["code"];
   if (newCode && newCode !== promo.code) {
-    const dup = getDb().prepare("SELECT id FROM promo WHERE code = ? AND id != ?").get(newCode, promo.id) as { id: number } | undefined;
+    const dup = await getDb().prepare("SELECT id FROM promo WHERE code = ? AND id != ?").get(newCode, promo.id) as { id: number } | undefined;
     if (dup) throw new FbError("This promotion code already exists.");
   }
-  applyPromoData(promo, ctx, false);
+  await applyPromoData(promo, ctx, false);
   return true;
 });
 
-register("admin", "product", "promo_duplicate", (ctx: CallContext) => {
+register("admin", "product", "promo_duplicate", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const idRaw = ctx.params["id"];
   if (!idRaw) throw new FbError("Promo ID was not passed");
-  const promo = findPromo(Number(idRaw));
+  const promo = await findPromo(Number(idRaw));
   if (!promo) throw new FbError("Promo not found");
   const base = promo.code && promo.code !== "" ? promo.code : "PROMO";
-  const codes = new Set((getDb().prepare("SELECT code FROM promo").all() as { code: string }[]).map((r) => r.code));
+  const codes = new Set(((await getDb().prepare("SELECT code FROM promo").all()) as { code: string }[]).map((r) => r.code));
   let candidate = `${base}-COPY`;
   if (codes.has(candidate)) {
     let n = 2;
@@ -1122,34 +1099,26 @@ register("admin", "product", "promo_duplicate", (ctx: CallContext) => {
     candidate = `${base.slice(0, 100 - (candidate.length - base.length))}${candidate.slice(base.length)}`;
   }
   const now = nowStr();
-  const info = getDbWrite()
-    .prepare("INSERT INTO promo (code, description, type, value, maxuses, used, freesetup, once_per_client, recurring, active, products, periods, client_groups, requires_products, start_at, end_at, auto_apply, priority, stackable, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-    .run(
-      candidate, promo.description, promo.type, promo.value, promo.maxuses ?? 0,
-      promo.freesetup, promo.once_per_client, promo.recurring,
-      promo.products, promo.periods, promo.client_groups, promo.requires_products,
-      promo.start_at, promo.end_at, promo.auto_apply, promo.priority ?? 0, promo.stackable,
-      now, now
-    );
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId("INSERT INTO promo (code, description, type, value, maxuses, used, freesetup, once_per_client, recurring, active, products, periods, client_groups, requires_products, start_at, end_at, auto_apply, priority, stackable, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", candidate, promo.description, promo.type, promo.value, promo.maxuses ?? 0, promo.freesetup, promo.once_per_client, promo.recurring, promo.products, promo.periods, promo.client_groups, promo.requires_products, promo.start_at, promo.end_at, promo.auto_apply, promo.priority ?? 0, promo.stackable, now, now);
+  return Number(info);
 });
 
-register("admin", "product", "promo_delete", (ctx: CallContext) => {
+register("admin", "product", "promo_delete", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const idRaw = ctx.params["id"];
   if (!idRaw) throw new FbError("Promo ID was not passed");
-  const promo = findPromo(Number(idRaw));
+  const promo = await findPromo(Number(idRaw));
   if (!promo) throw new FbError("Promo not found");
-  if (promoHasHistory(promo.id)) {
+  if (await promoHasHistory(promo.id)) {
     throw new FbError("Promotions with redemption history cannot be deleted. Disable the promotion instead.");
   }
-  getDbWrite().prepare("DELETE FROM promo WHERE id = ?").run(promo.id);
+  await getDbWrite().prepare("DELETE FROM promo WHERE id = ?").run(promo.id);
   return true;
 });
 
-register("admin", "product", "promo_get_list", (ctx: CallContext) => {
+register("admin", "product", "promo_get_list", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  let promos = getDb().prepare(`SELECT ${PROMO_COLS} FROM promo`).all() as unknown as PromoRow[];
+  let promos = await getDb().prepare(`SELECT ${PROMO_COLS} FROM promo`).all() as unknown as PromoRow[];
   const p = ctx.params;
   if (p["id"]) promos = promos.filter((x) => x.id === Number(p["id"]));
   if (p["search"]) {
@@ -1191,15 +1160,15 @@ register("admin", "product", "promo_get_list", (ctx: CallContext) => {
     if (ka > kb) return 1 * dir;
     return a.id - b.id;
   });
-  return paginate(promos.map((x) => promoArray(x, false)), p);
+  return paginate(await Promise.all(promos.map(async (x) => await promoArray(x, false))), p);
 });
 
-register("admin", "product", "promo_redemption_get_list", (ctx: CallContext) => {
+register("admin", "product", "promo_redemption_get_list", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const promoIdRaw = ctx.params["promo_id"];
   if (!promoIdRaw) throw new FbError("Promo ID is missing");
   const promoId = Number(promoIdRaw);
-  let rows = getDb().prepare("SELECT id, promo_id, client_id, client_order_id, invoice_id, phase, status, discount_amount, currency, committed_at, released_at, release_reason, created_at, updated_at FROM promo_redemption WHERE promo_id = ?").all(promoId) as Record<string, unknown>[];
+  let rows = await getDb().prepare("SELECT id, promo_id, client_id, client_order_id, invoice_id, phase, status, discount_amount, currency, committed_at, released_at, release_reason, created_at, updated_at FROM promo_redemption WHERE promo_id = ?").all(promoId) as Record<string, unknown>[];
   const p = ctx.params;
   if (p["client_id"]) rows = rows.filter((r) => r["client_id"] === Number(p["client_id"]));
   if (p["client_order_id"]) rows = rows.filter((r) => r["client_order_id"] === Number(p["client_order_id"]));
@@ -1220,27 +1189,27 @@ register("admin", "product", "promo_redemption_get_list", (ctx: CallContext) => 
     return Number(a["id"]) - Number(b["id"]);
   });
   const db = getDb();
-  const enriched = rows.map((row) => {
+  const enriched = await Promise.all(rows.map(async (row) => {
     const out: Record<string, unknown> = { ...row, client: null, order: null, invoice: null };
     if (row["client_id"]) {
-      const c = db.prepare("SELECT first_name, last_name, email FROM client WHERE id = ?").get(Number(row["client_id"])) as { first_name: string; last_name: string; email: string } | undefined;
+      const c = await db.prepare("SELECT first_name, last_name, email FROM client WHERE id = ?").get(Number(row["client_id"])) as { first_name: string; last_name: string; email: string } | undefined;
       out["client"] = { id: Number(row["client_id"]), first_name: c?.first_name ?? null, last_name: c?.last_name ?? null, email: c?.email ?? null };
     }
     if (row["client_order_id"]) {
-      const o = db.prepare("SELECT title, created_at FROM client_order WHERE id = ?").get(Number(row["client_order_id"])) as { title: string; created_at: string } | undefined;
+      const o = await db.prepare("SELECT title, created_at FROM client_order WHERE id = ?").get(Number(row["client_order_id"])) as { title: string; created_at: string } | undefined;
       out["order"] = { id: Number(row["client_order_id"]), title: o?.title ?? null, created_at: o?.created_at ?? null };
     }
     if (row["invoice_id"]) {
-      const inv = db.prepare("SELECT serie, nr, status, created_at FROM invoice WHERE id = ?").get(Number(row["invoice_id"])) as { serie: string; nr: number; status: string; created_at: string } | undefined;
+      const inv = await db.prepare("SELECT serie, nr, status, created_at FROM invoice WHERE id = ?").get(Number(row["invoice_id"])) as { serie: string; nr: number; status: string; created_at: string } | undefined;
       let serieNr: string | null = null;
       if (inv) {
-        const padRow = db.prepare("SELECT meta_value FROM setting WHERE param = 'invoice_number_padding'").get() as { meta_value: string } | undefined;
+        const padRow = await db.prepare("SELECT meta_value FROM setting WHERE param = 'invoice_number_padding'").get() as { meta_value: string } | undefined;
         const padding = padRow?.meta_value ? parseInt(padRow.meta_value, 10) : 5;
         serieNr = inv.serie + String(inv.nr).padStart(padding, "0");
       }
       out["invoice"] = { id: Number(row["invoice_id"]), serie_nr: serieNr, status: inv?.status ?? null, created_at: inv?.created_at ?? null };
     }
     return out;
-  });
+  }));
   return paginate(enriched, p);
 });

@@ -9,12 +9,12 @@ import { FbError, register, requireAdmin, type CallContext } from "../dispatch";
  * missing keys. Pinned by capture26.py.
  */
 
-function antispamConfig(): Record<string, unknown> {
-  return readExtensionConfig("mod_antispam");
+async function antispamConfig(): Promise<Record<string, unknown>> {
+  return await readExtensionConfig("mod_antispam");
 }
 
-function getConfigShape(): Record<string, unknown> {
-  const c = antispamConfig();
+async function getConfigShape(): Promise<Record<string, unknown>> {
+  const c = await antispamConfig();
   return {
     block_ips: c["block_ips"] ?? false,
     blocked_ips: c["blocked_ips"] ?? "",
@@ -43,12 +43,12 @@ function blockedIps(config: Record<string, unknown>): string[] {
     .filter((s) => s !== "");
 }
 
-function saveBlockedIps(ips: string[], enabled: boolean): void {
-  const config = antispamConfig();
+async function saveBlockedIps(ips: string[], enabled: boolean): Promise<void> {
+  const config = await antispamConfig();
   config["block_ips"] = enabled;
   config["blocked_ips"] = ips.join("\n");
   config["ext"] = "mod_antispam";
-  writeExtensionConfig("mod_antispam", config);
+  await writeExtensionConfig("mod_antispam", config);
 }
 
 /** Raw value when JSON, else the string param (for the is_string check). */
@@ -66,13 +66,13 @@ function normalizeIp(ctx: CallContext): string {
   return trimmed;
 }
 
-register("admin", "antispam", "get_config", (ctx) => {
+register("admin", "antispam", "get_config", async (ctx) => {
   requireAdmin(ctx);
-  return getConfigShape();
+  return await getConfigShape();
 });
 
-register("guest", "antispam", "recaptcha", () => {
-  const c = antispamConfig();
+register("guest", "antispam", "recaptcha", async () => {
+  const c = await antispamConfig();
   return {
     publickey: c["captcha_recaptcha_publickey"] ?? null,
     enabled: c["captcha_enabled"] ?? false,
@@ -84,34 +84,34 @@ register("guest", "antispam", "recaptcha", () => {
   };
 });
 
-register("admin", "antispam", "block_ip", (ctx) => {
+register("admin", "antispam", "block_ip", async (ctx) => {
   requireAdmin(ctx);
   const ip = normalizeIp(ctx);
-  const config = antispamConfig();
+  const config = await antispamConfig();
   const ips = blockedIps(config);
   if (ips.includes(ip)) throw new FbError(`${ip} is already blocked.`);
   if (ctx.ip === ip) {
     throw new FbError(`You cannot block ${ip} as it is the IP you are making requests from.`);
   }
   ips.push(ip);
-  saveBlockedIps(ips, true);
+  await saveBlockedIps(ips, true);
   return { result: true, ip };
 });
 
-register("admin", "antispam", "unblock_ip", (ctx) => {
+register("admin", "antispam", "unblock_ip", async (ctx) => {
   requireAdmin(ctx);
   const ip = normalizeIp(ctx);
-  const config = antispamConfig();
+  const config = await antispamConfig();
   const ips = blockedIps(config);
   const idx = ips.indexOf(ip);
   if (idx === -1) throw new FbError(`${ip} is not currently blocked.`);
   ips.splice(idx, 1);
-  saveBlockedIps(ips, ips.length > 0);
+  await saveBlockedIps(ips, ips.length > 0);
   return { result: true, ip };
 });
 
-register("admin", "antispam", "get_blocked_ips", (ctx) => {
+register("admin", "antispam", "get_blocked_ips", async (ctx) => {
   requireAdmin(ctx);
-  const config = antispamConfig();
+  const config = await antispamConfig();
   return { enabled: config["block_ips"] ?? false, ips: blockedIps(config) };
 });

@@ -10,11 +10,11 @@ import { FbError, register } from "../dispatch";
  * the built-in default) is implemented but unverified-live.
  */
 
-register("guest", "cookieconsent", "message", () => {
-  if (!isModuleActive("cookieconsent")) {
+register("guest", "cookieconsent", "message", async () => {
+  if (!await isModuleActive("cookieconsent")) {
     throw new FbError("FOSSBilling module cookieconsent is not installed/activated", 715);
   }
-  const config = readExtensionConfig("mod_cookieconsent");
+  const config = await readExtensionConfig("mod_cookieconsent");
   return (
     (config["message"] as string | undefined) ??
     "This website uses cookies. By continuing to use this website, you consent to our use of these cookies."

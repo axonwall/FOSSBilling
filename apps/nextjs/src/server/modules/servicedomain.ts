@@ -154,7 +154,7 @@ function periodsArray(periods: string | null): number[] | null {
   return years;
 }
 
-export function tldToApiArray(row: TldRow, isAdmin = false): Record<string, unknown> {
+export async function tldToApiArray(row: TldRow, isAdmin = false): Promise<Record<string, unknown>> {
   const out: Record<string, unknown> = {
     id: row.id,
     tld: row.tld,
@@ -171,7 +171,7 @@ export function tldToApiArray(row: TldRow, isAdmin = false): Record<string, unkn
   if (isAdmin) {
     const reg =
       row.tld_registrar_id !== null
-        ? (getDb().prepare("SELECT id, name FROM tld_registrar WHERE id = ?").get(row.tld_registrar_id) as unknown as
+        ? (await getDb().prepare("SELECT id, name FROM tld_registrar WHERE id = ?").get(row.tld_registrar_id) as unknown as
             | { id: number; name: string | null }
             | undefined)
         : undefined;
@@ -330,19 +330,19 @@ function validateRegistrarConfig(row: RegistrarRow, config: Record<string, unkno
 
 // --- Lookups ---
 
-function findOrder(id: number): OrderRow | undefined {
-  return getDb().prepare("SELECT * FROM client_order WHERE id = ?").get(id) as unknown as OrderRow | undefined;
+async function findOrder(id: number): Promise<OrderRow | undefined> {
+  return await getDb().prepare("SELECT * FROM client_order WHERE id = ?").get(id) as unknown as OrderRow | undefined;
 }
 
-function findOrderForClient(id: number, clientId: number): OrderRow | undefined {
-  return getDb()
+async function findOrderForClient(id: number, clientId: number): Promise<OrderRow | undefined> {
+  return await getDb()
     .prepare("SELECT * FROM client_order WHERE id = ? AND client_id = ?")
     .get(id, clientId) as unknown as OrderRow | undefined;
 }
 
-function domainByOrder(order: OrderRow): DomainRow | undefined {
+async function domainByOrder(order: OrderRow): Promise<DomainRow | undefined> {
   if (order.service_id === null || order.service_type !== "domain") return undefined;
-  return getDb().prepare("SELECT * FROM service_domain WHERE id = ?").get(order.service_id) as unknown as
+  return await getDb().prepare("SELECT * FROM service_domain WHERE id = ?").get(order.service_id) as unknown as
     | DomainRow
     | undefined;
 }
@@ -353,34 +353,34 @@ function assertUsable(order: OrderRow): void {
   }
 }
 
-function getServiceAdmin(ctx: CallContext): [OrderRow, DomainRow] {
+async function getServiceAdmin(ctx: CallContext): Promise<[OrderRow, DomainRow]> {
   if (!ctx.params["order_id"]) throw new FbError("Order ID is missing");
-  const order = findOrder(Number(ctx.params["order_id"]));
+  const order = await findOrder(Number(ctx.params["order_id"]));
   if (!order) throw new FbError("Order not found");
-  const svc = domainByOrder(order);
+  const svc = await domainByOrder(order);
   if (!svc) throw new FbError("Domain order is not activated");
   return [order, svc];
 }
 
-function getServiceClient(ctx: CallContext): [OrderRow, DomainRow] {
+async function getServiceClient(ctx: CallContext): Promise<[OrderRow, DomainRow]> {
   if (!ctx.params["order_id"]) throw new FbError("Order ID is required");
-  const order = findOrderForClient(Number(ctx.params["order_id"]), ctx.session!.client!.id);
+  const order = await findOrderForClient(Number(ctx.params["order_id"]), ctx.session!.client!.id);
   if (!order) throw new FbError("Order not found");
   assertUsable(order);
-  const svc = domainByOrder(order);
+  const svc = await domainByOrder(order);
   if (!svc || order.status !== "active") throw new FbError("Order is not activated");
   return [order, svc];
 }
 
-function findTldByTld(raw: string): TldRow | undefined {
+async function findTldByTld(raw: string): Promise<TldRow | undefined> {
   const normalized = normalizeTld(raw);
-  return getDb()
+  return await getDb()
     .prepare("SELECT * FROM tld WHERE tld = ? OR tld = ? ORDER BY id ASC LIMIT 1")
     .get(normalized, normalized.slice(1)) as unknown as TldRow | undefined;
 }
 
-function getRegistrar(id: number): RegistrarRow {
-  const row = getDb().prepare("SELECT * FROM tld_registrar WHERE id = ?").get(id) as unknown as
+async function getRegistrar(id: number): Promise<RegistrarRow> {
+  const row = await getDb().prepare("SELECT * FROM tld_registrar WHERE id = ?").get(id) as unknown as
     | RegistrarRow
     | undefined;
   if (!row) throw new FbError("Registrar not found");
@@ -392,13 +392,13 @@ function getRegistrar(id: number): RegistrarRow {
  * row, requires a ported adapter (Custom or Enom), and requires the
  * client row (PHP _getD merges the client profile into the domain).
  */
-function resolveAdapter(svc: DomainRow): { reg: RegistrarRow; code: string } {
+async function resolveAdapter(svc: DomainRow): Promise<{ reg: RegistrarRow; code: string }> {
   if (svc.tld_registrar_id === null) throw new FbError("Registrar not found");
-  const reg = getRegistrar(svc.tld_registrar_id);
+  const reg = await getRegistrar(svc.tld_registrar_id);
   if (reg.registrar !== "Custom" && reg.registrar !== "Enom") {
     throw new FbError(`Domain registrar ${reg.registrar} was not found`);
   }
-  const client = getDb().prepare("SELECT id FROM client WHERE id = ?").get(svc.client_id);
+  const client = await getDb().prepare("SELECT id FROM client WHERE id = ?").get(svc.client_id);
   if (!client) throw new FbError("Client not found");
   return { reg, code: reg.registrar };
 }
@@ -419,12 +419,12 @@ function epochToTs(epoch: number): string {
   return new Date(epoch * 1000).toISOString().slice(0, 19).replace("T", " ");
 }
 
-function saveDomain(svc: DomainRow, patch: Partial<DomainRow>): void {
+async function saveDomain(svc: DomainRow, patch: Partial<DomainRow>): Promise<void> {
   const next = { ...svc, ...patch };
   const keys = Object.keys(patch);
   if (keys.length === 0) return;
   const sets = keys.map((k) => `${k} = ?`).join(", ");
-  getDbWrite()
+  await getDbWrite()
     .prepare(`UPDATE service_domain SET ${sets}, updated_at = ? WHERE id = ?`)
     .run(...(keys.map((k) => (next as unknown as Record<string, unknown>)[k]) as (string | number | null)[]), nowTimestamp(), svc.id);
 }
@@ -490,9 +490,9 @@ function normalizePeriodsInput(v: unknown): string | null {
 
 // --- Registrations: domain actions ---
 
-register("admin", "servicedomain", "update", (ctx) => {
+register("admin", "servicedomain", "update", async (ctx) => {
   requireAdmin(ctx);
-  const [, svc] = getServiceAdmin(ctx);
+  const [, svc] = await getServiceAdmin(ctx);
   const patch: Partial<DomainRow> = {};
   if (ctx.params["ns1"] !== undefined) patch.ns1 = ctx.params["ns1"];
   if (ctx.params["ns2"] !== undefined) patch.ns2 = ctx.params["ns2"];
@@ -506,22 +506,22 @@ register("admin", "servicedomain", "update", (ctx) => {
   if (locked !== undefined && locked !== null) patch.locked = phpBool(locked) ? 1 : 0;
   const tc = paramValue(ctx, "transfer_code");
   if (tc !== undefined && tc !== null) patch.transfer_code = String(tc);
-  saveDomain(svc, patch);
+  await saveDomain(svc, patch);
   return true;
 });
 
 async function updateNameservers(
   ctx: CallContext,
-  getService: (ctx: CallContext) => [OrderRow, DomainRow],
+  getService: (ctx: CallContext) => [OrderRow, DomainRow] | Promise<[OrderRow, DomainRow]>,
 ): Promise<boolean> {
-  const [, svc] = getService(ctx);
+  const [, svc] = await getService(ctx);
   if (ctx.params["ns1"] === undefined && (ctx.rawParams as Record<string, unknown>)["ns1"] === undefined) {
     throw new FbError("Nameserver 1 is required");
   }
   if (ctx.params["ns2"] === undefined && (ctx.rawParams as Record<string, unknown>)["ns2"] === undefined) {
     throw new FbError("Nameserver 2 is required");
   }
-  const { reg, code } = resolveAdapter(svc);
+  const { reg, code } = await resolveAdapter(svc);
   // PHP: adapter modifyNs runs BEFORE the local model set + flush, so
   // an adapter failure persists nothing.
   if (code === "Enom") {
@@ -535,7 +535,7 @@ async function updateNameservers(
       }),
     );
   }
-  saveDomain(svc, {
+  await saveDomain(svc, {
     ns1: ctx.params["ns1"] ?? null,
     ns2: ctx.params["ns2"] ?? null,
     ns3: ctx.params["ns3"] ?? null,
@@ -562,9 +562,9 @@ function contactObject(ctx: CallContext): Record<string, unknown> | undefined {
 
 async function updateContacts(
   ctx: CallContext,
-  getService: (ctx: CallContext) => [OrderRow, DomainRow],
+  getService: (ctx: CallContext) => [OrderRow, DomainRow] | Promise<[OrderRow, DomainRow]>,
 ): Promise<boolean> {
-  const [, svc] = getService(ctx);
+  const [, svc] = await getService(ctx);
   const contact = contactObject(ctx);
   if (!contact || Object.keys(contact).length === 0) throw new FbError("Required field contact is missing");
   const required: [string, string][] = [
@@ -583,7 +583,7 @@ async function updateContacts(
     const v = contact[field];
     if (v === undefined || v === null || v === "") throw new FbError(message);
   }
-  const { reg, code } = resolveAdapter(svc);
+  const { reg, code } = await resolveAdapter(svc);
   // PHP sets the model fields before the adapter call but flushes
   // after it, so adapter-first-then-save is equivalent: a failure
   // persists nothing.
@@ -604,7 +604,7 @@ async function updateContacts(
     };
     await enomModifyContact(enomConfig(reg), svc.sld ?? "", stripDots(svc.tld), enomContact);
   }
-  saveDomain(svc, {
+  await saveDomain(svc, {
     contact_first_name: String(contact["first_name"]),
     contact_last_name: String(contact["last_name"]),
     contact_email: String(contact["email"]),
@@ -632,11 +632,11 @@ register("client", "servicedomain", "update_contacts", (ctx) => {
 
 async function setPrivacy(
   ctx: CallContext,
-  getService: (ctx: CallContext) => [OrderRow, DomainRow],
+  getService: (ctx: CallContext) => [OrderRow, DomainRow] | Promise<[OrderRow, DomainRow]>,
   value: boolean,
 ): Promise<boolean> {
-  const [, svc] = getService(ctx);
-  const { reg, code } = resolveAdapter(svc);
+  const [, svc] = await getService(ctx);
+  const { reg, code } = await resolveAdapter(svc);
   // PHP: adapter first, then the local flag — a failure flips nothing.
   if (code === "Enom") {
     if (value) {
@@ -645,7 +645,7 @@ async function setPrivacy(
       enomDisablePrivacy();
     }
   }
-  saveDomain(svc, { privacy: value ? 1 : 0 });
+  await saveDomain(svc, { privacy: value ? 1 : 0 });
   return true;
 }
 
@@ -668,15 +668,15 @@ register("client", "servicedomain", "disable_privacy_protection", (ctx) => {
 
 async function setLocked(
   ctx: CallContext,
-  getService: (ctx: CallContext) => [OrderRow, DomainRow],
+  getService: (ctx: CallContext) => [OrderRow, DomainRow] | Promise<[OrderRow, DomainRow]>,
   value: boolean,
 ): Promise<boolean> {
-  const [, svc] = getService(ctx);
-  const { reg, code } = resolveAdapter(svc);
+  const [, svc] = await getService(ctx);
+  const { reg, code } = await resolveAdapter(svc);
   if (code === "Enom") {
     await enomSetLock(enomConfig(reg), svc.sld ?? "", stripDots(svc.tld), value);
   }
-  saveDomain(svc, { locked: value ? 1 : 0 });
+  await saveDomain(svc, { locked: value ? 1 : 0 });
   return true;
 }
 
@@ -704,16 +704,16 @@ function addYears(ts: string, years: number): string {
 }
 
 async function syncDomain(svc: DomainRow): Promise<void> {
-  const order = getDb()
+  const order = await getDb()
     .prepare("SELECT * FROM client_order WHERE service_type = 'domain' AND service_id = ? ORDER BY id ASC LIMIT 1")
     .get(svc.id) as unknown as OrderRow | undefined;
   if (!order) throw new FbError("Domain order not found");
-  const { reg, code } = resolveAdapter(svc);
+  const { reg, code } = await resolveAdapter(svc);
   if (code === "Enom") {
     await syncEnomDomain(svc, reg);
     return;
   }
-  const client = getDb().prepare("SELECT * FROM client WHERE id = ?").get(svc.client_id) as unknown as
+  const client = await getDb().prepare("SELECT * FROM client WHERE id = ?").get(svc.client_id) as unknown as
     | Record<string, unknown>
     | undefined;
   const pick = (modelVal: string | null, clientKey: string): string => {
@@ -722,7 +722,7 @@ async function syncDomain(svc: DomainRow): Promise<void> {
     return cv === null || cv === undefined ? "" : String(cv);
   };
   const now = nowTimestamp();
-  saveDomain(svc, {
+  await saveDomain(svc, {
     contact_email: pick(svc.contact_email, "email"),
     contact_first_name: pick(svc.contact_first_name, "first_name"),
     contact_last_name: pick(svc.contact_last_name, "last_name"),
@@ -777,33 +777,33 @@ async function syncEnomDomain(svc: DomainRow, reg: RegistrarRow): Promise<void> 
     // back, so phone_cc is left alone.
     patch.contact_phone = c.phone;
   }
-  saveDomain(svc, patch);
+  await saveDomain(svc, patch);
 }
 
 register("admin", "servicedomain", "sync", async (ctx) => {
   requireAdmin(ctx);
-  const [, svc] = getServiceAdmin(ctx);
+  const [, svc] = await getServiceAdmin(ctx);
   await syncDomain(svc);
   return true;
 });
 register("client", "servicedomain", "sync", async (ctx) => {
   requireClient(ctx);
-  const [, svc] = getServiceClient(ctx);
+  const [, svc] = await getServiceClient(ctx);
   await syncDomain(svc);
   return true;
 });
 
 register("admin", "servicedomain", "get_transfer_code", async (ctx) => {
   requireAdmin(ctx);
-  const [, svc] = getServiceAdmin(ctx);
-  const { reg, code } = resolveAdapter(svc);
+  const [, svc] = await getServiceAdmin(ctx);
+  const { reg, code } = await resolveAdapter(svc);
   if (code === "Enom") return enomGetEpp(enomConfig(reg), svc.sld ?? "", stripDots(svc.tld));
   return "";
 });
 register("client", "servicedomain", "get_transfer_code", async (ctx) => {
   requireClient(ctx);
-  const [, svc] = getServiceClient(ctx);
-  const { reg, code } = resolveAdapter(svc);
+  const [, svc] = await getServiceClient(ctx);
+  const { reg, code } = await resolveAdapter(svc);
   if (code === "Enom") return enomGetEpp(enomConfig(reg), svc.sld ?? "", stripDots(svc.tld));
   return "";
 });
@@ -827,7 +827,7 @@ function tldSortClause(params: Record<string, string>): string {
   return "t.tld ASC, t.id ASC";
 }
 
-register("admin", "servicedomain", "tld_get_list", (ctx) => {
+register("admin", "servicedomain", "tld_get_list", async (ctx) => {
   requireAdmin(ctx);
   const where: string[] = [];
   const args: (string | number)[] = [];
@@ -843,54 +843,54 @@ register("admin", "servicedomain", "tld_get_list", (ctx) => {
     args.push(phpBool(paramValue(ctx, "allow_transfer")) ? 1 : 0);
   }
   const order = tldSortClause(ctx.params);
-  const rows = getDb()
+  const rows = await getDb()
     .prepare(
       `SELECT t.* FROM tld t LEFT JOIN tld_registrar r ON r.id = t.tld_registrar_id ${where.length ? `WHERE ${where.join(" AND ")} ` : ""}ORDER BY ${order}`,
     )
     .all(...args) as unknown as TldRow[];
-  return paginate(rows.map((r) => tldToApiArray(r, true)), ctx.params);
+  return paginate(await Promise.all(rows.map(async (r) => await tldToApiArray(r, true))), ctx.params);
 });
 
-register("admin", "servicedomain", "tld_get", (ctx) => {
+register("admin", "servicedomain", "tld_get", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["tld"]) throw new FbError("TLD is missing");
-  const row = findTldByTld(ctx.params["tld"]);
+  const row = await findTldByTld(ctx.params["tld"]);
   if (!row) throw new FbError("TLD not found");
-  return tldToApiArray(row, true);
+  return await tldToApiArray(row, true);
 });
 
-register("admin", "servicedomain", "tld_get_id", (ctx) => {
+register("admin", "servicedomain", "tld_get_id", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("ID is missing");
-  const row = getDb().prepare("SELECT * FROM tld WHERE id = ?").get(Number(ctx.params["id"])) as unknown as
+  const row = await getDb().prepare("SELECT * FROM tld WHERE id = ?").get(Number(ctx.params["id"])) as unknown as
     | TldRow
     | undefined;
   if (!row) throw new FbError("TLD not found");
-  return tldToApiArray(row, true);
+  return await tldToApiArray(row, true);
 });
 
-register("admin", "servicedomain", "tld_delete", (ctx) => {
+register("admin", "servicedomain", "tld_delete", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["tld"]) throw new FbError("TLD is missing");
   const normalized = normalizeTld(ctx.params["tld"]);
-  const row = findTldByTld(ctx.params["tld"]);
+  const row = await findTldByTld(ctx.params["tld"]);
   if (!row) throw new FbError("TLD not found");
-  const count = getDb()
+  const count = await getDb()
     .prepare("SELECT COUNT(*) AS c FROM service_domain WHERE LOWER(RTRIM(TRIM(tld), '.')) IN (?, ?)")
     .get(normalized, normalized.slice(1)) as unknown as { c: number };
   if (count.c > 0) throw new FbError(`TLD is used by ${count.c} domains`, 707);
-  getDbWrite().prepare("DELETE FROM tld WHERE id = ?").run(row.id);
+  await getDbWrite().prepare("DELETE FROM tld WHERE id = ?").run(row.id);
   return true;
 });
 
-register("admin", "servicedomain", "tld_create", (ctx) => {
+register("admin", "servicedomain", "tld_create", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["tld"]) throw new FbError("TLD is missing");
   if (!ctx.params["tld_registrar_id"]) throw new FbError("TLD registrar ID is missing");
   if (!ctx.params["price_registration"]) throw new FbError("Registration price is missing");
   if (!ctx.params["price_renew"]) throw new FbError("Renewal price is missing");
   if (!ctx.params["price_transfer"]) throw new FbError("Transfer price is missing");
-  if (findTldByTld(ctx.params["tld"])) throw new FbError("TLD already registered");
+  if (await findTldByTld(ctx.params["tld"])) throw new FbError("TLD already registered");
   const data: Record<string, unknown> = {};
   for (const k of ["price_registration", "price_renew", "price_transfer", "min_years", "periods"]) {
     if (paramPresent(ctx, k)) data[k] = paramValue(ctx, k);
@@ -901,37 +901,19 @@ register("admin", "servicedomain", "tld_create", (ctx) => {
   }
   const minYears = validateMinYears(data);
   const periods = "periods" in data ? normalizePeriodsInput(data["periods"]) : undefined;
-  const registrar = getRegistrar(Number(ctx.params["tld_registrar_id"]));
+  const registrar = await getRegistrar(Number(ctx.params["tld_registrar_id"]));
   validateRegistrarConfig(registrar, registrarConfig(registrar));
   const ts = nowTimestamp();
-  const info = getDbWrite()
-    .prepare(
-      `INSERT INTO tld (tld, price_registration, price_renew, price_transfer, allow_register, allow_transfer,
+  const info = await getDbWrite().insertAndGetId(`INSERT INTO tld (tld, price_registration, price_renew, price_transfer, allow_register, allow_transfer,
        require_transfer_code, active, min_years, periods, tld_registrar_id, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .run(
-      normalizeTld(ctx.params["tld"]),
-      String(prices["price_registration"]),
-      String(prices["price_renew"]),
-      String(prices["price_transfer"]),
-      paramPresent(ctx, "allow_register") ? (phpBool(paramValue(ctx, "allow_register")) ? 1 : 0) : 1,
-      paramPresent(ctx, "allow_transfer") ? (phpBool(paramValue(ctx, "allow_transfer")) ? 1 : 0) : 1,
-      paramPresent(ctx, "require_transfer_code") && phpBool(paramValue(ctx, "require_transfer_code")) ? 1 : 0,
-      paramPresent(ctx, "active") ? (phpBool(paramValue(ctx, "active")) ? 1 : 0) : 1,
-      minYears ?? 1,
-      periods ?? null,
-      registrar.id,
-      ts,
-      ts,
-    );
-  return Number(info.lastInsertRowid);
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, normalizeTld(ctx.params["tld"]), String(prices["price_registration"]), String(prices["price_renew"]), String(prices["price_transfer"]), paramPresent(ctx, "allow_register") ? (phpBool(paramValue(ctx, "allow_register")) ? 1 : 0) : 1, paramPresent(ctx, "allow_transfer") ? (phpBool(paramValue(ctx, "allow_transfer")) ? 1 : 0) : 1, paramPresent(ctx, "require_transfer_code") && phpBool(paramValue(ctx, "require_transfer_code")) ? 1 : 0, paramPresent(ctx, "active") ? (phpBool(paramValue(ctx, "active")) ? 1 : 0) : 1, minYears ?? 1, periods ?? null, registrar.id, ts, ts);
+  return Number(info);
 });
 
-register("admin", "servicedomain", "tld_update", (ctx) => {
+register("admin", "servicedomain", "tld_update", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["tld"]) throw new FbError("TLD is missing");
-  const row = findTldByTld(ctx.params["tld"]);
+  const row = await findTldByTld(ctx.params["tld"]);
   if (!row) throw new FbError("TLD not found");
   const data: Record<string, unknown> = {};
   for (const k of ["price_registration", "price_renew", "price_transfer", "min_years", "periods", "tld_registrar_id"]) {
@@ -945,7 +927,7 @@ register("admin", "servicedomain", "tld_update", (ctx) => {
   const periods = "periods" in data ? normalizePeriodsInput(data["periods"]) : undefined;
   let registrarId = row.tld_registrar_id;
   if ("tld_registrar_id" in data && data["tld_registrar_id"] !== null) {
-    const reg = getRegistrar(Number(data["tld_registrar_id"]));
+    const reg = await getRegistrar(Number(data["tld_registrar_id"]));
     validateRegistrarConfig(reg, registrarConfig(reg));
     registrarId = reg.id;
   }
@@ -963,7 +945,7 @@ register("admin", "servicedomain", "tld_update", (ctx) => {
     tld_registrar_id: registrarId,
   };
   const sets = Object.keys(patch).map((k) => `${k} = ?`).join(", ");
-  getDbWrite()
+  await getDbWrite()
     .prepare(`UPDATE tld SET ${sets}, updated_at = ? WHERE id = ?`)
     .run(...(Object.values(patch) as (string | number | null)[]), nowTimestamp(), row.id);
   return true;
@@ -971,22 +953,22 @@ register("admin", "servicedomain", "tld_update", (ctx) => {
 
 // --- Registrations: registrars ---
 
-function installedRegistrarCodes(): string[] {
-  const rows = getDb().prepare("SELECT registrar FROM tld_registrar").all() as unknown as { registrar: string | null }[];
+async function installedRegistrarCodes(): Promise<string[]> {
+  const rows = await getDb().prepare("SELECT registrar FROM tld_registrar").all() as unknown as { registrar: string | null }[];
   return rows.map((r) => r.registrar).filter((c): c is string => c !== null);
 }
 
-register("admin", "servicedomain", "registrar_get_list", (ctx) => {
+register("admin", "servicedomain", "registrar_get_list", async (ctx) => {
   requireAdmin(ctx);
   const dir = (ctx.params["direction"] ?? "").toUpperCase() === "DESC" ? "DESC" : "ASC";
   const order = ctx.params["sort"] === "id" ? `tr.id ${dir}` : `tr.name ${dir}, tr.id ${dir}`;
-  const rows = getDb().prepare(`SELECT * FROM tld_registrar tr ORDER BY ${order}`).all() as unknown as RegistrarRow[];
+  const rows = await getDb().prepare(`SELECT * FROM tld_registrar tr ORDER BY ${order}`).all() as unknown as RegistrarRow[];
   return paginate(rows.map(registrarToApi), ctx.params);
 });
 
-register("admin", "servicedomain", "registrar_get_pairs", (ctx) => {
+register("admin", "servicedomain", "registrar_get_pairs", async (ctx) => {
   requireAdmin(ctx);
-  const rows = getDb().prepare("SELECT id, name FROM tld_registrar ORDER BY id DESC").all() as unknown as {
+  const rows = await getDb().prepare("SELECT id, name FROM tld_registrar ORDER BY id DESC").all() as unknown as {
     id: number;
     name: string;
   }[];
@@ -995,61 +977,59 @@ register("admin", "servicedomain", "registrar_get_pairs", (ctx) => {
   return Object.keys(out).length > 0 ? out : [];
 });
 
-register("admin", "servicedomain", "registrar_get_available", (ctx) => {
+register("admin", "servicedomain", "registrar_get_available", async (ctx) => {
   requireAdmin(ctx);
-  const installed = new Set(installedRegistrarCodes());
+  const installed = new Set(await installedRegistrarCodes());
   return ALL_ADAPTER_CODES.filter((c) => !installed.has(c));
 });
 
-register("admin", "servicedomain", "registrar_install", (ctx) => {
+register("admin", "servicedomain", "registrar_install", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["code"]) throw new FbError("Registrar code is missing");
-  const installed = new Set(installedRegistrarCodes());
+  const installed = new Set(await installedRegistrarCodes());
   if (installed.has(ctx.params["code"]) || !ALL_ADAPTER_CODES.includes(ctx.params["code"])) {
     throw new FbError("Registrar is not available for installation.");
   }
-  getDbWrite()
+  await getDbWrite()
     .prepare("INSERT INTO tld_registrar (name, registrar, test_mode, config) VALUES (?, ?, 0, NULL)")
     .run(ctx.params["code"], ctx.params["code"]);
   return true;
 });
 
-register("admin", "servicedomain", "registrar_delete", (ctx) => {
+register("admin", "servicedomain", "registrar_delete", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("Registrar ID is missing");
-  const row = getRegistrar(Number(ctx.params["id"]));
-  const domains = getDb()
+  const row = await getRegistrar(Number(ctx.params["id"]));
+  const domains = await getDb()
     .prepare("SELECT COUNT(*) AS c FROM service_domain WHERE tld_registrar_id = ?")
     .get(row.id) as unknown as { c: number };
   if (domains.c > 0) throw new FbError(`Registrar is used by ${domains.c} domains`, 707);
-  const tlds = getDb().prepare("SELECT COUNT(*) AS c FROM tld WHERE tld_registrar_id = ?").get(row.id) as unknown as {
+  const tlds = await getDb().prepare("SELECT COUNT(*) AS c FROM tld WHERE tld_registrar_id = ?").get(row.id) as unknown as {
     c: number;
   };
   if (tlds.c > 0) throw new FbError(`Registrar is used by ${tlds.c} TLDs`, 707);
-  getDbWrite().prepare("DELETE FROM tld_registrar WHERE id = ?").run(row.id);
+  await getDbWrite().prepare("DELETE FROM tld_registrar WHERE id = ?").run(row.id);
   return true;
 });
 
-register("admin", "servicedomain", "registrar_copy", (ctx) => {
+register("admin", "servicedomain", "registrar_copy", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("Registrar ID is missing");
-  const row = getRegistrar(Number(ctx.params["id"]));
-  const info = getDbWrite()
-    .prepare("INSERT INTO tld_registrar (name, registrar, test_mode, config) VALUES (?, ?, ?, NULL)")
-    .run(`${row.name} (Copy)`, row.registrar, row.test_mode);
-  return Number(info.lastInsertRowid);
+  const row = await getRegistrar(Number(ctx.params["id"]));
+  const info = await getDbWrite().insertAndGetId("INSERT INTO tld_registrar (name, registrar, test_mode, config) VALUES (?, ?, ?, NULL)", `${row.name} (Copy)`, row.registrar, row.test_mode);
+  return Number(info);
 });
 
-register("admin", "servicedomain", "registrar_get", (ctx) => {
+register("admin", "servicedomain", "registrar_get", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("Registrar ID is missing");
-  return registrarToApi(getRegistrar(Number(ctx.params["id"])));
+  return registrarToApi(await getRegistrar(Number(ctx.params["id"])));
 });
 
-register("admin", "servicedomain", "registrar_update", (ctx) => {
+register("admin", "servicedomain", "registrar_update", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("Registrar ID is missing");
-  const row = getRegistrar(Number(ctx.params["id"]));
+  const row = await getRegistrar(Number(ctx.params["id"]));
   const title = paramValue(ctx, "title");
   const nextName = title !== undefined && title !== null ? String(title) : row.name;
   const nextTestMode = paramPresent(ctx, "test_mode") ? (phpBool(paramValue(ctx, "test_mode")) ? 1 : 0) : row.test_mode;
@@ -1080,7 +1060,7 @@ register("admin", "servicedomain", "registrar_update", (ctx) => {
     validateRegistrarConfig(row, merged);
     nextConfig = Object.keys(merged).length > 0 ? JSON.stringify(merged) : "[]";
   }
-  getDbWrite()
+  await getDbWrite()
     .prepare("UPDATE tld_registrar SET name = ?, test_mode = ?, config = ? WHERE id = ?")
     .run(nextName, nextTestMode, nextConfig, row.id);
   return true;
@@ -1088,26 +1068,26 @@ register("admin", "servicedomain", "registrar_update", (ctx) => {
 
 register("admin", "servicedomain", "batch_sync_expiration_dates", async (ctx) => {
   requireAdmin(ctx);
-  const setting = getDb().prepare("SELECT * FROM setting WHERE param = ?").get("servicedomain_last_sync") as unknown as
+  const setting = await getDb().prepare("SELECT * FROM setting WHERE param = ?").get("servicedomain_last_sync") as unknown as
     | { value: string | null }
     | undefined;
   if (setting?.value) {
     const last = new Date(setting.value.replace(" ", "T") + "Z").getTime();
     if (!Number.isNaN(last) && Date.now() - last < 86400 * 30 * 1000) return false;
   }
-  const domains = getDb().prepare("SELECT * FROM service_domain").all() as unknown as DomainRow[];
+  const domains = await getDb().prepare("SELECT * FROM service_domain").all() as unknown as DomainRow[];
   for (const d of domains) {
     try {
       if (d.tld_registrar_id === null) throw new FbError("Registrar not found");
-      const reg = getRegistrar(d.tld_registrar_id);
+      const reg = await getRegistrar(d.tld_registrar_id);
       if (reg.registrar === "Custom") {
         const now = nowTimestamp();
-        saveDomain(d, { expires_at: d.expires_at ?? addYears(now, d.period ?? 1) });
+        await saveDomain(d, { expires_at: d.expires_at ?? addYears(now, d.period ?? 1) });
       } else if (reg.registrar === "Enom") {
         // PHP syncExpirationDate: expires only, and only when the
         // adapter supplies a usable value.
         const exp = await enomGetExpiration(enomConfig(reg), d.sld ?? "", stripDots(d.tld));
-        if (exp !== null) saveDomain(d, { expires_at: epochToTs(exp) });
+        if (exp !== null) await saveDomain(d, { expires_at: epochToTs(exp) });
       } else {
         throw new FbError(`Domain registrar ${reg.registrar} was not found`);
       }
@@ -1117,9 +1097,9 @@ register("admin", "servicedomain", "batch_sync_expiration_dates", async (ctx) =>
   }
   const now = nowTimestamp();
   if (setting) {
-    getDbWrite().prepare("UPDATE setting SET value = ?, updated_at = ? WHERE param = ?").run(now, now, "servicedomain_last_sync");
+    await getDbWrite().prepare("UPDATE setting SET value = ?, updated_at = ? WHERE param = ?").run(now, now, "servicedomain_last_sync");
   } else {
-    getDbWrite()
+    await getDbWrite()
       .prepare("INSERT INTO setting (param, value, created_at, updated_at) VALUES (?, ?, ?, ?)")
       .run("servicedomain_last_sync", now, now, now);
   }
@@ -1128,7 +1108,7 @@ register("admin", "servicedomain", "batch_sync_expiration_dates", async (ctx) =>
 
 // --- Registrations: guest ---
 
-register("guest", "servicedomain", "tlds", (ctx) => {
+register("guest", "servicedomain", "tlds", async (ctx) => {
   const where: string[] = ["active = 1"];
   const args: (string | number)[] = [];
   if (paramPresent(ctx, "allow_register")) {
@@ -1139,23 +1119,23 @@ register("guest", "servicedomain", "tlds", (ctx) => {
     where.push("allow_transfer = ?");
     args.push(phpBool(paramValue(ctx, "allow_transfer")) ? 1 : 0);
   }
-  const rows = getDb()
+  const rows = await getDb()
     .prepare(`SELECT * FROM tld WHERE ${where.join(" AND ")} ORDER BY id ASC`)
     .all(...args) as unknown as TldRow[];
-  return rows.map((r) => tldToApiArray(r, false));
+  return await Promise.all(rows.map(async (r) => await tldToApiArray(r, false)));
 });
 
-register("guest", "servicedomain", "pricing", (ctx) => {
+register("guest", "servicedomain", "pricing", async (ctx) => {
   if (!ctx.params["tld"]) throw new FbError("TLD is missing");
-  const row = findTldByTld(ctx.params["tld"]);
+  const row = await findTldByTld(ctx.params["tld"]);
   if (!row) throw new FbError("TLD not found");
-  return tldToApiArray(row, false);
+  return await tldToApiArray(row, false);
 });
 
-function guestTldOrThrow(ctx: CallContext, notConfiguredMessage: string): TldRow {
+async function guestTldOrThrow(ctx: CallContext, notConfiguredMessage: string): Promise<TldRow> {
   if (!ctx.params["tld"]) throw new FbError("TLD is missing");
   if (!ctx.params["sld"]) throw new FbError("SLD is missing");
-  const row = findTldByTld(ctx.params["tld"]);
+  const row = await findTldByTld(ctx.params["tld"]);
   if (!row) throw new FbError(notConfiguredMessage);
   if (!row.active) throw new FbError(notConfiguredMessage.replace("not configured", "not active"));
   return row;
@@ -1165,12 +1145,12 @@ register("guest", "servicedomain", "check", async (ctx) => {
   if (!ctx.params["tld"]) throw new FbError("TLD is missing");
   if (!ctx.params["sld"]) throw new FbError("SLD is missing");
   if (!isSldValid(ctx.params["sld"])) throw new FbError(`Domain ${ctx.params["sld"]} is invalid`);
-  const row = findTldByTld(ctx.params["tld"]);
+  const row = await findTldByTld(ctx.params["tld"]);
   if (!row) throw new FbError("Domain availability could not be determined. TLD is not configured.");
   if (!row.active) throw new FbError("Domain availability could not be determined. TLD is not active.");
   if (!row.allow_register) throw new FbError("Domain cannot be registered", 403);
   if (row.tld_registrar_id === null) throw new FbError("Registrar not found");
-  const reg = getRegistrar(row.tld_registrar_id);
+  const reg = await getRegistrar(row.tld_registrar_id);
   validateRegistrarConfig(reg, registrarConfig(reg));
   if (reg.registrar === "Enom") {
     return enomCheckAvailable(enomConfig(reg), ctx.params["sld"], stripDots(row.tld));
@@ -1184,10 +1164,10 @@ register("guest", "servicedomain", "check", async (ctx) => {
 });
 
 register("guest", "servicedomain", "can_be_transferred", async (ctx) => {
-  const row = guestTldOrThrow(ctx, "TLD is not configured.");
+  const row = await guestTldOrThrow(ctx, "TLD is not configured.");
   if (!row.allow_transfer) throw new FbError("Domain cannot be transferred", 403);
   if (row.tld_registrar_id === null) throw new FbError("Registrar not found");
-  const reg = getRegistrar(row.tld_registrar_id);
+  const reg = await getRegistrar(row.tld_registrar_id);
   validateRegistrarConfig(reg, registrarConfig(reg));
   if (reg.registrar === "Enom") {
     return enomCanBeTransferred(enomConfig(reg), ctx.params["sld"], stripDots(row.tld));

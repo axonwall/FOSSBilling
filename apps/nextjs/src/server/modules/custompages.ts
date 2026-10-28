@@ -34,19 +34,19 @@ function pageArray(row: PageRow) {
   };
 }
 
-function resolvePage(ctx: CallContext): PageRow {
+async function resolvePage(ctx: CallContext): Promise<PageRow> {
   const id = ctx.params["id"];
   const slug = ctx.params["slug"];
   if (!id && !slug) throw new FbError("Custom page ID or slug is missing");
-  const row = slug ? findPageBySlug(slug) : findPageById(Number(id));
+  const row = slug ? await findPageBySlug(slug) : await findPageById(Number(id));
   if (!row) throw new FbError("Custom page not found");
   return row;
 }
 
-register("guest", "custompages", "get_list", (ctx: CallContext) => {
+register("guest", "custompages", "get_list", async (ctx: CallContext) => {
   // This endpoint's PHP pager reports pages: 0 for an empty result
   // (paginateDoctrineQuery), unlike the clamped pagers elsewhere.
-  const items = listPages().map(pageArray);
+  const items = (await listPages()).map(pageArray);
   const perPage = parseInt(ctx.params["per_page"] ?? "100", 10) || 100;
   const page = parseInt(ctx.params["page"] ?? "1", 10) || 1;
   const total = items.length;
@@ -59,25 +59,25 @@ register("guest", "custompages", "get_list", (ctx: CallContext) => {
   };
 });
 
-register("guest", "custompages", "get", (ctx: CallContext) => {
-  return pageArray(resolvePage(ctx));
+register("guest", "custompages", "get", async (ctx: CallContext) => {
+  return pageArray(await resolvePage(ctx));
 });
 
-register("admin", "custompages", "get_list", (ctx: CallContext) => {
+register("admin", "custompages", "get_list", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  return paginate(listPages().map(pageArray), ctx.params);
+  return paginate((await listPages()).map(pageArray), ctx.params);
 });
 
-register("admin", "custompages", "get_page", (ctx: CallContext) => {
+register("admin", "custompages", "get_page", async (ctx: CallContext) => {
   requireAdmin(ctx);
   // PHP reads $data['page_id'] here (not id/slug) and returns null when
   // the page does not exist — no error envelope.
   const pageId = ctx.params["page_id"];
-  const row = pageId ? findPageById(Number(pageId)) : undefined;
+  const row = pageId ? await findPageById(Number(pageId)) : undefined;
   return row ? pageArray(row) : null;
 });
 
-register("admin", "custompages", "create", (ctx: CallContext) => {
+register("admin", "custompages", "create", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const title = ctx.params["title"];
   if (!title) throw new FbError("Title was not passed");
@@ -86,8 +86,8 @@ register("admin", "custompages", "create", (ctx: CallContext) => {
   // PHP generateUniqueSlug(): base slug, then base-1, base-2, ...
   const base = slugify(title);
   let slug = base;
-  for (let i = 1; findPageBySlug(slug); i++) slug = `${base}-${i}`;
-  return insertPage({
+  for (let i = 1; await findPageBySlug(slug); i++) slug = `${base}-${i}`;
+  return await insertPage({
     title,
     slug,
     content,
@@ -97,12 +97,12 @@ register("admin", "custompages", "create", (ctx: CallContext) => {
   });
 });
 
-register("admin", "custompages", "update", (ctx: CallContext) => {
+register("admin", "custompages", "update", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const id = Number(ctx.params["id"] ?? 0);
-  const row = findPageById(id);
+  const row = await findPageById(id);
   if (!row) throw new FbError("Custom page not found");
-  updatePageRow(id, {
+  await updatePageRow(id, {
     title: ctx.params["title"] ?? row.title,
     description: ctx.params["description"] ?? null,
     keywords: ctx.params["keywords"] ?? null,
@@ -112,22 +112,22 @@ register("admin", "custompages", "update", (ctx: CallContext) => {
   return true;
 });
 
-register("admin", "custompages", "batch_delete", (ctx: CallContext) => {
+register("admin", "custompages", "batch_delete", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const ids = ctx.params["ids"];
   if (!ids) throw new FbError("Custom page IDs were not passed");
   for (const part of ids.split(",")) {
     const id = Number(part.trim());
-    if (id) deletePageRow(id);
+    if (id) await deletePageRow(id);
   }
   return true;
 });
 
-register("admin", "custompages", "delete", (ctx: CallContext) => {
+register("admin", "custompages", "delete", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const id = Number(ctx.params["id"] ?? 0);
-  const row = findPageById(id);
+  const row = await findPageById(id);
   if (!row) throw new FbError("Custom page not found");
-  deletePageRow(id);
+  await deletePageRow(id);
   return true;
 });

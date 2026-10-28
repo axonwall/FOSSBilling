@@ -15,7 +15,7 @@ export async function GET(
   if (!/^[a-z0-9]+$/i.test(hash)) {
     return new Response("Invalid invoice hash", { status: 400 });
   }
-  const pdf = invoicePdfByHash(hash);
+  const pdf = await invoicePdfByHash(hash);
   if (!pdf) {
     return new Response("Invoice not found", { status: 404 });
   }

@@ -56,13 +56,13 @@ function buildPdf(pages: Line[][]): Buffer {
   return Buffer.from(out, "latin1");
 }
 
-export function invoicePdfByHash(hash: string): Buffer | null {
+export async function invoicePdfByHash(hash: string): Promise<Buffer | null> {
   const db = getDb();
-  const inv = db.prepare("SELECT * FROM invoice WHERE hash = ?").get(hash) as Record<string, unknown> | undefined;
+  const inv = await db.prepare("SELECT * FROM invoice WHERE hash = ?").get(hash) as Record<string, unknown> | undefined;
   if (!inv) return null;
-  const client = db.prepare("SELECT * FROM client WHERE id = ?").get(inv.client_id as number) as Record<string, unknown> | undefined;
-  const items = db.prepare("SELECT * FROM invoice_item WHERE invoice_id = ? ORDER BY id ASC").all(inv.id as number) as unknown as Record<string, unknown>[];
-  const sums = db.prepare(
+  const client = await db.prepare("SELECT * FROM client WHERE id = ?").get(inv.client_id as number) as Record<string, unknown> | undefined;
+  const items = await db.prepare("SELECT * FROM invoice_item WHERE invoice_id = ? ORDER BY id ASC").all(inv.id as number) as unknown as Record<string, unknown>[];
+  const sums = await db.prepare(
     `SELECT COALESCE(SUM(price * quantity), 0) AS subtotal,
             COALESCE(SUM(CASE WHEN taxed THEN price * quantity ELSE 0 END), 0) AS taxable
      FROM invoice_item WHERE invoice_id = ?`
@@ -70,16 +70,16 @@ export function invoicePdfByHash(hash: string): Buffer | null {
   const taxrate = parseFloat(String(inv.taxrate ?? 0)) || 0;
   const tax = Math.round(sums.taxable * taxrate) / 100;
   const total = Math.round((sums.subtotal + tax) * 100) / 100;
-  const code = String(inv.currency ?? findDefaultCurrency()?.code ?? "USD");
+  const code = String(inv.currency ?? (await findDefaultCurrency())?.code ?? "USD");
   const money = (v: number) => formatCurrencyValue(v, code, {});
   const serieNr = `${inv.serie ?? ""}${String(inv.nr ?? inv.id).padStart(5, "0")}`;
   const status = String(inv.status ?? "");
   const company = {
-    name: getSetting("company_name") ?? "",
-    email: getSetting("company_email") ?? "",
-    phone: getSetting("company_phone") ?? "",
-    address: [getSetting("company_address_1"), getSetting("company_address_2"), getSetting("company_address_3")].filter(Boolean).join(", "),
-    signature: getSetting("company_signature") ?? "",
+    name: await getSetting("company_name") ?? "",
+    email: await getSetting("company_email") ?? "",
+    phone: await getSetting("company_phone") ?? "",
+    address: [await getSetting("company_address_1"), await getSetting("company_address_2"), await getSetting("company_address_3")].filter(Boolean).join(", "),
+    signature: await getSetting("company_signature") ?? "",
   };
   const lines: Line[] = [
     { text: `Invoice Number: ${serieNr}`, size: 16, bold: true },

@@ -42,8 +42,8 @@ function historyToApi(r: HistoryRow) {
   };
 }
 
-function getHistoryOrThrow(id: number): HistoryRow {
-  const row = getDb().prepare("SELECT * FROM activity_client_email WHERE id = ?").get(id) as unknown as HistoryRow | undefined;
+async function getHistoryOrThrow(id: number): Promise<HistoryRow> {
+  const row = await getDb().prepare("SELECT * FROM activity_client_email WHERE id = ?").get(id) as unknown as HistoryRow | undefined;
   if (!row) throw new FbError("Email not found");
   return row;
 }
@@ -62,7 +62,7 @@ function pager<T>(ctx: CallContext, items: T[]) {
   return p;
 }
 
-register("admin", "email", "send", (ctx) => {
+register("admin", "email", "send", async (ctx) => {
   requireAdmin(ctx);
   required(ctx, {
     to: "Receiver email is required",
@@ -72,7 +72,7 @@ register("admin", "email", "send", (ctx) => {
     subject: "Email subject is required",
     content: "Email content is required",
   });
-  queueEmail({
+  await queueEmail({
     recipient: ctx.params.to,
     sender: ctx.params.from,
     subject: ctx.params.subject,
@@ -85,79 +85,79 @@ register("admin", "email", "send", (ctx) => {
   return true;
 });
 
-register("admin", "email", "email_get_list", (ctx) => {
+register("admin", "email", "email_get_list", async (ctx) => {
   requireAdmin(ctx);
-  const rows = getDb().prepare("SELECT * FROM activity_client_email ORDER BY id DESC").all() as unknown as HistoryRow[];
+  const rows = await getDb().prepare("SELECT * FROM activity_client_email ORDER BY id DESC").all() as unknown as HistoryRow[];
   return pager(ctx, rows.map(historyToApi));
 });
 
-register("admin", "email", "email_get", (ctx) => {
+register("admin", "email", "email_get", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params.id) throw new FbError("Email ID was not passed");
-  return historyToApi(getHistoryOrThrow(parseInt(ctx.params.id, 10)));
+  return historyToApi(await getHistoryOrThrow(parseInt(ctx.params.id, 10)));
 });
 
-register("admin", "email", "email_resend", (ctx) => {
+register("admin", "email", "email_resend", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params.id) throw new FbError("Email ID was not passed");
-  const row = getHistoryOrThrow(parseInt(ctx.params.id, 10));
+  const row = await getHistoryOrThrow(parseInt(ctx.params.id, 10));
   // PHP resend() renders from content_html only and names the recipient
   // from the client record (missing client -> 'Client not found').
-  const client = row.client_id !== null ? findClientById(row.client_id) : undefined;
+  const client = row.client_id !== null ? await findClientById(row.client_id) : undefined;
   if (row.client_id !== null && !client) throw new FbError("Client not found");
-  queueEmail({
+  await queueEmail({
     recipient: row.recipients,
     sender: row.sender,
     subject: row.subject,
     content: row.content_html ?? "",
     toName: client ? `${client.first_name} ${client.last_name}` : null,
-    fromName: getSetting("company_name"),
+    fromName: await getSetting("company_name"),
     clientId: row.client_id,
   });
   return true;
 });
 
-register("admin", "email", "email_delete", (ctx) => {
+register("admin", "email", "email_delete", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params.id) throw new FbError("Email ID was not passed");
-  const row = getHistoryOrThrow(parseInt(ctx.params.id, 10));
-  getDbWrite().prepare("DELETE FROM activity_client_email WHERE id = ?").run(row.id);
+  const row = await getHistoryOrThrow(parseInt(ctx.params.id, 10));
+  await getDbWrite().prepare("DELETE FROM activity_client_email WHERE id = ?").run(row.id);
   return true;
 });
 
-register("admin", "email", "template_get_list", (ctx) => {
+register("admin", "email", "template_get_list", async (ctx) => {
   requireAdmin(ctx);
-  const rows = listEmailTemplates();
+  const rows = await listEmailTemplates();
   // PHP's default list order is category ASC, action_code ASC (NULL
   // categories first); an explicit sort param goes through paginate.
   if (!ctx.params.sort) {
     rows.sort((a, b) => ((a.category ?? "").localeCompare(b.category ?? "")
       || a.action_code.localeCompare(b.action_code)));
   }
-  return pager(ctx, rows.map((t) => {
-    const api = templateToApi(t) as Record<string, unknown>;
+  return pager(ctx, await Promise.all(rows.map(async (t) => {
+    const api = await templateToApi(t) as Record<string, unknown>;
     // PHP's list mapping coerces nulls to '' (template_get keeps null).
     api.category = t.category ?? "";
     api.description = t.description ?? "";
     api.subject = t.subject ?? "";
     api.id = t.id ?? "";
     return api;
-  }));
+  })));
 });
 
-register("admin", "email", "template_get", (ctx) => {
+register("admin", "email", "template_get", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params.id) throw new FbError("Email ID was not passed");
-  const t = findEmailTemplate(parseInt(ctx.params.id, 10));
+  const t = await findEmailTemplate(parseInt(ctx.params.id, 10));
   if (!t) throw new FbError("Email template not found");
-  return templateToApi(t, true);
+  return await templateToApi(t, true);
 });
 
 /** PHP validates templates by rendering them strictly (unknown
  * top-level variables are an error). The Twig template-name hash
  * in PHP's message is not reproducible; the prefix and variable
  * name are. */
-register("admin", "email", "template_create", (ctx) => {
+register("admin", "email", "template_create", async (ctx) => {
   requireAdmin(ctx);
   required(ctx, {
     action_code: "Email template code is required",
@@ -172,41 +172,37 @@ register("admin", "email", "template_create", (ctx) => {
   } catch (e) {
     throw new FbError(e instanceof Error ? e.message : String(e));
   }
-  const info = getDbWrite().prepare(
-    `INSERT INTO email_template (action_code, category, enabled, is_custom, is_overridden, subject, content, description)
-     VALUES (?, ?, ?, 1, 0, ?, ?, NULL)`
-  ).run(ctx.params.action_code, ctx.params.category ?? null,
-        ctx.params.enabled === "1" || ctx.params.enabled === "true" ? 1 : 0,
-        ctx.params.subject, ctx.params.content);
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId(`INSERT INTO email_template (action_code, category, enabled, is_custom, is_overridden, subject, content, description)
+     VALUES (?, ?, ?, 1, 0, ?, ?, NULL)`, ctx.params.action_code, ctx.params.category ?? null, ctx.params.enabled === "1" || ctx.params.enabled === "true" ? 1 : 0, ctx.params.subject, ctx.params.content);
+  return Number(info);
 });
 
-register("admin", "email", "template_update", (ctx) => {
+register("admin", "email", "template_update", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params.id) throw new FbError("Email ID was not passed");
-  const t = findEmailTemplate(parseInt(ctx.params.id, 10));
+  const t = await findEmailTemplate(parseInt(ctx.params.id, 10));
   if (!t) throw new FbError("Email template not found");
   const subject = ctx.params.subject ?? t.subject;
   const content = ctx.params.content ?? t.content ?? "";
   // The DB row is the override store for built-ins too.
-  getDbWrite().prepare("UPDATE email_template SET subject = ?, content = ?, is_overridden = ? WHERE id = ?")
+  await getDbWrite().prepare("UPDATE email_template SET subject = ?, content = ?, is_overridden = ? WHERE id = ?")
     .run(subject, content, t.is_custom ? 0 : 1, t.id);
   return true;
 });
 
-register("admin", "email", "template_delete", (ctx) => {
+register("admin", "email", "template_delete", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params.id) throw new FbError("Email ID was not passed");
-  const t = findEmailTemplate(parseInt(ctx.params.id, 10));
+  const t = await findEmailTemplate(parseInt(ctx.params.id, 10));
   if (!t) throw new FbError("Email template not found");
-  getDbWrite().prepare("DELETE FROM email_template WHERE id = ?").run(t.id);
+  await getDbWrite().prepare("DELETE FROM email_template WHERE id = ?").run(t.id);
   return true;
 });
 
-register("admin", "email", "template_render", (ctx) => {
+register("admin", "email", "template_render", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params.id) throw new FbError("Email ID was not passed");
-  const t = findEmailTemplate(parseInt(ctx.params.id, 10));
+  const t = await findEmailTemplate(parseInt(ctx.params.id, 10));
   if (!t) throw new FbError("Email template not found");
   // PHP renders with the template's stored sample vars — those are
   // encrypted at rest (v2: prefix) and TS does not decrypt them, so
@@ -220,17 +216,17 @@ register("admin", "email", "template_render", (ctx) => {
   });
 });
 
-register("admin", "email", "batch_sendmail", (ctx) => {
+register("admin", "email", "batch_sendmail", async (ctx) => {
   requireAdmin(ctx);
-  getDbWrite().prepare("UPDATE email_queue SET status = 'sending', updated_at = ? WHERE status = 'pending'")
+  await getDbWrite().prepare("UPDATE email_queue SET status = 'sending', updated_at = ? WHERE status = 'pending'")
     .run(nowTimestamp());
   return null;
 });
 
-register("admin", "email", "send_test", (ctx) => {
+register("admin", "email", "send_test", async (ctx) => {
   requireAdmin(ctx);
   const adminEmail = ctx.session?.admin?.email ?? "";
-  queueEmail({
+  await queueEmail({
     recipient: adminEmail,
     sender: adminEmail,
     subject: "Test email",
@@ -242,14 +238,14 @@ register("admin", "email", "send_test", (ctx) => {
 
 // ---- Phase 5 R1 comms: template groups, reset, batch, send, queue ----
 
-function templateRowOrThrow(id: number): TemplateRowFull {
-  const row = getDb().prepare("SELECT * FROM email_template WHERE id = ?").get(id) as unknown as TemplateRowFull | undefined;
+async function templateRowOrThrow(id: number): Promise<TemplateRowFull> {
+  const row = await getDb().prepare("SELECT * FROM email_template WHERE id = ?").get(id) as unknown as TemplateRowFull | undefined;
   if (!row) throw new FbError("Email template not found");
   return row;
 }
 
-function templateGroupIds(templateId: number): number[] {
-  return (getDb().prepare("SELECT admin_group_id FROM email_template_group WHERE email_template_id = ? ORDER BY admin_group_id ASC").all(templateId) as unknown as { admin_group_id: number }[])
+async function templateGroupIds(templateId: number): Promise<number[]> {
+  return ((await getDb().prepare("SELECT admin_group_id FROM email_template_group WHERE email_template_id = ? ORDER BY admin_group_id ASC").all(templateId)) as unknown as { admin_group_id: number }[])
     .map((r) => r.admin_group_id);
 }
 
@@ -303,105 +299,105 @@ function sortRows<T extends Record<string, unknown>>(
 const like = (hay: unknown, needle: string) =>
   String(hay ?? "").toLowerCase().includes(needle.toLowerCase());
 
-register("admin", "email", "template_group_get_list", (ctx) => {
+register("admin", "email", "template_group_get_list", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params.id) throw new FbError("Email ID was not passed");
-  const template = templateRowOrThrow(parseInt(ctx.params.id, 10));
-  const ids = templateGroupIds(template.id);
+  const template = await templateRowOrThrow(parseInt(ctx.params.id, 10));
+  const ids = await templateGroupIds(template.id);
   if (!ids.length) return [];
   const placeholders = ids.map(() => "?").join(",");
-  const groups = getDb().prepare(
+  const groups = await getDb().prepare(
     `SELECT id, name, protected FROM admin_group WHERE id IN (${placeholders}) ORDER BY id ASC`
   ).all(...ids) as unknown as { id: number; name: string; protected: number }[];
   return groups.map((g) => ({ id: g.id, name: g.name, protected: !!g.protected }));
 });
 
-register("admin", "email", "template_group_add", (ctx) => {
+register("admin", "email", "template_group_add", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params.id) throw new FbError("Email ID was not passed");
   if (!ctx.params.group_id) throw new FbError("Staff group ID was not passed");
-  const template = templateRowOrThrow(parseInt(ctx.params.id, 10));
+  const template = await templateRowOrThrow(parseInt(ctx.params.id, 10));
   const groupId = parseInt(ctx.params.group_id, 10);
-  const group = getDb().prepare("SELECT id FROM admin_group WHERE id = ?").get(groupId) as unknown as { id: number } | undefined;
+  const group = await getDb().prepare("SELECT id FROM admin_group WHERE id = ?").get(groupId) as unknown as { id: number } | undefined;
   if (!group) throw new FbError("Staff group not found");
-  const existing = getDb().prepare(
+  const existing = await getDb().prepare(
     "SELECT id FROM email_template_group WHERE email_template_id = ? AND admin_group_id = ?"
   ).get(template.id, groupId) as unknown as { id: number } | undefined;
   if (existing) return true;
-  getDbWrite().prepare(
+  await getDbWrite().prepare(
     "INSERT INTO email_template_group (admin_group_id, created_at, email_template_id) VALUES (?, ?, ?)"
   ).run(groupId, nowTimestamp(), template.id);
   return true;
 });
 
-register("admin", "email", "template_group_remove", (ctx) => {
+register("admin", "email", "template_group_remove", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params.id) throw new FbError("Email ID was not passed");
   if (!ctx.params.group_id) throw new FbError("Staff group ID was not passed");
-  const template = templateRowOrThrow(parseInt(ctx.params.id, 10));
+  const template = await templateRowOrThrow(parseInt(ctx.params.id, 10));
   const groupId = parseInt(ctx.params.group_id, 10);
-  getDbWrite().prepare(
+  await getDbWrite().prepare(
     "DELETE FROM email_template_group WHERE email_template_id = ? AND admin_group_id = ?"
   ).run(template.id, groupId);
   return true;
 });
 
-register("admin", "email", "template_reset", (ctx) => {
+register("admin", "email", "template_reset", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params.code) throw new FbError("Email template code was not passed");
   const code = ctx.params.code;
   const def = getDefaultTemplate(code, { code });
   if (!def) throw new FbError(`Email template ${code} does not have a file-backed default`);
-  const id = getOrCreateTemplateId(code, { code });
-  const row = templateRowOrThrow(id);
+  const id = await getOrCreateTemplateId(code, { code });
+  const row = await templateRowOrThrow(id);
   if (row.is_custom) throw new FbError(`Custom email template ${code} cannot be reset to a default`);
-  applyRowChanges(id, { subject: def.subject, content: def.content, is_overridden: 0, last_error: null, error_checked_at: null });
+  await applyRowChanges(id, { subject: def.subject, content: def.content, is_overridden: 0, last_error: null, error_checked_at: null });
   return true;
 });
 
-register("admin", "email", "batch_template_generate", (ctx) => {
+register("admin", "email", "batch_template_generate", async (ctx) => {
   requireAdmin(ctx);
-  const rows = getDb().prepare("SELECT * FROM email_template ORDER BY id ASC").all() as unknown as TemplateRowFull[];
+  const rows = await getDb().prepare("SELECT * FROM email_template ORDER BY id ASC").all() as unknown as TemplateRowFull[];
   for (const row of rows) {
     if (row.is_custom) continue;
     const def = getDefaultTemplate(row.action_code);
     if (!def) continue;
-    applyRowChanges(row.id, { subject: def.subject, content: def.content, is_overridden: 0, last_error: null, error_checked_at: null });
+    await applyRowChanges(row.id, { subject: def.subject, content: def.content, is_overridden: 0, last_error: null, error_checked_at: null });
   }
   return true;
 });
 
-function syncFileBackedTemplates(): void {
+async function syncFileBackedTemplates(): Promise<void> {
   for (const { code, module } of listDefaultTemplateCodes()) {
-    if (!isModuleActive(module)) continue;
+    if (!await isModuleActive(module)) continue;
     const def = getDefaultTemplate(code, { code });
     if (!def) continue;
-    const existing = getDb().prepare("SELECT * FROM email_template WHERE action_code = ?").get(code) as unknown as TemplateRowFull | undefined;
+    const existing = await getDb().prepare("SELECT * FROM email_template WHERE action_code = ?").get(code) as unknown as TemplateRowFull | undefined;
     if (!existing) {
-      createBuiltinRecord(code, def);
+      await createBuiltinRecord(code, def);
     } else if (!existing.is_custom) {
-      applyRowChanges(existing.id, syncBuiltinChanges(existing, def));
+      await applyRowChanges(existing.id, syncBuiltinChanges(existing, def));
     }
   }
 }
 
-register("admin", "email", "batch_template_disable", (ctx) => {
+register("admin", "email", "batch_template_disable", async (ctx) => {
   requireAdmin(ctx);
-  syncFileBackedTemplates();
-  getDbWrite().prepare("UPDATE email_template SET enabled = 0").run();
+  await syncFileBackedTemplates();
+  await getDbWrite().prepare("UPDATE email_template SET enabled = 0").run();
   return true;
 });
 
-register("admin", "email", "batch_template_enable", (ctx) => {
+register("admin", "email", "batch_template_enable", async (ctx) => {
   requireAdmin(ctx);
-  syncFileBackedTemplates();
-  getDbWrite().prepare("UPDATE email_template SET enabled = 1").run();
+  await syncFileBackedTemplates();
+  await getDbWrite().prepare("UPDATE email_template SET enabled = 1").run();
   return true;
 });
 
 /** Email render context: stored/call vars + the email env globals. */
-function emailRenderCtx(vars: Record<string, unknown>): Record<string, unknown> {
-  const company = companyContext();
+async function emailRenderCtx(vars: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const company = await companyContext();
   return {
     ...vars,
     guest: {
@@ -421,31 +417,31 @@ function decodeEntities(s: string): string {
 
 /** PHP _parse: render content then subject strictly; on failure the
  * template keeps the error and the call throws. */
-function parseTemplateOrThrow(row: TemplateRowFull, vars: Record<string, unknown>): [string, string] {
+async function parseTemplateOrThrow(row: TemplateRowFull, vars: Record<string, unknown>): Promise<[string, string]> {
   const [subjectTpl, contentTpl] = effectiveParts(row);
-  const ctx = emailRenderCtx(vars);
+  const ctx = await emailRenderCtx(vars);
   try {
     const content = renderTemplateStrict(contentTpl, ctx);
     const subject = decodeEntities(renderTemplateStrict(subjectTpl, ctx));
     if (row.last_error !== null) {
-      applyRowChanges(row.id, { last_error: null, error_checked_at: null });
+      await applyRowChanges(row.id, { last_error: null, error_checked_at: null });
     }
     return [subject, content];
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    applyRowChanges(row.id, { last_error: message, error_checked_at: nowTimestamp() });
+    await applyRowChanges(row.id, { last_error: message, error_checked_at: nowTimestamp() });
     throw new FbError(message);
   }
 }
 
-register("admin", "email", "template_validate_all", (ctx) => {
+register("admin", "email", "template_validate_all", async (ctx) => {
   requireAdmin(ctx);
-  const rows = getDb().prepare("SELECT * FROM email_template ORDER BY id ASC").all() as unknown as TemplateRowFull[];
+  const rows = await getDb().prepare("SELECT * FROM email_template ORDER BY id ASC").all() as unknown as TemplateRowFull[];
   const results: { valid: number; invalid: number; errors: { id: number; action_code: string; error: string }[] } =
     { valid: 0, invalid: 0, errors: [] };
   for (const row of rows) {
     try {
-      parseTemplateOrThrow(row, templateVars(row));
+      await parseTemplateOrThrow(row, await templateVars(row));
       results.valid++;
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
@@ -458,12 +454,12 @@ register("admin", "email", "template_validate_all", (ctx) => {
   return results;
 });
 
-function setTemplateVars(row: TemplateRowFull, vars: Record<string, unknown>): void {
+async function setTemplateVars(row: TemplateRowFull, vars: Record<string, unknown>): Promise<void> {
   const encoded = encryptV2(JSON.stringify(vars));
-  applyRowChanges(row.id, { vars: encoded });
+  await applyRowChanges(row.id, { vars: encoded });
 }
 
-register("admin", "email", "template_send", (ctx) => {
+register("admin", "email", "template_send", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params.code) throw new FbError("Template code not passed");
   const code = ctx.params.code;
@@ -477,8 +473,8 @@ register("admin", "email", "template_send", (ctx) => {
   if (has("to_client") && has("to")) {
     throw new FbError("Parameters `to` and `to_client` cannot be combined. Client-bound emails are always sent to the client's registered email address.");
   }
-  const id = getOrCreateTemplateId(code, ctx.params);
-  let row = templateRowOrThrow(id);
+  const id = await getOrCreateTemplateId(code, ctx.params);
+  let row = await templateRowOrThrow(id);
 
   // Call vars: everything except routing/default keys (PHP unsets the
   // same list; CSRFToken never reaches the API layer there either).
@@ -495,10 +491,10 @@ register("admin", "email", "template_send", (ctx) => {
 
   let staffList: { id: number; email: string; name: string; signature: string | null; timezone: string | null }[] = [];
   if (has("to_staff")) {
-    const groupIds = templateGroupIds(row.id);
+    const groupIds = await templateGroupIds(row.id);
     if (groupIds.length) {
       const placeholders = groupIds.map(() => "?").join(",");
-      staffList = getDb().prepare(
+      staffList = await getDb().prepare(
         `SELECT DISTINCT a.id, a.email, a.name, a.signature, a.timezone FROM admin a
          INNER JOIN admin_group_member m ON m.admin_id = a.id
          WHERE m.admin_group_id IN (${placeholders}) AND a.status = 'active'
@@ -511,29 +507,29 @@ register("admin", "email", "template_send", (ctx) => {
     }
   }
 
-  let customer: ReturnType<typeof clientAdminArray> | null = null;
+  let customer: Awaited<ReturnType<typeof clientAdminArray>> | null = null;
   if (has("to_client")) {
-    const clientRow = findClientById(parseInt(ctx.params.to_client, 10));
+    const clientRow = await findClientById(parseInt(ctx.params.to_client, 10));
     if (!clientRow) throw new FbError("Client not found");
-    customer = clientAdminArray(clientRow);
+    customer = await clientAdminArray(clientRow);
     vars.c = customer;
   }
 
   let oneStaff: { id: number; email: string; name: string; signature: string | null } | null = null;
   if (has("to_admin")) {
-    const admin = getDb().prepare("SELECT id, email, name, signature FROM admin WHERE id = ?").get(parseInt(ctx.params.to_admin, 10)) as unknown as
+    const admin = await getDb().prepare("SELECT id, email, name, signature FROM admin WHERE id = ?").get(parseInt(ctx.params.to_admin, 10)) as unknown as
       { id: number; email: string; name: string; signature: string | null } | undefined;
     if (!admin) throw new FbError("Admin not found");
     oneStaff = admin;
     vars.c = { id: admin.id, email: admin.email, name: admin.name, signature: admin.signature };
   }
 
-  setTemplateVars(row, vars);
-  row = templateRowOrThrow(id);
+  await setTemplateVars(row, vars);
+  row = await templateRowOrThrow(id);
   if (!row.enabled) return false;
 
-  const emailConfig = readExtensionConfig("mod_email");
-  const company = companyContext();
+  const emailConfig = await readExtensionConfig("mod_email");
+  const company = await companyContext();
   const from = ctx.params.from
     ?? (typeof emailConfig.from_email === "string" && emailConfig.from_email ? emailConfig.from_email : null)
     ?? (company.email || null);
@@ -550,34 +546,34 @@ register("admin", "email", "template_send", (ctx) => {
   let sent = false;
   if (has("to_staff")) {
     if (staffList.length === 0) {
-      parseTemplateOrThrow(row, vars);
+      await parseTemplateOrThrow(row, vars);
     }
     for (const staff of staffList) {
       const staffVars = { ...vars, staff: { id: staff.id, email: staff.email, name: staff.name, signature: staff.signature } };
-      const [subject, content] = parseTemplateOrThrow(row, staffVars);
-      queueEmail({
+      const [subject, content] = await parseTemplateOrThrow(row, staffVars);
+      await queueEmail({
         recipient: staff.email, sender: from, subject, content,
         toName: staff.name, fromName, clientId: null, adminId: staff.id,
       });
       sent = true;
     }
   } else if (oneStaff) {
-    const [subject, content] = parseTemplateOrThrow(row, vars);
-    queueEmail({
+    const [subject, content] = await parseTemplateOrThrow(row, vars);
+    await queueEmail({
       recipient: oneStaff.email, sender: from, subject, content,
       toName: oneStaff.name, fromName, clientId: null, adminId: oneStaff.id,
     });
     sent = true;
   } else if (customer) {
-    const [subject, content] = parseTemplateOrThrow(row, vars);
-    queueEmail({
+    const [subject, content] = await parseTemplateOrThrow(row, vars);
+    await queueEmail({
       recipient: customer.email, sender: from, subject, content,
       toName: `${customer.first_name} ${customer.last_name}`, fromName, clientId: customer.id, adminId: null,
     });
     sent = true;
   } else {
-    const [subject, content] = parseTemplateOrThrow(row, vars);
-    queueEmail({
+    const [subject, content] = await parseTemplateOrThrow(row, vars);
+    await queueEmail({
       recipient: ctx.params.to, sender: from, subject, content,
       toName: ctx.params.to_name ?? null, fromName, clientId: null, adminId: null,
     });
@@ -586,25 +582,25 @@ register("admin", "email", "template_send", (ctx) => {
   return sent;
 });
 
-register("admin", "email", "batch_template_delete", (ctx) => {
+register("admin", "email", "batch_template_delete", async (ctx) => {
   requireAdmin(ctx);
   const ids = idsParam(ctx);
   if (ids === undefined) throw new FbError("IDs were not passed");
   for (const id of ids) {
-    const row = templateRowOrThrow(id);
+    const row = await templateRowOrThrow(id);
     if (!row.is_custom && hasDefaultTemplate(row.action_code)) continue;
-    getDbWrite().prepare("DELETE FROM email_template WHERE id = ?").run(id);
+    await getDbWrite().prepare("DELETE FROM email_template WHERE id = ?").run(id);
   }
   return true;
 });
 
-register("admin", "email", "batch_delete", (ctx) => {
+register("admin", "email", "batch_delete", async (ctx) => {
   requireAdmin(ctx);
   const ids = idsParam(ctx);
   if (ids === undefined) throw new FbError("IDs were not passed");
   for (const id of ids) {
-    getHistoryOrThrow(id);
-    getDbWrite().prepare("DELETE FROM activity_client_email WHERE id = ?").run(id);
+    await getHistoryOrThrow(id);
+    await getDbWrite().prepare("DELETE FROM activity_client_email WHERE id = ?").run(id);
   }
   return true;
 });
@@ -629,9 +625,9 @@ function queueToApi(r: QueueRow) {
   };
 }
 
-register("admin", "email", "get_queue", (ctx) => {
+register("admin", "email", "get_queue", async (ctx) => {
   requireAdmin(ctx);
-  let rows = getDb().prepare("SELECT * FROM email_queue").all() as unknown as QueueRow[];
+  let rows = await getDb().prepare("SELECT * FROM email_queue").all() as unknown as QueueRow[];
   if (ctx.params.status) rows = rows.filter((r) => r.status === ctx.params.status);
   if (ctx.params.client_id) rows = rows.filter((r) => (r as unknown as { client_id: number | null }).client_id === parseInt(ctx.params.client_id, 10));
   const allowed: Record<string, string> = {
@@ -659,14 +655,14 @@ register("admin", "email", "get_queue", (ctx) => {
 
 // ---- client email history ----
 
-function clientHistoryOrThrow(clientId: number, id: number): HistoryRow {
-  const row = getDb().prepare("SELECT * FROM activity_client_email WHERE id = ? AND client_id = ?").get(id, clientId) as unknown as HistoryRow | undefined;
+async function clientHistoryOrThrow(clientId: number, id: number): Promise<HistoryRow> {
+  const row = await getDb().prepare("SELECT * FROM activity_client_email WHERE id = ? AND client_id = ?").get(id, clientId) as unknown as HistoryRow | undefined;
   if (!row) throw new FbError("Email not found");
   return row;
 }
 
-function historyListQuery(ctx: CallContext, clientId: number): HistoryRow[] {
-  let rows = getDb().prepare("SELECT * FROM activity_client_email WHERE client_id = ?").all(clientId) as unknown as HistoryRow[];
+async function historyListQuery(ctx: CallContext, clientId: number): Promise<HistoryRow[]> {
+  let rows = await getDb().prepare("SELECT * FROM activity_client_email WHERE client_id = ?").all(clientId) as unknown as HistoryRow[];
   const p = ctx.params;
   if (p.id) rows = rows.filter((r) => r.id === parseInt(p.id, 10));
   if (p.sender) rows = rows.filter((r) => like(r.sender, p.sender));
@@ -681,40 +677,40 @@ function historyListQuery(ctx: CallContext, clientId: number): HistoryRow[] {
     "id", "DESC") as unknown as HistoryRow[];
 }
 
-register("client", "email", "get_list", (ctx) => {
+register("client", "email", "get_list", async (ctx) => {
   requireClient(ctx);
   const clientId = ctx.session!.client!.id;
-  return pager(ctx, historyListQuery(ctx, clientId).map(historyToApi));
+  return pager(ctx, (await historyListQuery(ctx, clientId)).map(historyToApi));
 });
 
-register("client", "email", "get", (ctx) => {
+register("client", "email", "get", async (ctx) => {
   requireClient(ctx);
   if (!ctx.params.id) throw new FbError("Email ID was not passed");
-  return historyToApi(clientHistoryOrThrow(ctx.session!.client!.id, parseInt(ctx.params.id, 10)));
+  return historyToApi(await clientHistoryOrThrow(ctx.session!.client!.id, parseInt(ctx.params.id, 10)));
 });
 
-register("client", "email", "resend", (ctx) => {
+register("client", "email", "resend", async (ctx) => {
   requireClient(ctx);
   if (!ctx.params.id) throw new FbError("Email ID was not passed");
-  const row = clientHistoryOrThrow(ctx.session!.client!.id, parseInt(ctx.params.id, 10));
-  const client = findClientById(row.client_id ?? -1);
+  const row = await clientHistoryOrThrow(ctx.session!.client!.id, parseInt(ctx.params.id, 10));
+  const client = await findClientById(row.client_id ?? -1);
   if (!client) throw new FbError("Client not found");
-  queueEmail({
+  await queueEmail({
     recipient: row.recipients,
     sender: row.sender,
     subject: row.subject,
     content: row.content_html ?? "",
     toName: `${client.first_name} ${client.last_name}`,
-    fromName: getSetting("company_name"),
+    fromName: await getSetting("company_name"),
     clientId: row.client_id,
   });
   return true;
 });
 
-register("client", "email", "delete", (ctx) => {
+register("client", "email", "delete", async (ctx) => {
   requireClient(ctx);
   if (!ctx.params.id) throw new FbError("Email ID was not passed");
-  const row = clientHistoryOrThrow(ctx.session!.client!.id, parseInt(ctx.params.id, 10));
-  getDbWrite().prepare("DELETE FROM activity_client_email WHERE id = ?").run(row.id);
+  const row = await clientHistoryOrThrow(ctx.session!.client!.id, parseInt(ctx.params.id, 10));
+  await getDbWrite().prepare("DELETE FROM activity_client_email WHERE id = ?").run(row.id);
   return true;
 });

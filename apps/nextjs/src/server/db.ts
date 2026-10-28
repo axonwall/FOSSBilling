@@ -1,19 +1,87 @@
-import { DatabaseSync } from "node:sqlite";
+import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { statSync } from "node:fs";
 import { createHash } from "node:crypto";
+import { createPgDb } from "./pg";
 
 /**
  * Data layer for the TS-ported modules. Phase 2 shares the existing
  * FOSSBilling database — the strangler contract is that TS and PHP read
  * the same tables while both runtimes are live.
  *
- * The reference/dev driver is SQLite via node:sqlite, pointed at the
- * install's database file by FB_DATABASE_PATH. MySQL/PostgreSQL drivers
- * slot in behind this module's query helpers in later phases (D3).
+ * R3a: the seam is async. getDb()/getDbWrite() return a Db synchronously
+ * (a thin handle), but every query method is async. Two drivers sit
+ * behind the interface: SQLite via node:sqlite (dev/test, FB_DATABASE_PATH)
+ * and Postgres via pg (production, FB_DATABASE_URL). Row shapes are
+ * identical on both drivers (see pg.ts for the Postgres normalization
+ * contract); call sites never branch on the driver.
  */
 
-let db: DatabaseSync | null = null;
-let dbStamp: string | null = null;
+/** One prepared statement. prepare() itself is sync; execution is async. */
+export interface DbStatement {
+  get<T = Record<string, unknown>>(...params: unknown[]): Promise<T | undefined>;
+  all<T = Record<string, unknown>>(...params: unknown[]): Promise<T[]>;
+  /** INSERT/UPDATE/DELETE. changes is the affected-row count (pg rowCount). */
+  run(...params: unknown[]): Promise<{ changes: number }>;
+}
+
+export interface Db {
+  prepare(sql: string): DbStatement;
+  /** Misc execution (no result needed). Transactions use withTransaction. */
+  exec(sql: string): Promise<void>;
+  /**
+   * Single-row INSERT returning the new id. Postgres appends
+   * RETURNING id; SQLite reads lastInsertRowid. The SQL must be a plain
+   * single-row INSERT with a column list and no RETURNING clause.
+   */
+  insertAndGetId(sql: string, ...params: unknown[]): Promise<number>;
+  /**
+   * Run fn inside a transaction on one connection (a checked-out pg
+   * client, or the SQLite write connection). Inside fn, ONLY the tx
+   * handle may be used — getDb()/getDbWrite() would escape the
+   * transaction on pg. Nesting is not supported (the seam has no
+   * nested-transaction sites).
+   */
+  withTransaction<T>(fn: (tx: Db) => Promise<T>): Promise<T>;
+}
+
+class SqliteStatement implements DbStatement {
+  constructor(private stmt: ReturnType<DatabaseSync["prepare"]>) {}
+  async get<T = Record<string, unknown>>(...params: unknown[]): Promise<T | undefined> {
+    return this.stmt.get(...(params as SQLInputValue[])) as T | undefined;
+  }
+  async all<T = Record<string, unknown>>(...params: unknown[]): Promise<T[]> {
+    return this.stmt.all(...(params as SQLInputValue[])) as T[];
+  }
+  async run(...params: unknown[]): Promise<{ changes: number }> {
+    const r = this.stmt.run(...(params as SQLInputValue[]));
+    return { changes: Number(r.changes) };
+  }
+}
+
+class DbSqlite implements Db {
+  constructor(private conn: DatabaseSync) {}
+  prepare(sql: string): DbStatement {
+    return new SqliteStatement(this.conn.prepare(sql));
+  }
+  async exec(sql: string): Promise<void> {
+    this.conn.exec(sql);
+  }
+  async insertAndGetId(sql: string, ...params: unknown[]): Promise<number> {
+    const r = this.conn.prepare(sql).run(...(params as SQLInputValue[]));
+    return Number(r.lastInsertRowid);
+  }
+  async withTransaction<T>(fn: (tx: Db) => Promise<T>): Promise<T> {
+    this.conn.exec("BEGIN");
+    try {
+      const out = await fn(this);
+      this.conn.exec("COMMIT");
+      return out;
+    } catch (e) {
+      try { this.conn.exec("ROLLBACK"); } catch { /* already failed */ }
+      throw e;
+    }
+  }
+}
 
 function dbPath(): string {
   const path = process.env.FB_DATABASE_PATH;
@@ -39,25 +107,62 @@ function fileStamp(path: string): string | null {
   }
 }
 
-export function getDb(): DatabaseSync {
+let sqliteRead: DatabaseSync | null = null;
+let sqliteReadStamp: string | null = null;
+
+function sqliteReadConn(): DatabaseSync {
   const path = dbPath();
   const stamp = fileStamp(path);
-  if (db && stamp !== null && dbStamp !== null && stamp !== dbStamp) {
-    try { db.close(); } catch { /* already closed */ }
-    db = null;
+  if (sqliteRead && stamp !== null && sqliteReadStamp !== null && stamp !== sqliteReadStamp) {
+    try { sqliteRead.close(); } catch { /* already closed */ }
+    sqliteRead = null;
     // NOTE: the write connection is NOT closed here. A read that
     // follows a write in the same request changes the stamp (the
-    // handler's own write), and closing dbWrite there invalidated
-    // handles already handed out ("database is not open" on the next
-    // write of a read-write-read loop, e.g. update_priority). The
-    // write connection validates its own stamp in getDbWrite().
+    // handler's own write), and closing the write connection there
+    // invalidated handles already handed out ("database is not open"
+    // on the next write of a read-write-read loop, e.g.
+    // update_priority). The write connection validates its own stamp
+    // in sqliteWriteConn().
   }
-  if (db) return db;
+  if (sqliteRead) return sqliteRead;
   // timeout = SQLite busy timeout: PHP writes session rows concurrently,
   // so a TS read must wait out brief locks instead of failing the call.
-  db = new DatabaseSync(path, { readOnly: true, timeout: 5000 });
-  dbStamp = stamp;
-  return db;
+  sqliteRead = new DatabaseSync(path, { readOnly: true, timeout: 5000 });
+  sqliteReadStamp = stamp;
+  return sqliteRead;
+}
+
+let sqliteWrite: DatabaseSync | null = null;
+let sqliteWriteStamp: string | null = null;
+
+/** Write connection (mutations). Opened lazily — reads never touch it.
+ * Stamp-checked on every acquisition so an externally replaced DB
+ * (fixture snapshot restore) never receives writes on a stale inode,
+ * without invalidating handles a handler already holds: only a fresh
+ * getDbWrite() call after a stamp change reopens. */
+function sqliteWriteConn(): DatabaseSync {
+  sqliteReadConn(); // keeps both connections on the same file generation
+  const stamp = fileStamp(dbPath());
+  if (sqliteWrite && stamp !== null && sqliteWriteStamp !== null && stamp !== sqliteWriteStamp) {
+    try { sqliteWrite.close(); } catch { /* already closed */ }
+    sqliteWrite = null;
+  }
+  if (sqliteWrite) return sqliteWrite;
+  sqliteWrite = new DatabaseSync(dbPath(), { timeout: 5000 });
+  sqliteWriteStamp = stamp;
+  return sqliteWrite;
+}
+
+/** Read handle. Sync accessor; query methods are async. */
+export function getDb(): Db {
+  if (process.env.FB_DATABASE_URL) return createPgDb();
+  return new DbSqlite(sqliteReadConn());
+}
+
+/** Write handle. Sync accessor; query methods are async. */
+export function getDbWrite(): Db {
+  if (process.env.FB_DATABASE_URL) return createPgDb();
+  return new DbSqlite(sqliteWriteConn());
 }
 
 export interface SettingRow {
@@ -65,21 +170,21 @@ export interface SettingRow {
   value: string | null;
 }
 
-export function getSettings(params: string[]): Map<string, string | null> {
+export async function getSettings(params: string[]): Promise<Map<string, string | null>> {
   const out = new Map<string, string | null>();
   if (params.length === 0) return out;
   const marks = params.map(() => "?").join(",");
-  const rows = getDb()
+  const rows = (await getDb()
     .prepare(`SELECT param, value FROM setting WHERE param IN (${marks})`)
-    .all(...params) as unknown as SettingRow[];
+    .all(...params)) as unknown as SettingRow[];
   for (const r of rows) out.set(r.param, r.value);
   return out;
 }
 
-export function getSetting(param: string): string | null {
-  const row = getDb()
+export async function getSetting(param: string): Promise<string | null> {
+  const row = (await getDb()
     .prepare("SELECT value FROM setting WHERE param = ?")
-    .get(param) as { value: string | null } | undefined;
+    .get(param)) as { value: string | null } | undefined;
   return row?.value ?? null;
 }
 
@@ -93,49 +198,28 @@ export interface CurrencyRow {
   fraction_digits: number | null;
 }
 
-export function listCurrencies(): CurrencyRow[] {
-  return getDb()
+export async function listCurrencies(): Promise<CurrencyRow[]> {
+  return (await getDb()
     .prepare(
       "SELECT id, code, is_default, conversion_rate, is_rate_manual, format_pattern, fraction_digits FROM currency ORDER BY id",
     )
-    .all() as unknown as CurrencyRow[];
+    .all()) as unknown as CurrencyRow[];
 }
 
-export function findCurrencyByCode(code: string): CurrencyRow | undefined {
-  return getDb()
+export async function findCurrencyByCode(code: string): Promise<CurrencyRow | undefined> {
+  return (await getDb()
     .prepare(
       "SELECT id, code, is_default, conversion_rate, is_rate_manual, format_pattern, fraction_digits FROM currency WHERE code = ?",
     )
-    .get(code) as unknown as CurrencyRow | undefined;
+    .get(code)) as unknown as CurrencyRow | undefined;
 }
 
-export function findDefaultCurrency(): CurrencyRow | undefined {
-  return getDb()
+export async function findDefaultCurrency(): Promise<CurrencyRow | undefined> {
+  return (await getDb()
     .prepare(
       "SELECT id, code, is_default, conversion_rate, is_rate_manual, format_pattern, fraction_digits FROM currency WHERE is_default = 1",
     )
-    .get() as unknown as CurrencyRow | undefined;
-}
-
-let dbWrite: DatabaseSync | null = null;
-let dbWriteStamp: string | null = null;
-
-/** Write connection (mutations). Opened lazily — reads never touch it.
- * Stamp-checked on every acquisition so an externally replaced DB
- * (fixture snapshot restore) never receives writes on a stale inode,
- * without invalidating handles a handler already holds: only a fresh
- * getDbWrite() call after a stamp change reopens. */
-export function getDbWrite(): DatabaseSync {
-  getDb(); // keeps both connections on the same file generation
-  const stamp = fileStamp(dbPath());
-  if (dbWrite && stamp !== null && dbWriteStamp !== null && stamp !== dbWriteStamp) {
-    try { dbWrite.close(); } catch { /* already closed */ }
-    dbWrite = null;
-  }
-  if (dbWrite) return dbWrite;
-  dbWrite = new DatabaseSync(dbPath(), { timeout: 5000 });
-  dbWriteStamp = stamp;
-  return dbWrite;
+    .get()) as unknown as CurrencyRow | undefined;
 }
 
 /** Doctrine timestamp format used across the schema (Y-m-d H:i:s, UTC here). */
@@ -143,20 +227,20 @@ export function nowTimestamp(): string {
   return new Date().toISOString().slice(0, 19).replace("T", " ");
 }
 
-export function insertCurrency(row: {
+export async function insertCurrency(row: {
   code: string;
   conversion_rate: number;
   is_rate_manual: number;
-}): void {
+}): Promise<void> {
   const ts = nowTimestamp();
-  getDbWrite()
+  await getDbWrite()
     .prepare(
       "INSERT INTO currency (code, conversion_rate, is_rate_manual, is_default, format_pattern, fraction_digits, created_at, updated_at) VALUES (?, ?, ?, 0, NULL, NULL, ?, ?)",
     )
     .run(row.code, row.conversion_rate, row.is_rate_manual, ts, ts);
 }
 
-export function updateCurrencyRow(
+export async function updateCurrencyRow(
   code: string,
   fields: Partial<{
     conversion_rate: number;
@@ -164,7 +248,7 @@ export function updateCurrencyRow(
     format_pattern: string | null;
     fraction_digits: number | null;
   }>,
-): void {
+): Promise<void> {
   const sets: string[] = [];
   const values: (string | number | null)[] = [];
   for (const [k, v] of Object.entries(fields)) {
@@ -174,29 +258,24 @@ export function updateCurrencyRow(
   if (sets.length === 0) return;
   sets.push("updated_at = ?");
   values.push(nowTimestamp(), code);
-  getDbWrite()
+  await getDbWrite()
     .prepare(`UPDATE currency SET ${sets.join(", ")} WHERE code = ?`)
     .run(...(values as (string | number)[]));
 }
 
-export function deleteCurrencyRow(code: string): void {
-  getDbWrite().prepare("DELETE FROM currency WHERE code = ?").run(code);
+export async function deleteCurrencyRow(code: string): Promise<void> {
+  await getDbWrite().prepare("DELETE FROM currency WHERE code = ?").run(code);
 }
 
-export function setDefaultCurrencyRow(code: string): void {
+export async function setDefaultCurrencyRow(code: string): Promise<void> {
   const w = getDbWrite();
-  w.exec("BEGIN");
-  try {
-    w.prepare("UPDATE currency SET is_default = 0 WHERE is_default = 1").run();
-    w.prepare("UPDATE currency SET is_default = 1, updated_at = ? WHERE code = ?").run(
+  await w.withTransaction(async (tx) => {
+    await tx.prepare("UPDATE currency SET is_default = 0 WHERE is_default = 1").run();
+    await tx.prepare("UPDATE currency SET is_default = 1, updated_at = ? WHERE code = ?").run(
       nowTimestamp(),
       code,
     );
-    w.exec("COMMIT");
-  } catch (e) {
-    w.exec("ROLLBACK");
-    throw e;
-  }
+  });
 }
 
 export interface ClientRow {
@@ -241,14 +320,14 @@ export interface ClientRow {
 const CLIENT_COLUMNS =
   "id, aid, role, auth_type, email, status, email_approved, tax_exempt, merge_renewals, type, first_name, last_name, gender, birthday, phone_cc, phone, company, company_vat, company_number, address_1, address_2, city, state, postcode, country, notes, currency, lang, timezone, ip, api_token, referred_by, billing_email, created_at, updated_at, custom_1, custom_2, custom_3, custom_4, custom_5, custom_6, custom_7, custom_8, custom_9, custom_10, custom_11, custom_12, custom_13, custom_14, custom_15, custom_16, custom_17, custom_18, custom_19, custom_20";
 
-export function findClientById(id: number): ClientRow | undefined {
-  return getDb()
+export async function findClientById(id: number): Promise<ClientRow | undefined> {
+  return await getDb()
     .prepare(`SELECT ${CLIENT_COLUMNS} FROM client WHERE id = ?`)
     .get(id) as unknown as ClientRow | undefined;
 }
 
-export function findClientByEmail(email: string): ClientRow | undefined {
-  return getDb()
+export async function findClientByEmail(email: string): Promise<ClientRow | undefined> {
+  return await getDb()
     .prepare(`SELECT ${CLIENT_COLUMNS} FROM client WHERE email = ?`)
     .get(email) as unknown as ClientRow | undefined;
 }
@@ -262,7 +341,7 @@ export interface ClientFilters {
   search?: string;
 }
 
-export function listClients(filters: ClientFilters): ClientRow[] {
+export async function listClients(filters: ClientFilters): Promise<ClientRow[]> {
   const where: string[] = [];
   const args: (string | number)[] = [];
   if (filters.id) {
@@ -292,18 +371,18 @@ export function listClients(filters: ClientFilters): ClientRow[] {
   }
   // PHP's pager orders lists newest-first (id DESC) — see captures6.
   const sql = `SELECT ${CLIENT_COLUMNS} FROM client ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY id DESC`;
-  return getDb().prepare(sql).all(...args) as unknown as ClientRow[];
+  return await getDb().prepare(sql).all(...args) as unknown as ClientRow[];
 }
 
-export function clientBalanceSum(clientId: number): number {
-  const row = getDb()
+export async function clientBalanceSum(clientId: number): Promise<number> {
+  const row = await getDb()
     .prepare("SELECT COALESCE(SUM(amount), 0) AS total FROM client_balance WHERE client_id = ?")
     .get(clientId) as { total: number | string } | undefined;
   return Number(row?.total ?? 0);
 }
 
-export function clientGroups(clientId: number): { id: number; title: string }[] {
-  const rows = getDb()
+export async function clientGroups(clientId: number): Promise<{ id: number; title: string }[]> {
+  const rows = await getDb()
     .prepare(
       "SELECT g.id AS id, g.title AS title FROM client_group g JOIN client_group_members m ON m.client_group_id = g.id WHERE m.client_id = ? ORDER BY g.id",
     )
@@ -311,8 +390,8 @@ export function clientGroups(clientId: number): { id: number; title: string }[] 
   return rows;
 }
 
-export function listClientPairs(limit: number): { id: number; name: string }[] {
-  const rows = getDb()
+export async function listClientPairs(limit: number): Promise<{ id: number; name: string }[]> {
+  const rows = await getDb()
     .prepare("SELECT id, first_name, last_name FROM client ORDER BY id DESC LIMIT ?")
     .all(limit) as unknown as { id: number; first_name: string | null; last_name: string | null }[];
   return rows.map((r) => ({ id: r.id, name: `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim() }));
@@ -330,8 +409,8 @@ export interface AdminRow {
   updated_at: string | null;
 }
 
-export function findAdminById(id: number): AdminRow | undefined {
-  return getDb()
+export async function findAdminById(id: number): Promise<AdminRow | undefined> {
+  return await getDb()
     .prepare(
       "SELECT id, email, name, signature, status, api_token, timezone, created_at, updated_at FROM admin WHERE id = ?",
     )
@@ -342,24 +421,24 @@ export interface AdminFullRow extends AdminRow {
   system_name: string | null;
 }
 
-export function listAdmins(): AdminFullRow[] {
-  return getDb()
+export async function listAdmins(): Promise<AdminFullRow[]> {
+  return await getDb()
     .prepare(
       "SELECT id, email, name, signature, status, api_token, timezone, created_at, updated_at, system_name FROM admin WHERE system_name IS NULL ORDER BY id",
     )
     .all() as unknown as AdminFullRow[];
 }
 
-export function findAdminFullById(id: number): AdminFullRow | undefined {
-  return getDb()
+export async function findAdminFullById(id: number): Promise<AdminFullRow | undefined> {
+  return await getDb()
     .prepare(
       "SELECT id, email, name, signature, status, api_token, timezone, created_at, updated_at, system_name FROM admin WHERE id = ?",
     )
     .get(id) as unknown as AdminFullRow | undefined;
 }
 
-export function listAdminPairs(): { id: number; name: string | null }[] {
-  return getDb()
+export async function listAdminPairs(): Promise<{ id: number; name: string | null }[]> {
+  return await getDb()
     .prepare("SELECT id, name FROM admin ORDER BY id")
     .all() as unknown as { id: number; name: string | null }[];
 }
@@ -375,16 +454,16 @@ export interface AdminGroupRow {
   updated_at: string | null;
 }
 
-export function listAdminGroups(): AdminGroupRow[] {
-  return getDb()
+export async function listAdminGroups(): Promise<AdminGroupRow[]> {
+  return await getDb()
     .prepare(
       "SELECT id, name, system_name, permissions, protected, parent_id, created_at, updated_at FROM admin_group ORDER BY id",
     )
     .all() as unknown as AdminGroupRow[];
 }
 
-export function adminGroupIdsFor(adminId: number): number[] {
-  const rows = getDb()
+export async function adminGroupIdsFor(adminId: number): Promise<number[]> {
+  const rows = await getDb()
     .prepare("SELECT admin_group_id FROM admin_group_member WHERE admin_id = ?")
     .all(adminId) as unknown as { admin_group_id: number }[];
   return rows.map((r) => r.admin_group_id);
@@ -405,7 +484,7 @@ export interface ActivityRow {
   client_email: string | null;
 }
 
-export function listActivity(filters: {
+export async function listActivity(filters: {
   priority?: string;
   minPriority?: string;
   userFilter?: string;
@@ -413,7 +492,7 @@ export function listActivity(filters: {
   clientId?: string;
   ip?: string;
   search?: string;
-}): ActivityRow[] {
+}): Promise<ActivityRow[]> {
   const where: string[] = [];
   const args: (string | number)[] = [];
   if (filters.priority) {
@@ -449,7 +528,7 @@ export function listActivity(filters: {
     LEFT JOIN client c ON c.id = m.client_id
     ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
     ORDER BY m.id DESC`;
-  return getDb().prepare(sql).all(...args) as unknown as ActivityRow[];
+  return await getDb().prepare(sql).all(...args) as unknown as ActivityRow[];
 }
 
 export interface PostRow {
@@ -472,44 +551,40 @@ export interface PostRow {
 const POST_COLUMNS =
   "id, admin_id, title, description, content, status, slug, image, section, publish_at, published_at, expires_at, created_at, updated_at";
 
-export function listPosts(activeOnly: boolean): PostRow[] {
+export async function listPosts(activeOnly: boolean): Promise<PostRow[]> {
   const sql = `SELECT ${POST_COLUMNS} FROM post ${activeOnly ? "WHERE status = 'active'" : ""} ORDER BY created_at DESC, id`;
-  return getDb().prepare(sql).all() as unknown as PostRow[];
+  return await getDb().prepare(sql).all() as unknown as PostRow[];
 }
 
-export function findPostById(id: number): PostRow | undefined {
-  return getDb().prepare(`SELECT ${POST_COLUMNS} FROM post WHERE id = ?`).get(id) as unknown as
+export async function findPostById(id: number): Promise<PostRow | undefined> {
+  return await getDb().prepare(`SELECT ${POST_COLUMNS} FROM post WHERE id = ?`).get(id) as unknown as
     | PostRow
     | undefined;
 }
 
-export function findPostBySlug(slug: string): PostRow | undefined {
-  return getDb().prepare(`SELECT ${POST_COLUMNS} FROM post WHERE slug = ?`).get(slug) as unknown as
+export async function findPostBySlug(slug: string): Promise<PostRow | undefined> {
+  return await getDb().prepare(`SELECT ${POST_COLUMNS} FROM post WHERE slug = ?`).get(slug) as unknown as
     | PostRow
     | undefined;
 }
 
-export function insertPost(row: {
+export async function insertPost(row: {
   admin_id: number;
   title: string;
   slug: string;
   content: string | null;
   status: string;
   description: string | null;
-}): number {
+}): Promise<number> {
   const ts = nowTimestamp();
-  const info = getDbWrite()
-    .prepare(
-      "INSERT INTO post (admin_id, title, slug, content, status, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    )
-    .run(row.admin_id, row.title, row.slug, row.content, row.status, row.description, ts, ts);
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId("INSERT INTO post (admin_id, title, slug, content, status, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", row.admin_id, row.title, row.slug, row.content, row.status, row.description, ts, ts);
+  return Number(info);
 }
 
-export function updatePostRow(
+export async function updatePostRow(
   id: number,
   fields: Partial<{ title: string; description: string | null; content: string | null; status: string }>,
-): void {
+): Promise<void> {
   const sets: string[] = [];
   const values: (string | number | null)[] = [];
   for (const [k, v] of Object.entries(fields)) {
@@ -518,13 +593,13 @@ export function updatePostRow(
   }
   sets.push("updated_at = ?");
   values.push(nowTimestamp(), id);
-  getDbWrite()
+  await getDbWrite()
     .prepare(`UPDATE post SET ${sets.join(", ")} WHERE id = ?`)
     .run(...(values as (string | number)[]));
 }
 
-export function deletePostRow(id: number): void {
-  getDbWrite().prepare("DELETE FROM post WHERE id = ?").run(id);
+export async function deletePostRow(id: number): Promise<void> {
+  await getDbWrite().prepare("DELETE FROM post WHERE id = ?").run(id);
 }
 
 export interface PageRow {
@@ -540,41 +615,37 @@ export interface PageRow {
 
 const PAGE_COLUMNS = "id, title, description, keywords, content, slug, created_at, updated_at";
 
-export function listPages(): PageRow[] {
-  return getDb()
+export async function listPages(): Promise<PageRow[]> {
+  return await getDb()
     .prepare(`SELECT ${PAGE_COLUMNS} FROM custom_pages ORDER BY created_at DESC, id`)
     .all() as unknown as PageRow[];
 }
 
-export function findPageById(id: number): PageRow | undefined {
-  return getDb().prepare(`SELECT ${PAGE_COLUMNS} FROM custom_pages WHERE id = ?`).get(id) as unknown as
+export async function findPageById(id: number): Promise<PageRow | undefined> {
+  return await getDb().prepare(`SELECT ${PAGE_COLUMNS} FROM custom_pages WHERE id = ?`).get(id) as unknown as
     | PageRow
     | undefined;
 }
 
-export function findPageBySlug(slug: string): PageRow | undefined {
-  return getDb()
+export async function findPageBySlug(slug: string): Promise<PageRow | undefined> {
+  return await getDb()
     .prepare(`SELECT ${PAGE_COLUMNS} FROM custom_pages WHERE slug = ?`)
     .get(slug) as unknown as PageRow | undefined;
 }
 
-export function insertPage(row: {
+export async function insertPage(row: {
   title: string;
   slug: string;
   content: string | null;
   description: string | null;
   keywords: string | null;
-}): number {
+}): Promise<number> {
   const ts = nowTimestamp();
-  const info = getDbWrite()
-    .prepare(
-      "INSERT INTO custom_pages (title, slug, content, description, keywords, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-    )
-    .run(row.title, row.slug, row.content, row.description, row.keywords, ts, ts);
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId("INSERT INTO custom_pages (title, slug, content, description, keywords, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)", row.title, row.slug, row.content, row.description, row.keywords, ts, ts);
+  return Number(info);
 }
 
-export function updatePageRow(
+export async function updatePageRow(
   id: number,
   fields: Partial<{
     title: string;
@@ -583,7 +654,7 @@ export function updatePageRow(
     content: string | null;
     slug: string;
   }>,
-): void {
+): Promise<void> {
   const sets: string[] = [];
   const values: (string | number | null)[] = [];
   for (const [k, v] of Object.entries(fields)) {
@@ -592,50 +663,50 @@ export function updatePageRow(
   }
   sets.push("updated_at = ?");
   values.push(nowTimestamp(), id);
-  getDbWrite()
+  await getDbWrite()
     .prepare(`UPDATE custom_pages SET ${sets.join(", ")} WHERE id = ?`)
     .run(...(values as (string | number)[]));
 }
 
-export function deletePageRow(id: number): void {
-  getDbWrite().prepare("DELETE FROM custom_pages WHERE id = ?").run(id);
+export async function deletePageRow(id: number): Promise<void> {
+  await getDbWrite().prepare("DELETE FROM custom_pages WHERE id = ?").run(id);
 }
 
-export function getAllSettings(): { param: string; value: string | null }[] {
-  return getDb()
+export async function getAllSettings(): Promise<{ param: string; value: string | null }[]> {
+  return await getDb()
     .prepare("SELECT param, value FROM setting ORDER BY param")
     .all() as unknown as { param: string; value: string | null }[];
 }
 
-export function findPublicSetting(param: string): string | null | undefined {
-  const row = getDb()
+export async function findPublicSetting(param: string): Promise<string | null | undefined> {
+  const row = await getDb()
     .prepare("SELECT value FROM setting WHERE param = ? AND public = 1")
     .get(param) as { value: string | null } | undefined;
   return row ? row.value : undefined;
 }
 
-export function findSettingValue(param: string): string | null {
-  const row = getDb()
+export async function findSettingValue(param: string): Promise<string | null> {
+  const row = await getDb()
     .prepare("SELECT value FROM setting WHERE param = ?")
     .get(param) as { value: string | null } | undefined;
   return row?.value ?? null;
 }
 
-export function upsertSetting(param: string, value: string): void {
+export async function upsertSetting(param: string, value: string): Promise<void> {
   const ts = nowTimestamp();
   const w = getDbWrite();
-  const res = w
+  const res = await w
     .prepare("UPDATE setting SET value = ?, updated_at = ? WHERE param = ?")
     .run(value, ts, param);
   if (res.changes === 0) {
-    w.prepare(
+    await w.prepare(
       "INSERT INTO setting (param, value, public, category, hash, created_at, updated_at) VALUES (?, ?, 0, NULL, NULL, ?, ?)",
     ).run(param, value, ts, ts);
   }
 }
 
-export function findAdminByEmail(email: string): AdminFullRow | undefined {
-  return getDb()
+export async function findAdminByEmail(email: string): Promise<AdminFullRow | undefined> {
+  return await getDb()
     .prepare(
       "SELECT id, email, name, signature, status, api_token, timezone, created_at, updated_at, system_name FROM admin WHERE email = ?",
     )
@@ -656,8 +727,8 @@ export interface AdminAuthRow {
   system_name: string | null;
 }
 
-export function findAdminAuthByEmail(email: string): AdminAuthRow | undefined {
-  return getDb()
+export async function findAdminAuthByEmail(email: string): Promise<AdminAuthRow | undefined> {
+  return await getDb()
     .prepare("SELECT id, email, name, pass, status, system_name FROM admin WHERE email = ?")
     .get(email) as AdminAuthRow | undefined;
 }
@@ -670,42 +741,42 @@ export interface AdminPasswordResetRow {
   created_at: string | null;
 }
 
-export function findAdminPasswordResetByHash(hash: string): AdminPasswordResetRow | undefined {
-  return getDb()
+export async function findAdminPasswordResetByHash(hash: string): Promise<AdminPasswordResetRow | undefined> {
+  return await getDb()
     .prepare("SELECT id, hash, ip, admin_id, created_at FROM admin_password_reset WHERE hash = ?")
     .get(hash) as AdminPasswordResetRow | undefined;
 }
 
 /** Staff\Repository\AdminPasswordResetRepository::replaceReset. */
-export function replaceAdminPasswordReset(adminId: number, hash: string, ip: string | null): void {
+export async function replaceAdminPasswordReset(adminId: number, hash: string, ip: string | null): Promise<void> {
   const w = getDbWrite();
   const now = nowTimestamp();
-  w.prepare("DELETE FROM admin_password_reset WHERE admin_id = ?").run(adminId);
-  w.prepare("INSERT INTO admin_password_reset (hash, ip, admin_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)")
+  await w.prepare("DELETE FROM admin_password_reset WHERE admin_id = ?").run(adminId);
+  await w.prepare("INSERT INTO admin_password_reset (hash, ip, admin_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)")
     .run(hash, ip, adminId, now, now);
 }
 
-export function deleteAdminPasswordResets(adminId: number): void {
-  getDbWrite().prepare("DELETE FROM admin_password_reset WHERE admin_id = ?").run(adminId);
+export async function deleteAdminPasswordResets(adminId: number): Promise<void> {
+  await getDbWrite().prepare("DELETE FROM admin_password_reset WHERE admin_id = ?").run(adminId);
 }
 
 /** Activity\Service::recordAdminLogin: one row per staff login. */
-export function insertAdminLoginHistory(adminId: number, ip: string | null): void {
-  getDbWrite()
+export async function insertAdminLoginHistory(adminId: number, ip: string | null): Promise<void> {
+  await getDbWrite()
     .prepare("INSERT INTO activity_admin_history (admin_id, ip, created_at) VALUES (?, ?, ?)")
     .run(adminId, ip, nowTimestamp());
 }
 
 /** Activity\Repository\ActivityAdminHistoryRepository::findOneByIdOrFail. */
-export function findAdminLoginHistoryById(id: number): {
+export async function findAdminLoginHistoryById(id: number): Promise<{
   id: number;
   ip: string | null;
   created_at: string | null;
   staff_id: number | null;
   staff_name: string | null;
   staff_email: string | null;
-} | undefined {
-  return getDb()
+} | undefined> {
+  return await getDb()
     .prepare(
       `SELECT h.id AS id, h.ip AS ip, h.created_at AS created_at, a.id AS staff_id, a.name AS staff_name, a.email AS staff_email
        FROM activity_admin_history h LEFT JOIN admin a ON a.id = h.admin_id WHERE h.id = ?`,
@@ -720,24 +791,20 @@ export function findAdminLoginHistoryById(id: number): {
   } | undefined;
 }
 
-export function insertAdmin(row: {
+export async function insertAdmin(row: {
   email: string;
   pass: string;
   name: string;
   status: string;
   signature: string | null;
   timezone: string | null;
-}): number {
+}): Promise<number> {
   const ts = nowTimestamp();
-  const info = getDbWrite()
-    .prepare(
-      "INSERT INTO admin (email, pass, name, status, signature, timezone, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    )
-    .run(row.email, row.pass, row.name, row.status, row.signature, row.timezone, ts, ts);
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId("INSERT INTO admin (email, pass, name, status, signature, timezone, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", row.email, row.pass, row.name, row.status, row.signature, row.timezone, ts, ts);
+  return Number(info);
 }
 
-export function updateAdminRow(
+export async function updateAdminRow(
   id: number,
   fields: Partial<{
     email: string;
@@ -748,7 +815,7 @@ export function updateAdminRow(
     pass: string;
     api_token: string | null;
   }>,
-): void {
+): Promise<void> {
   const sets: string[] = [];
   const values: (string | number | null)[] = [];
   for (const [k, v] of Object.entries(fields)) {
@@ -758,50 +825,41 @@ export function updateAdminRow(
   if (sets.length === 0) return;
   sets.push("updated_at = ?");
   values.push(nowTimestamp(), id);
-  getDbWrite()
+  await getDbWrite()
     .prepare(`UPDATE admin SET ${sets.join(", ")} WHERE id = ?`)
     .run(...(values as (string | number)[]));
 }
 
-export function deleteAdminRow(id: number): void {
+export async function deleteAdminRow(id: number): Promise<void> {
   const w = getDbWrite();
-  w.exec("BEGIN");
-  try {
-    w.prepare("DELETE FROM admin_group_member WHERE admin_id = ?").run(id);
-    w.prepare("DELETE FROM admin WHERE id = ?").run(id);
-    w.exec("COMMIT");
-  } catch (e) {
-    w.exec("ROLLBACK");
-    throw e;
-  }
+  await w.withTransaction(async (tx) => {
+    await tx.prepare("DELETE FROM admin_group_member WHERE admin_id = ?").run(id);
+    await tx.prepare("DELETE FROM admin WHERE id = ?").run(id);
+  });
 }
 
-export function addAdminToGroup(adminId: number, groupId: number): void {
-  getDbWrite()
+export async function addAdminToGroup(adminId: number, groupId: number): Promise<void> {
+  await getDbWrite()
     .prepare("INSERT INTO admin_group_member (admin_id, admin_group_id, created_at) VALUES (?, ?, ?)")
     .run(adminId, groupId, nowTimestamp());
 }
 
-export function removeAdminFromGroup(adminId: number, groupId: number): void {
-  getDbWrite()
+export async function removeAdminFromGroup(adminId: number, groupId: number): Promise<void> {
+  await getDbWrite()
     .prepare("DELETE FROM admin_group_member WHERE admin_id = ? AND admin_group_id = ?")
     .run(adminId, groupId);
 }
 
-export function insertAdminGroup(name: string, parentId: number): number {
+export async function insertAdminGroup(name: string, parentId: number): Promise<number> {
   const ts = nowTimestamp();
-  const info = getDbWrite()
-    .prepare(
-      "INSERT INTO admin_group (name, system_name, permissions, protected, parent_id, created_at, updated_at) VALUES (?, NULL, NULL, 0, ?, ?, ?)",
-    )
-    .run(name, parentId, ts, ts);
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId("INSERT INTO admin_group (name, system_name, permissions, protected, parent_id, created_at, updated_at) VALUES (?, NULL, NULL, 0, ?, ?, ?)", name, parentId, ts, ts);
+  return Number(info);
 }
 
-export function updateAdminGroupRow(
+export async function updateAdminGroupRow(
   id: number,
   fields: Partial<{ name: string; permissions: string | null; parent_id: number | null }>,
-): void {
+): Promise<void> {
   const sets: string[] = [];
   const values: (string | number | null)[] = [];
   for (const [k, v] of Object.entries(fields)) {
@@ -811,48 +869,43 @@ export function updateAdminGroupRow(
   if (sets.length === 0) return;
   sets.push("updated_at = ?");
   values.push(nowTimestamp(), id);
-  getDbWrite()
+  await getDbWrite()
     .prepare(`UPDATE admin_group SET ${sets.join(", ")} WHERE id = ?`)
     .run(...(values as (string | number)[]));
 }
 
-export function deleteAdminGroupRow(id: number): void {
+export async function deleteAdminGroupRow(id: number): Promise<void> {
   const w = getDbWrite();
-  w.exec("BEGIN");
-  try {
-    w.prepare("DELETE FROM admin_group_member WHERE admin_group_id = ?").run(id);
-    w.prepare("DELETE FROM admin_group WHERE id = ?").run(id);
-    w.exec("COMMIT");
-  } catch (e) {
-    w.exec("ROLLBACK");
-    throw e;
-  }
+  await w.withTransaction(async (tx) => {
+    await tx.prepare("DELETE FROM admin_group_member WHERE admin_group_id = ?").run(id);
+    await tx.prepare("DELETE FROM admin_group WHERE id = ?").run(id);
+  });
 }
 
-export function findAdminGroupById(id: number): AdminGroupRow | undefined {
-  return getDb()
+export async function findAdminGroupById(id: number): Promise<AdminGroupRow | undefined> {
+  return await getDb()
     .prepare(
       "SELECT id, name, system_name, permissions, protected, parent_id, created_at, updated_at FROM admin_group WHERE id = ?",
     )
     .get(id) as unknown as AdminGroupRow | undefined;
 }
 
-export function countAdminGroupMembers(groupId: number): number {
-  const row = getDb()
+export async function countAdminGroupMembers(groupId: number): Promise<number> {
+  const row = await getDb()
     .prepare("SELECT COUNT(*) AS n FROM admin_group_member WHERE admin_group_id = ?")
     .get(groupId) as { n: number } | undefined;
   return row?.n ?? 0;
 }
 
-export function listAdminLoginHistory(): {
+export async function listAdminLoginHistory(): Promise<{
   id: number;
   ip: string | null;
   created_at: string | null;
   staff_id: number | null;
   staff_name: string | null;
   staff_email: string | null;
-}[] {
-  return getDb()
+}[]> {
+  return await getDb()
     .prepare(
       `SELECT h.id AS id, h.ip AS ip, h.created_at AS created_at, a.id AS staff_id, a.name AS staff_name, a.email AS staff_email
        FROM activity_admin_history h LEFT JOIN admin a ON a.id = h.admin_id ORDER BY h.id DESC`,
@@ -867,22 +920,22 @@ export function listAdminLoginHistory(): {
   }[];
 }
 
-export function insertActivity(row: {
+export async function insertActivity(row: {
   admin_id: number | null;
   client_id: number | null;
   priority: number;
   message: string;
   ip: string | null;
-}): void {
-  getDbWrite()
+}): Promise<void> {
+  await getDbWrite()
     .prepare(
       "INSERT INTO activity_system (admin_id, client_id, priority, message, ip, created_at) VALUES (?, ?, ?, ?, ?, ?)",
     )
     .run(row.admin_id, row.client_id, row.priority, row.message, row.ip, nowTimestamp());
 }
 
-export function updateSessionContent(id: string, content: string): void {
-  getDbWrite().prepare("UPDATE session SET content = ? WHERE id = ?").run(content, id);
+export async function updateSessionContent(id: string, content: string): Promise<void> {
+  await getDbWrite().prepare("UPDATE session SET content = ? WHERE id = ?").run(content, id);
 }
 
 export interface SessionRow {
@@ -891,17 +944,17 @@ export interface SessionRow {
   lifetime: number;
 }
 
-export function insertSession(id: string, content: string, lifetime: number): void {
+export async function insertSession(id: string, content: string, lifetime: number): Promise<void> {
   const now = Math.floor(Date.now() / 1000);
-  getDbWrite()
+  await getDbWrite()
     .prepare(
       "INSERT INTO session (id, modified_at, created_at, content, lifetime, fingerprint) VALUES (?, ?, ?, ?, ?, NULL)",
     )
     .run(id, now, now, content, lifetime);
 }
 
-export function findSession(id: string): SessionRow | undefined {
-  const row = getDb()
+export async function findSession(id: string): Promise<SessionRow | undefined> {
+  const row = await getDb()
     .prepare("SELECT id, content, lifetime FROM session WHERE id = ?")
     .get(id) as unknown as
     | { id: string; content: string | Uint8Array; lifetime: number }
@@ -917,8 +970,8 @@ export function findSession(id: string): SessionRow | undefined {
  * Profile\Service::invalidateSessions scans every session row and drops
  * the ones whose _sf2_attributes bag carries the matching identity.
  */
-export function listSessionRows(): SessionRow[] {
-  const rows = getDb()
+export async function listSessionRows(): Promise<SessionRow[]> {
+  const rows = await getDb()
     .prepare("SELECT id, content, lifetime FROM session WHERE content IS NOT NULL AND LENGTH(content) > 0")
     .all() as unknown as { id: string; content: string | Uint8Array; lifetime: number }[];
   return rows.map((r) => ({
@@ -928,8 +981,8 @@ export function listSessionRows(): SessionRow[] {
   }));
 }
 
-export function deleteSessionRow(id: string): void {
-  getDbWrite().prepare("DELETE FROM session WHERE id = ?").run(id);
+export async function deleteSessionRow(id: string): Promise<void> {
+  await getDbWrite().prepare("DELETE FROM session WHERE id = ?").run(id);
 }
 
 // ---------------------------------------------------------------------------
@@ -969,14 +1022,14 @@ export interface ProductRow {
 const PRODUCT_COLS =
   "id, form_id, title, slug, description, unit, active, status, hidden, is_addon, setup, addons, icon_url, allow_quantity_select, stock_control, quantity_in_stock, suspension_grace_days, plugin, plugin_config, upgrades, priority, config, type, created_at, updated_at, product_category_id, product_payment_id";
 
-export function findProductById(id: number): ProductRow | undefined {
-  return getDb().prepare(`SELECT ${PRODUCT_COLS} FROM product WHERE id = ?`).get(id) as
+export async function findProductById(id: number): Promise<ProductRow | undefined> {
+  return await getDb().prepare(`SELECT ${PRODUCT_COLS} FROM product WHERE id = ?`).get(id) as
     | ProductRow
     | undefined;
 }
 
-export function listAllProducts(): ProductRow[] {
-  return getDb().prepare(`SELECT ${PRODUCT_COLS} FROM product ORDER BY priority ASC, id ASC`).all() as unknown as ProductRow[];
+export async function listAllProducts(): Promise<ProductRow[]> {
+  return await getDb().prepare(`SELECT ${PRODUCT_COLS} FROM product ORDER BY priority ASC, id ASC`).all() as unknown as ProductRow[];
 }
 
 export interface ProductPaymentRow {
@@ -986,8 +1039,8 @@ export interface ProductPaymentRow {
   once_setup_price: number | null;
 }
 
-export function findProductPayment(id: number): ProductPaymentRow | undefined {
-  return getDb()
+export async function findProductPayment(id: number): Promise<ProductPaymentRow | undefined> {
+  return await getDb()
     .prepare("SELECT id, type, once_price, once_setup_price FROM product_payment WHERE id = ?")
     .get(id) as ProductPaymentRow | undefined;
 }
@@ -1002,8 +1055,8 @@ export interface ProductPeriodRow {
   product_payment_id: number;
 }
 
-export function listProductPeriods(paymentId: number): ProductPeriodRow[] {
-  return getDb()
+export async function listProductPeriods(paymentId: number): Promise<ProductPeriodRow[]> {
+  return await getDb()
     .prepare(
       "SELECT id, code, price, setup_price, enabled, sort_order, product_payment_id FROM product_payment_period WHERE product_payment_id = ? ORDER BY sort_order ASC, id ASC",
     )
@@ -1020,19 +1073,19 @@ export interface CategoryRow {
   updated_at: string | null;
 }
 
-export function listCategories(): CategoryRow[] {
-  return getDb()
+export async function listCategories(): Promise<CategoryRow[]> {
+  return await getDb()
     .prepare("SELECT id, title, description, icon_url, priority, created_at, updated_at FROM product_category ORDER BY id ASC")
     .all() as unknown as CategoryRow[];
 }
 
-export function findTldRegistrar(id: number): { id: number; title: string } | undefined {
-  return getDb()
+export async function findTldRegistrar(id: number): Promise<{ id: number; title: string } | undefined> {
+  return await getDb()
     .prepare("SELECT id, name AS title FROM tld_registrar WHERE id = ?")
     .get(id) as { id: number; title: string } | undefined;
 }
 
-export function listTlds(): {
+export async function listTlds(): Promise<{
   tld: string;
   price_registration: string;
   price_renew: string;
@@ -1042,10 +1095,10 @@ export function listTlds(): {
   min_years: number;
   periods: string | null;
   tld_registrar_id: number | null;
-}[] {
+}[]> {
   // Prices are DECIMAL in PHP (returned as strings); SQLite stores them
   // as REAL, so format back to the scale-2 string form.
-  return getDb()
+  return await getDb()
     .prepare(
       `SELECT tld, printf('%.2f', price_registration) AS price_registration,
               printf('%.2f', price_renew) AS price_renew,
@@ -1065,34 +1118,32 @@ export interface CartRow {
   updated_at: string | null;
 }
 
-export function findCartBySession(sessionId: string): CartRow | undefined {
-  return getDb()
+export async function findCartBySession(sessionId: string): Promise<CartRow | undefined> {
+  return await getDb()
     .prepare("SELECT id, session_id, currency_id, promo_id, created_at, updated_at FROM cart WHERE session_id = ?")
     .get(sessionId) as CartRow | undefined;
 }
 
 /** Cart/Api/Admin.php get_list: no search filter, every cart listed. */
-export function listCarts(): CartRow[] {
-  return getDb()
+export async function listCarts(): Promise<CartRow[]> {
+  return await getDb()
     .prepare("SELECT id, session_id, currency_id, promo_id, created_at, updated_at FROM cart ORDER BY id ASC")
     .all() as unknown as CartRow[];
 }
 
-export function findCartById(id: number): CartRow | undefined {
-  return getDb()
+export async function findCartById(id: number): Promise<CartRow | undefined> {
+  return await getDb()
     .prepare("SELECT id, session_id, currency_id, promo_id, created_at, updated_at FROM cart WHERE id = ?")
     .get(id) as CartRow | undefined;
 }
 
-export function insertCart(sessionId: string, currencyId: number): number {
+export async function insertCart(sessionId: string, currencyId: number): Promise<number> {
   const now = nowTimestamp();
-  const info = getDbWrite()
-    .prepare("INSERT INTO cart (session_id, currency_id, promo_id, created_at, updated_at) VALUES (?, ?, NULL, ?, ?)")
-    .run(sessionId, currencyId, now, now);
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId("INSERT INTO cart (session_id, currency_id, promo_id, created_at, updated_at) VALUES (?, ?, NULL, ?, ?)", sessionId, currencyId, now, now);
+  return Number(info);
 }
 
-export function updateCartRow(id: number, fields: { currency_id?: number; promo_id?: number | null }): void {
+export async function updateCartRow(id: number, fields: { currency_id?: number; promo_id?: number | null }): Promise<void> {
   const sets: string[] = [];
   const vals: unknown[] = [];
   if (fields.currency_id !== undefined) { sets.push("currency_id = ?"); vals.push(fields.currency_id); }
@@ -1100,13 +1151,13 @@ export function updateCartRow(id: number, fields: { currency_id?: number; promo_
   if (sets.length === 0) return;
   sets.push("updated_at = ?");
   vals.push(nowTimestamp(), id);
-  getDbWrite().prepare(`UPDATE cart SET ${sets.join(", ")} WHERE id = ?`).run(...(vals as never[]));
+  await getDbWrite().prepare(`UPDATE cart SET ${sets.join(", ")} WHERE id = ?`).run(...(vals as never[]));
 }
 
-export function deleteCartRow(id: number): void {
+export async function deleteCartRow(id: number): Promise<void> {
   const w = getDbWrite();
-  w.prepare("DELETE FROM cart_product WHERE cart_id = ?").run(id);
-  w.prepare("DELETE FROM cart WHERE id = ?").run(id);
+  await w.prepare("DELETE FROM cart_product WHERE cart_id = ?").run(id);
+  await w.prepare("DELETE FROM cart WHERE id = ?").run(id);
 }
 
 export interface CartProductRow {
@@ -1116,25 +1167,23 @@ export interface CartProductRow {
   cart_id: number;
 }
 
-export function listCartProducts(cartId: number): CartProductRow[] {
-  return getDb()
+export async function listCartProducts(cartId: number): Promise<CartProductRow[]> {
+  return await getDb()
     .prepare("SELECT id, product_id, config, cart_id FROM cart_product WHERE cart_id = ? ORDER BY id ASC")
     .all(cartId) as unknown as CartProductRow[];
 }
 
-export function insertCartProduct(cartId: number, productId: number, config: string): number {
-  const info = getDbWrite()
-    .prepare("INSERT INTO cart_product (product_id, config, cart_id) VALUES (?, ?, ?)")
-    .run(productId, config, cartId);
-  return Number(info.lastInsertRowid);
+export async function insertCartProduct(cartId: number, productId: number, config: string): Promise<number> {
+  const info = await getDbWrite().insertAndGetId("INSERT INTO cart_product (product_id, config, cart_id) VALUES (?, ?, ?)", productId, config, cartId);
+  return Number(info);
 }
 
-export function deleteCartProductRow(id: number): void {
-  getDbWrite().prepare("DELETE FROM cart_product WHERE id = ?").run(id);
+export async function deleteCartProductRow(id: number): Promise<void> {
+  await getDbWrite().prepare("DELETE FROM cart_product WHERE id = ?").run(id);
 }
 
-export function clearCartProducts(cartId: number): void {
-  getDbWrite().prepare("DELETE FROM cart_product WHERE cart_id = ?").run(cartId);
+export async function clearCartProducts(cartId: number): Promise<void> {
+  await getDbWrite().prepare("DELETE FROM cart_product WHERE cart_id = ?").run(cartId);
 }
 
 export interface PromoRow {
@@ -1163,14 +1212,14 @@ export interface PromoRow {
 const PROMO_COLS =
   "id, code, description, type, value, maxuses, used, freesetup, once_per_client, recurring, active, products, periods, client_groups, requires_products, start_at, end_at, auto_apply, priority, stackable";
 
-export function findPromoByCode(code: string): PromoRow | undefined {
-  return getDb().prepare(`SELECT ${PROMO_COLS} FROM promo WHERE code = ?`).get(code) as
+export async function findPromoByCode(code: string): Promise<PromoRow | undefined> {
+  return await getDb().prepare(`SELECT ${PROMO_COLS} FROM promo WHERE code = ?`).get(code) as
     | PromoRow
     | undefined;
 }
 
-export function findPromoById(id: number): PromoRow | undefined {
-  return getDb().prepare(`SELECT ${PROMO_COLS} FROM promo WHERE id = ?`).get(id) as
+export async function findPromoById(id: number): Promise<PromoRow | undefined> {
+  return await getDb().prepare(`SELECT ${PROMO_COLS} FROM promo WHERE id = ?`).get(id) as
     | PromoRow
     | undefined;
 }
@@ -1181,9 +1230,9 @@ export function findPromoById(id: number): PromoRow | undefined {
  * priority DESC, id ASC. Window compares against "now" in the
  * server timezone (UTC on the TS seam, matching the PHP runtime).
  */
-export function listAutoApplyPromos(): PromoRow[] {
+export async function listAutoApplyPromos(): Promise<PromoRow[]> {
   const now = nowTimestamp();
-  return getDb()
+  return await getDb()
     .prepare(
       `SELECT ${PROMO_COLS} FROM promo WHERE active = 1 AND auto_apply = 1
        AND (start_at IS NULL OR start_at <= ?) AND (end_at IS NULL OR end_at >= ?)
@@ -1198,8 +1247,8 @@ export function listAutoApplyPromos(): PromoRow[] {
  * the exact once-per-client predicate — NOT countPromoRedemptionsForClient,
  * which counts every phase and every non-released status.
  */
-export function hasActiveCheckoutRedemption(promoId: number, clientId: number): boolean {
-  const row = getDb()
+export async function hasActiveCheckoutRedemption(promoId: number, clientId: number): Promise<boolean> {
+  const row = await getDb()
     .prepare(
       `SELECT COUNT(*) AS n FROM promo_redemption
        WHERE promo_id = ? AND client_id = ? AND phase = 'checkout' AND status IN ('reserved', 'committed')`,
@@ -1215,18 +1264,18 @@ export function hasActiveCheckoutRedemption(promoId: number, clientId: number): 
  * promo is maxed out. Staff checkout only; the client-checkout call
  * site keeps the unconditional incrementPromoUsed.
  */
-export function incrementPromoUsedIfAvailable(id: number): boolean {
-  const info = getDbWrite()
+export async function incrementPromoUsedIfAvailable(id: number): Promise<boolean> {
+  const info = await getDbWrite()
     .prepare("UPDATE promo SET used = COALESCE(used, 0) + 1 WHERE id = ? AND (maxuses IS NULL OR maxuses = 0 OR used < maxuses)")
     .run(id);
   return info.changes > 0;
 }
 
-export function incrementPromoUsed(id: number): void {
-  getDbWrite().prepare("UPDATE promo SET used = COALESCE(used, 0) + 1 WHERE id = ?").run(id);
+export async function incrementPromoUsed(id: number): Promise<void> {
+  await getDbWrite().prepare("UPDATE promo SET used = COALESCE(used, 0) + 1 WHERE id = ?").run(id);
 }
 
-export function insertPromoRedemption(row: {
+export async function insertPromoRedemption(row: {
   promo_id: number;
   client_id: number;
   client_order_id: number | null;
@@ -1235,17 +1284,17 @@ export function insertPromoRedemption(row: {
   status: string;
   discount_amount: number;
   currency: string;
-}): void {
+}): Promise<void> {
   const now = nowTimestamp();
-  getDbWrite()
+  await getDbWrite()
     .prepare(
       "INSERT INTO promo_redemption (promo_id, client_id, client_order_id, invoice_id, phase, status, discount_amount, currency, committed_at, released_at, release_reason, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, ?, ?)",
     )
     .run(row.promo_id, row.client_id, row.client_order_id, row.invoice_id, row.phase, row.status, row.discount_amount, row.currency, now, now);
 }
 
-export function countPromoRedemptionsForClient(promoId: number, clientId: number): number {
-  const row = getDb()
+export async function countPromoRedemptionsForClient(promoId: number, clientId: number): Promise<number> {
+  const row = await getDb()
     .prepare("SELECT COUNT(*) AS n FROM promo_redemption WHERE promo_id = ? AND client_id = ? AND status != 'released'")
     .get(promoId, clientId) as { n: number } | undefined;
   return row?.n ?? 0;
@@ -1259,29 +1308,29 @@ export interface TaxRuleRow {
   taxrate: string;
 }
 
-export function findTaxRule(state: string | null, country: string | null): TaxRuleRow | undefined {
-  return getDb()
+export async function findTaxRule(state: string | null, country: string | null): Promise<TaxRuleRow | undefined> {
+  return await getDb()
     .prepare("SELECT id, name, country, state, taxrate FROM tax WHERE state IS ? AND country IS ?")
     .get(state, country) as TaxRuleRow | undefined;
 }
 
-export function findTaxRuleByCountry(country: string): TaxRuleRow | undefined {
+export async function findTaxRuleByCountry(country: string): Promise<TaxRuleRow | undefined> {
   // Mirrors TaxRepository::findOneByCountry: ANY rule with this country
   // (a state-specific rule can be the first match — PHP parity quirk).
-  return getDb()
+  return await getDb()
     .prepare("SELECT id, name, country, state, taxrate FROM tax WHERE country = ? ORDER BY id ASC")
     .get(country) as TaxRuleRow | undefined;
 }
 
-export function findGlobalTaxRule(): TaxRuleRow | undefined {
-  return getDb()
+export async function findGlobalTaxRule(): Promise<TaxRuleRow | undefined> {
+  return await getDb()
     .prepare(
       "SELECT id, name, country, state, taxrate FROM tax WHERE (country IS NULL OR country = '') AND (state IS NULL OR state = '') ORDER BY id ASC",
     )
     .get() as TaxRuleRow | undefined;
 }
 
-export function insertOrder(row: {
+export async function insertOrder(row: {
   client_id: number;
   product_id: number;
   form_id: number | null;
@@ -1304,39 +1353,27 @@ export function insertOrder(row: {
   notes: string | null;
   config: string;
   suspension_grace_days: number | null;
-}): number {
+}): Promise<number> {
   const now = nowTimestamp();
-  const info = getDbWrite()
-    .prepare(
-      `INSERT INTO client_order (client_id, product_id, form_id, promo_id, promo_recurring, promo_used, group_id, group_master, invoice_option, title, currency, unpaid_invoice_id, service_id, service_type, period, quantity, unit, price, discount, status, reason, notes, config, suspension_grace_days, referred_by, expires_at, activated_at, suspended_at, unsuspended_at, canceled_at, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, ?, ?)`,
-    )
-    .run(
-      row.client_id, row.product_id, row.form_id, row.promo_id, row.promo_recurring ?? null,
-      row.promo_used ?? null, row.group_id, row.group_master,
-      row.invoice_option, row.title, row.currency, row.unpaid_invoice_id, row.service_type,
-      row.period, row.quantity, row.unit, String(row.price),
-      row.discount === null || row.discount === undefined ? null : String(row.discount),
-      row.status, row.notes,
-      row.config, row.suspension_grace_days, now, now,
-    );
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId(`INSERT INTO client_order (client_id, product_id, form_id, promo_id, promo_recurring, promo_used, group_id, group_master, invoice_option, title, currency, unpaid_invoice_id, service_id, service_type, period, quantity, unit, price, discount, status, reason, notes, config, suspension_grace_days, referred_by, expires_at, activated_at, suspended_at, unsuspended_at, canceled_at, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, ?, ?)`, row.client_id, row.product_id, row.form_id, row.promo_id, row.promo_recurring ?? null, row.promo_used ?? null, row.group_id, row.group_master, row.invoice_option, row.title, row.currency, row.unpaid_invoice_id, row.service_type, row.period, row.quantity, row.unit, String(row.price), row.discount === null || row.discount === undefined ? null : String(row.discount), row.status, row.notes, row.config, row.suspension_grace_days, now, now);
+  return Number(info);
 }
 
-export function updateOrderUnpaidInvoice(id: number, invoiceId: number): void {
-  getDbWrite()
+export async function updateOrderUnpaidInvoice(id: number, invoiceId: number): Promise<void> {
+  await getDbWrite()
     .prepare("UPDATE client_order SET unpaid_invoice_id = ?, updated_at = ? WHERE id = ?")
     .run(invoiceId, nowTimestamp(), id);
 }
 
-export function insertOrderStatus(orderId: number, status: string, notes: string | null): void {
+export async function insertOrderStatus(orderId: number, status: string, notes: string | null): Promise<void> {
   const now = nowTimestamp();
-  getDbWrite()
+  await getDbWrite()
     .prepare("INSERT INTO client_order_status (status, notes, created_at, updated_at, client_order_id) VALUES (?, ?, ?, ?, ?)")
     .run(status, notes, now, now, orderId);
 }
 
-export function insertInvoice(row: {
+export async function insertInvoice(row: {
   client_id: number;
   serie: string | null;
   nr: string | null;
@@ -1351,22 +1388,14 @@ export function insertInvoice(row: {
   gateway_id: number | null;
   due_at: string;
   notes: string | null;
-}): number {
+}): Promise<number> {
   const now = nowTimestamp();
-  const info = getDbWrite()
-    .prepare(
-      `INSERT INTO invoice (client_id, serie, nr, hash, currency, currency_rate, credit, base_income, base_refund, refund, notes, text_1, text_2, status, credit_note_for_invoice_id, debit_note_for_invoice_id, replaces_invoice_id, replaced_by_invoice_id, seller_company, seller_company_vat, seller_company_number, seller_address, seller_phone, seller_email, buyer_first_name, buyer_last_name, buyer_company, buyer_company_vat, buyer_company_number, buyer_address, buyer_city, buyer_state, buyer_country, buyer_zip, buyer_phone, buyer_email, issued, taxname, taxrate, due_at, reminded_at, paid_at, hash_expires_at, created_at, updated_at, gateway_id)
-       VALUES (?, ?, ?, ?, ?, ?, NULL, 0, 0, NULL, ?, NULL, NULL, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, ?, ?, ?, NULL, NULL, ?, ?, ?, ?)`,
-    )
-    .run(
-      row.client_id, row.serie, row.nr, row.hash, row.currency, row.currency_rate,
-      row.notes, row.status, row.taxname, row.taxrate, row.due_at, row.hash_expires_at, now, now,
-      row.gateway_id,
-    );
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId(`INSERT INTO invoice (client_id, serie, nr, hash, currency, currency_rate, credit, base_income, base_refund, refund, notes, text_1, text_2, status, credit_note_for_invoice_id, debit_note_for_invoice_id, replaces_invoice_id, replaced_by_invoice_id, seller_company, seller_company_vat, seller_company_number, seller_address, seller_phone, seller_email, buyer_first_name, buyer_last_name, buyer_company, buyer_company_vat, buyer_company_number, buyer_address, buyer_city, buyer_state, buyer_country, buyer_zip, buyer_phone, buyer_email, issued, taxname, taxrate, due_at, reminded_at, paid_at, hash_expires_at, created_at, updated_at, gateway_id)
+       VALUES (?, ?, ?, ?, ?, ?, NULL, 0, 0, NULL, ?, NULL, NULL, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, ?, ?, ?, NULL, NULL, ?, ?, ?, ?)`, row.client_id, row.serie, row.nr, row.hash, row.currency, row.currency_rate, row.notes, row.status, row.taxname, row.taxrate, row.due_at, row.hash_expires_at, now, now, row.gateway_id);
+  return Number(info);
 }
 
-export function insertInvoiceItem(row: {
+export async function insertInvoiceItem(row: {
   invoice_id: number;
   type: string;
   rel_id: number | null;
@@ -1380,20 +1409,14 @@ export function insertInvoiceItem(row: {
   taxed: number;
   refunded_item_id?: number | null;
   charged?: number;
-}): number {
+}): Promise<number> {
   const now = nowTimestamp();
-  const info = getDbWrite()
-    .prepare(
-      `INSERT INTO invoice_item (type, rel_id, refunded_item_id, task, status, title, period, quantity, unit, price, charged, taxed, attempts, created_at, updated_at, invoice_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`,
-    )
-    // rel_id is VARCHAR: PHP stores it as a string, so bind text here
-    // (same node:sqlite float-formatting trap as client_balance.rel_id).
-    .run(row.type, row.rel_id === null || row.rel_id === undefined ? null : String(row.rel_id), row.refunded_item_id ?? null, row.task, row.status, row.title, row.period, row.quantity, row.unit, String(row.price), row.charged ?? 0, row.taxed, now, now, row.invoice_id);
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId(`INSERT INTO invoice_item (type, rel_id, refunded_item_id, task, status, title, period, quantity, unit, price, charged, taxed, attempts, created_at, updated_at, invoice_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`, row.type, row.rel_id === null || row.rel_id === undefined ? null : String(row.rel_id), row.refunded_item_id ?? null, row.task, row.status, row.title, row.period, row.quantity, row.unit, String(row.price), row.charged ?? 0, row.taxed, now, now, row.invoice_id);
+  return Number(info);
 }
 
-export function updateInvoiceRow(
+export async function updateInvoiceRow(
   id: number,
   fields: Partial<{
     status: string;
@@ -1418,83 +1441,83 @@ export function updateInvoiceRow(
     seller_phone: string | null;
     seller_email: string | null;
   }>,
-): void {
+): Promise<void> {
   const entries = Object.entries(fields);
   if (entries.length === 0) return;
   const sets = entries.map(([k]) => `${k} = ?`).join(", ");
   const vals = entries.map(([, v]) => v);
-  getDbWrite()
+  await getDbWrite()
     .prepare(`UPDATE invoice SET ${sets}, updated_at = ? WHERE id = ?`)
     .run(...(vals as never[]), nowTimestamp(), id);
 }
 
-export function maxInvoiceNr(serie: string | null): number {
-  const row = getDb()
+export async function maxInvoiceNr(serie: string | null): Promise<number> {
+  const row = await getDb()
     .prepare("SELECT MAX(CAST(nr AS INTEGER)) AS m FROM invoice WHERE serie IS ?")
     .get(serie) as { m: number | null } | undefined;
   return row?.m ?? 0;
 }
 
-export function invoiceNrExists(serie: string | null, nr: string): boolean {
-  const row = getDb()
+export async function invoiceNrExists(serie: string | null, nr: string): Promise<boolean> {
+  const row = await getDb()
     .prepare("SELECT COUNT(*) AS n FROM invoice WHERE serie IS ? AND nr = ?")
     .get(serie, nr) as { n: number } | undefined;
   return (row?.n ?? 0) > 0;
 }
 
-export function insertInvoiceEvent(invoiceId: number, type: string, snapshot: unknown): void {
-  getDbWrite()
+export async function insertInvoiceEvent(invoiceId: number, type: string, snapshot: unknown): Promise<void> {
+  await getDbWrite()
     .prepare(
       "INSERT INTO invoice_event (invoice_id, type, admin_id, client_id, snapshot, created_at) VALUES (?, ?, NULL, NULL, ?, ?)",
     )
     .run(invoiceId, type, JSON.stringify(snapshot), nowTimestamp());
 }
 
-export function listInvoiceItems(invoiceId: number): {
+export async function listInvoiceItems(invoiceId: number): Promise<{
   id: number; type: string | null; rel_id: number | null; task: string | null;
   status: string | null; title: string | null; period: string | null;
   quantity: number; unit: string | null; price: number; charged: number; taxed: number;
   refunded_item_id: number | null;
-}[] {
-  return getDb()
+}[]> {
+  return await getDb()
     .prepare(
       "SELECT id, type, rel_id, refunded_item_id, task, status, title, period, quantity, unit, price, charged, taxed FROM invoice_item WHERE invoice_id = ? ORDER BY id ASC",
     )
     .all(invoiceId) as never[];
 }
 
-export function findInvoiceRow(id: number): Record<string, unknown> | undefined {
-  return getDb().prepare("SELECT * FROM invoice WHERE id = ?").get(id) as
+export async function findInvoiceRow(id: number): Promise<Record<string, unknown> | undefined> {
+  return await getDb().prepare("SELECT * FROM invoice WHERE id = ?").get(id) as
     | Record<string, unknown>
     | undefined;
 }
 
-export function markInvoiceItemsCharged(invoiceId: number): void {
-  getDbWrite()
+export async function markInvoiceItemsCharged(invoiceId: number): Promise<void> {
+  await getDbWrite()
     .prepare("UPDATE invoice_item SET charged = price * quantity, updated_at = ? WHERE invoice_id = ?")
     .run(nowTimestamp(), invoiceId);
 }
 
-export function setSettingValue(param: string, value: string): void {
-  upsertSetting(param, value);
+export async function setSettingValue(param: string, value: string): Promise<void> {
+  await upsertSetting(param, value);
 }
 
-export function setClientCurrency(clientId: number, currency: string): void {
-  getDbWrite()
+export async function setClientCurrency(clientId: number, currency: string): Promise<void> {
+  await getDbWrite()
     .prepare("UPDATE client SET currency = ?, updated_at = ? WHERE id = ?")
     .run(currency, nowTimestamp(), clientId);
 }
 
-export function insertBalanceRow(row: {
+export async function insertBalanceRow(row: {
   client_id: number;
   type: string;
   // VARCHAR(20) in the schema — PHP stores PayPal txn ids here.
   rel_id: number | string | null;
   amount: number;
   description: string;
-}): void {
+}): Promise<void> {
   const now = nowTimestamp();
-  getDbWrite()
+  await getDbWrite()
     .prepare(
       "INSERT INTO client_balance (type, rel_id, invoice_item_id, amount, description, created_at, updated_at, client_id) VALUES (?, ?, NULL, ?, ?, ?, ?, ?)",
     )
@@ -1557,33 +1580,33 @@ export interface InvoiceRowFull {
   gateway_id: number | null;
 }
 
-export function findInvoiceById(id: number): InvoiceRowFull | undefined {
-  return getDb().prepare("SELECT * FROM invoice WHERE id = ?").get(id) as
+export async function findInvoiceById(id: number): Promise<InvoiceRowFull | undefined> {
+  return await getDb().prepare("SELECT * FROM invoice WHERE id = ?").get(id) as
     | InvoiceRowFull
     | undefined;
 }
 
-export function findInvoiceByHash(hash: string): InvoiceRowFull | undefined {
-  return getDb().prepare("SELECT * FROM invoice WHERE hash = ?").get(hash) as
+export async function findInvoiceByHash(hash: string): Promise<InvoiceRowFull | undefined> {
+  return await getDb().prepare("SELECT * FROM invoice WHERE hash = ?").get(hash) as
     | InvoiceRowFull
     | undefined;
 }
 
-export function listInvoices(filters: {
+export async function listInvoices(filters: {
   client_id?: number;
   status?: string;
   currency?: string;
-}): InvoiceRowFull[] {
+}): Promise<InvoiceRowFull[]> {
   const where: string[] = [];
   const vals: unknown[] = [];
   if (filters.client_id !== undefined) { where.push("client_id = ?"); vals.push(filters.client_id); }
   if (filters.status) { where.push("status = ?"); vals.push(filters.status); }
   if (filters.currency) { where.push("currency = ?"); vals.push(filters.currency); }
   const sql = `SELECT * FROM invoice ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY id DESC`;
-  return getDb().prepare(sql).all(...(vals as never[])) as unknown as InvoiceRowFull[];
+  return await getDb().prepare(sql).all(...(vals as never[])) as unknown as InvoiceRowFull[];
 }
 
-export function updateInvoiceFields(
+export async function updateInvoiceFields(
   id: number,
   fields: Partial<{
     status: string; notes: string | null; text_1: string | null; text_2: string | null;
@@ -1592,47 +1615,47 @@ export function updateInvoiceFields(
     serie: string; nr: string; issued: number; refund: number; credit: number;
     base_refund: number; replaced_by_invoice_id: number | null; reminded_at: string | null;
   }>,
-): void {
+): Promise<void> {
   const entries = Object.entries(fields);
   if (entries.length === 0) return;
   const sets = entries.map(([k]) => `${k} = ?`).join(", ");
   const vals = entries.map(([, v]) => v);
-  getDbWrite()
+  await getDbWrite()
     .prepare(`UPDATE invoice SET ${sets}, updated_at = ? WHERE id = ?`)
     .run(...(vals as never[]), nowTimestamp(), id);
 }
 
-export function deleteInvoiceCascade(id: number): void {
+export async function deleteInvoiceCascade(id: number): Promise<void> {
   const w = getDbWrite();
-  w.prepare("DELETE FROM invoice_item WHERE invoice_id = ?").run(id);
-  w.prepare("DELETE FROM invoice_event WHERE invoice_id = ?").run(id);
-  w.prepare("DELETE FROM invoice WHERE id = ?").run(id);
+  await w.prepare("DELETE FROM invoice_item WHERE invoice_id = ?").run(id);
+  await w.prepare("DELETE FROM invoice_event WHERE invoice_id = ?").run(id);
+  await w.prepare("DELETE FROM invoice WHERE id = ?").run(id);
 }
 
-export function deleteInvoiceItemRow(id: number): void {
-  getDbWrite().prepare("DELETE FROM invoice_item WHERE id = ?").run(id);
+export async function deleteInvoiceItemRow(id: number): Promise<void> {
+  await getDbWrite().prepare("DELETE FROM invoice_item WHERE id = ?").run(id);
 }
 
-export function updateInvoiceItemRow(
+export async function updateInvoiceItemRow(
   id: number,
   fields: Partial<{ title: string; price: number; quantity: number; taxed: number; period: string | null; unit: string | null }>,
-): void {
+): Promise<void> {
   const entries = Object.entries(fields);
   if (entries.length === 0) return;
   const sets = entries.map(([k]) => `${k} = ?`).join(", ");
   const vals = entries.map(([, v]) => v);
-  getDbWrite()
+  await getDbWrite()
     .prepare(`UPDATE invoice_item SET ${sets}, updated_at = ? WHERE id = ?`)
     .run(...(vals as never[]), nowTimestamp(), id);
 }
 
-export function findInvoiceItemRow(id: number): { id: number; invoice_id: number } | undefined {
-  return getDb().prepare("SELECT id, invoice_id FROM invoice_item WHERE id = ?").get(id) as
+export async function findInvoiceItemRow(id: number): Promise<{ id: number; invoice_id: number } | undefined> {
+  return await getDb().prepare("SELECT id, invoice_id FROM invoice_item WHERE id = ?").get(id) as
     | { id: number; invoice_id: number }
     | undefined;
 }
 
-export function insertTransaction(row: {
+export async function insertTransaction(row: {
   txn_id: string | null;
   amount: number;
   currency: string;
@@ -1643,19 +1666,15 @@ export function insertTransaction(row: {
   note: string | null;
   invoice_id: number;
   gateway_id: number;
-}): number {
+}): Promise<number> {
   const now = nowTimestamp();
-  const info = getDbWrite()
-    .prepare(
-      `INSERT INTO "transaction" (txn_id, txn_status, s_id, s_period, amount, currency, type, status, ip, error, error_code, ipn, ipn_hash, output, note, created_at, updated_at, invoice_id, gateway_id)
-       VALUES (?, NULL, NULL, NULL, ?, ?, NULL, ?, ?, NULL, NULL, ?, ?, NULL, ?, ?, ?, ?, ?)`,
-    )
-    .run(row.txn_id, row.amount, row.currency, row.status, row.ip, row.ipn, row.ipn_hash, row.note, now, now, row.invoice_id, row.gateway_id);
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId(`INSERT INTO "transaction" (txn_id, txn_status, s_id, s_period, amount, currency, type, status, ip, error, error_code, ipn, ipn_hash, output, note, created_at, updated_at, invoice_id, gateway_id)
+       VALUES (?, NULL, NULL, NULL, ?, ?, NULL, ?, ?, NULL, NULL, ?, ?, NULL, ?, ?, ?, ?, ?)`, row.txn_id, row.amount, row.currency, row.status, row.ip, row.ipn, row.ipn_hash, row.note, now, now, row.invoice_id, row.gateway_id);
+  return Number(info);
 }
 
-export function findTransactionByTxnId(txnId: string): { id: number; invoice_id: number | null } | undefined {
-  return getDb().prepare('SELECT id, invoice_id FROM "transaction" WHERE txn_id = ?').get(txnId) as
+export async function findTransactionByTxnId(txnId: string): Promise<{ id: number; invoice_id: number | null } | undefined> {
+  return await getDb().prepare('SELECT id, invoice_id FROM "transaction" WHERE txn_id = ?').get(txnId) as
     | { id: number; invoice_id: number | null }
     | undefined;
 }
@@ -1664,34 +1683,34 @@ export function findTransactionByTxnId(txnId: string): { id: number; invoice_id:
  * Invoice\ServiceTransaction::create dedupe, first leg: an existing
  * PROCESSED row for the same gateway + external id is returned as-is.
  */
-export function findProcessedTransaction(gatewayId: number, txnId: string): { id: number; invoice_id: number | null } | undefined {
-  return getDb()
+export async function findProcessedTransaction(gatewayId: number, txnId: string): Promise<{ id: number; invoice_id: number | null } | undefined> {
+  return await getDb()
     .prepare('SELECT id, invoice_id FROM "transaction" WHERE gateway_id = ? AND txn_id = ? AND status = \'processed\'')
     .get(gatewayId, txnId) as { id: number; invoice_id: number | null } | undefined;
 }
 
 /** Second dedupe leg: same gateway + canonical IPN hash. */
-export function findTransactionByGatewayHash(gatewayId: number, ipnHash: string): { id: number; invoice_id: number | null } | undefined {
-  return getDb()
+export async function findTransactionByGatewayHash(gatewayId: number, ipnHash: string): Promise<{ id: number; invoice_id: number | null } | undefined> {
+  return await getDb()
     .prepare('SELECT id, invoice_id FROM "transaction" WHERE gateway_id = ? AND ipn_hash = ?')
     .get(gatewayId, ipnHash) as { id: number; invoice_id: number | null } | undefined;
 }
 
 /** The mark-as-paid settlement update: amount/currency/status/note. */
-export function settleTransaction(id: number, amount: number, currency: string, note: string): void {
-  getDbWrite()
+export async function settleTransaction(id: number, amount: number, currency: string, note: string): Promise<void> {
+  await getDbWrite()
     .prepare('UPDATE "transaction" SET amount = ?, currency = ?, status = \'processed\', note = ?, updated_at = ? WHERE id = ?')
     .run(amount, currency, note, nowTimestamp(), id);
 }
 
-export function findGateway(id: number): { id: number; gateway: string; enabled: number } | undefined {
-  return getDb().prepare("SELECT id, gateway, enabled FROM pay_gateway WHERE id = ?").get(id) as
+export async function findGateway(id: number): Promise<{ id: number; gateway: string; enabled: number } | undefined> {
+  return await getDb().prepare("SELECT id, gateway, enabled FROM pay_gateway WHERE id = ?").get(id) as
     | { id: number; gateway: string; enabled: number }
     | undefined;
 }
 
-export function listGateways(): { id: number; gateway: string; enabled: number; name: string | null }[] {
-  return getDb()
+export async function listGateways(): Promise<{ id: number; gateway: string; enabled: number; name: string | null }[]> {
+  return await getDb()
     .prepare("SELECT id, gateway, enabled, name FROM pay_gateway ORDER BY id ASC")
     .all() as never[];
 }
@@ -1709,53 +1728,51 @@ export interface TaxRow {
 
 const TAX_COLS = "id, level, name, country, state, taxrate, created_at, updated_at";
 
-export function listTaxRules(): TaxRow[] {
-  return getDb().prepare(`SELECT ${TAX_COLS} FROM tax ORDER BY id ASC`).all() as unknown as TaxRow[];
+export async function listTaxRules(): Promise<TaxRow[]> {
+  return await getDb().prepare(`SELECT ${TAX_COLS} FROM tax ORDER BY id ASC`).all() as unknown as TaxRow[];
 }
 
-export function findTaxById(id: number): TaxRow | undefined {
-  return getDb().prepare(`SELECT ${TAX_COLS} FROM tax WHERE id = ?`).get(id) as TaxRow | undefined;
+export async function findTaxById(id: number): Promise<TaxRow | undefined> {
+  return await getDb().prepare(`SELECT ${TAX_COLS} FROM tax WHERE id = ?`).get(id) as TaxRow | undefined;
 }
 
-export function insertTax(row: {
+export async function insertTax(row: {
   name: string;
   taxrate: string;
   country: string | null;
   state: string | null;
   level: string | null;
-}): number {
+}): Promise<number> {
   const now = nowTimestamp();
-  const info = getDbWrite()
-    .prepare("INSERT INTO tax (level, name, country, state, taxrate, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
-    .run(row.level, row.name, row.country, row.state, row.taxrate, now, now);
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId("INSERT INTO tax (level, name, country, state, taxrate, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)", row.level, row.name, row.country, row.state, row.taxrate, now, now);
+  return Number(info);
 }
 
-export function updateTaxRow(
+export async function updateTaxRow(
   id: number,
   fields: Partial<{ name: string; taxrate: string; country: string | null; state: string | null; level: string | null }>,
-): void {
+): Promise<void> {
   const entries = Object.entries(fields);
   if (entries.length === 0) return;
   const sets = entries.map(([k]) => `${k} = ?`).join(", ");
   const vals = entries.map(([, v]) => v);
-  getDbWrite()
+  await getDbWrite()
     .prepare(`UPDATE tax SET ${sets}, updated_at = ? WHERE id = ?`)
     .run(...(vals as never[]), nowTimestamp(), id);
 }
 
-export function deleteTaxRow(id: number): void {
-  getDbWrite().prepare("DELETE FROM tax WHERE id = ?").run(id);
+export async function deleteTaxRow(id: number): Promise<void> {
+  await getDbWrite().prepare("DELETE FROM tax WHERE id = ?").run(id);
 }
 
-export function ordersForInvoice(invoiceId: number): {
+export async function ordersForInvoice(invoiceId: number): Promise<{
   id: number;
   title: string;
   expires_at: string | null;
   product_name: string | null;
   product_type: string | null;
-}[] {
-  return getDb()
+}[]> {
+  return await getDb()
     .prepare(
       `SELECT o.id AS id, o.title AS title, o.expires_at AS expires_at,
               p.title AS product_name, p.type AS product_type
@@ -1770,9 +1787,9 @@ export function ordersForInvoice(invoiceId: number): {
 
 /** Invoice\\Service::getInvoicePromoApplications: checkout-phase
  * redemptions grouped by promo:order, with the discount title. */
-export function promoApplicationsForInvoice(invoiceId: number): Record<string, unknown>[] {
-  const inv = getDb().prepare("SELECT status FROM invoice WHERE id = ?").get(invoiceId) as { status: string } | undefined;
-  const rows = getDb()
+export async function promoApplicationsForInvoice(invoiceId: number): Promise<Record<string, unknown>[]> {
+  const inv = await getDb().prepare("SELECT status FROM invoice WHERE id = ?").get(invoiceId) as { status: string } | undefined;
+  const rows = await getDb()
     .prepare(
       `SELECT pr.promo_id, pr.client_order_id, pr.status, pr.discount_amount,
               p.code AS promo_code, p.type AS promo_type, p.value AS promo_value
@@ -1863,27 +1880,27 @@ const ORDER_COLS = `id, client_id, product_id, form_id, promo_id, promo_recurrin
   suspension_grace_days, referred_by, expires_at, activated_at, suspended_at, unsuspended_at,
   canceled_at, created_at, updated_at`;
 
-export function findOrderById(id: number): OrderRowFull | undefined {
-  return getDb().prepare(`SELECT ${ORDER_COLS} FROM client_order WHERE id = ?`).get(id) as
+export async function findOrderById(id: number): Promise<OrderRowFull | undefined> {
+  return await getDb().prepare(`SELECT ${ORDER_COLS} FROM client_order WHERE id = ?`).get(id) as
     | OrderRowFull
     | undefined;
 }
 
-export function listOrders(filters: {
+export async function listOrders(filters: {
   client_id?: number;
   status?: string;
   product_id?: number;
-}): OrderRowFull[] {
+}): Promise<OrderRowFull[]> {
   const where: string[] = [];
   const vals: unknown[] = [];
   if (filters.client_id !== undefined) { where.push("client_id = ?"); vals.push(filters.client_id); }
   if (filters.status) { where.push("status = ?"); vals.push(filters.status); }
   if (filters.product_id !== undefined) { where.push("product_id = ?"); vals.push(filters.product_id); }
   const sql = `SELECT ${ORDER_COLS} FROM client_order ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY id DESC`;
-  return getDb().prepare(sql).all(...(vals as never[])) as unknown as OrderRowFull[];
+  return await getDb().prepare(sql).all(...(vals as never[])) as unknown as OrderRowFull[];
 }
 
-export function updateOrderRow(
+export async function updateOrderRow(
   id: number,
   fields: Partial<{
     status: string; notes: string | null; reason: string | null; expires_at: string | null;
@@ -1891,42 +1908,42 @@ export function updateOrderRow(
     canceled_at: string | null; unpaid_invoice_id: number | null; config: string | null;
     service_id: number | null;
   }>,
-): void {
+): Promise<void> {
   const entries = Object.entries(fields);
   if (entries.length === 0) return;
   const sets = entries.map(([k]) => `${k} = ?`).join(", ");
   const vals = entries.map(([, v]) => v);
-  getDbWrite()
+  await getDbWrite()
     .prepare(`UPDATE client_order SET ${sets}, updated_at = ? WHERE id = ?`)
     .run(...(vals as never[]), nowTimestamp(), id);
 }
 
-export function deleteOrderCascade(id: number): void {
+export async function deleteOrderCascade(id: number): Promise<void> {
   const w = getDbWrite();
-  w.prepare("DELETE FROM client_order_status WHERE client_order_id = ?").run(id);
-  w.prepare("DELETE FROM client_order WHERE id = ?").run(id);
+  await w.prepare("DELETE FROM client_order_status WHERE client_order_id = ?").run(id);
+  await w.prepare("DELETE FROM client_order WHERE id = ?").run(id);
 }
 
-export function listOrderStatusHistory(orderId: number): {
+export async function listOrderStatusHistory(orderId: number): Promise<{
   id: number; status: string; notes: string | null; created_at: string | null;
   updated_at: string | null; client_order_id: number;
-}[] {
-  return getDb()
+}[]> {
+  return await getDb()
     .prepare(
       "SELECT id, status, notes, created_at, updated_at, client_order_id FROM client_order_status WHERE client_order_id = ? ORDER BY id DESC",
     )
     .all(orderId) as never[];
 }
 
-export function deleteOrderStatusRow(id: number): void {
-  getDbWrite().prepare("DELETE FROM client_order_status WHERE id = ?").run(id);
+export async function deleteOrderStatusRow(id: number): Promise<void> {
+  await getDbWrite().prepare("DELETE FROM client_order_status WHERE id = ?").run(id);
 }
 
-export function orderStatusCounts(): Record<string, number> {
+export async function orderStatusCounts(): Promise<Record<string, number>> {
   // PHP's Order counter() counts group masters only; on the
   // reference DB every order is a master, so this never changed
   // a parity result — but the filter is the faithful query.
-  const rows = getDb()
+  const rows = await getDb()
     .prepare("SELECT status, COUNT(*) AS n FROM client_order WHERE group_master = 1 GROUP BY status")
     .all() as unknown as { status: string; n: number }[];
   const out: Record<string, number> = {};
@@ -1934,9 +1951,9 @@ export function orderStatusCounts(): Record<string, number> {
   return out;
 }
 
-export function countActiveTicketsForOrder(orderId: number): number {
+export async function countActiveTicketsForOrder(orderId: number): Promise<number> {
   try {
-    const row = getDb()
+    const row = await getDb()
       .prepare(
         "SELECT COUNT(*) AS n FROM support_ticket WHERE rel_id = ? AND rel_type = 'order' AND status NOT IN ('closed')",
       )
@@ -1971,38 +1988,33 @@ export interface TransactionRowFull {
 const TX_COLS = `id, txn_id, txn_status, s_id, s_period, amount, currency, type, status, ip,
   error, error_code, ipn, note, created_at, updated_at, invoice_id, gateway_id`;
 
-export function findTransactionById(id: number): TransactionRowFull | undefined {
-  return getDb().prepare(`SELECT ${TX_COLS} FROM "transaction" WHERE id = ?`).get(id) as
+export async function findTransactionById(id: number): Promise<TransactionRowFull | undefined> {
+  return await getDb().prepare(`SELECT ${TX_COLS} FROM "transaction" WHERE id = ?`).get(id) as
     | TransactionRowFull
     | undefined;
 }
 
-export function listTransactions(filters: { invoice_id?: number; status?: string }): TransactionRowFull[] {
+export async function listTransactions(filters: { invoice_id?: number; status?: string }): Promise<TransactionRowFull[]> {
   const where: string[] = [];
   const vals: unknown[] = [];
   if (filters.invoice_id !== undefined) { where.push("invoice_id = ?"); vals.push(filters.invoice_id); }
   if (filters.status) { where.push("status = ?"); vals.push(filters.status); }
   const sql = `SELECT ${TX_COLS} FROM "transaction" ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY id DESC`;
-  return getDb().prepare(sql).all(...(vals as never[])) as unknown as TransactionRowFull[];
+  return await getDb().prepare(sql).all(...(vals as never[])) as unknown as TransactionRowFull[];
 }
 
-export function insertTransactionFull(row: {
+export async function insertTransactionFull(row: {
   txn_id: string | null; txn_status: string | null; amount: string | null;
   currency: string | null; type: string | null; status: string | null; ip: string | null;
   ipn: string; note: string | null; invoice_id: number | null; gateway_id: number | null;
-}): number {
+}): Promise<number> {
   const now = nowTimestamp();
-  const info = getDbWrite()
-    .prepare(
-      `INSERT INTO "transaction" (txn_id, txn_status, s_id, s_period, amount, currency, type, status, ip, error, error_code, ipn, ipn_hash, output, note, created_at, updated_at, invoice_id, gateway_id)
-       VALUES (?, ?, NULL, NULL, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, NULL, ?, ?, ?, ?, ?)`,
-    )
-    .run(row.txn_id, row.txn_status, row.amount, row.currency, row.type, row.status, row.ip,
-      row.ipn, sha256Hex(row.ipn), row.note, now, now, row.invoice_id, row.gateway_id);
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId(`INSERT INTO "transaction" (txn_id, txn_status, s_id, s_period, amount, currency, type, status, ip, error, error_code, ipn, ipn_hash, output, note, created_at, updated_at, invoice_id, gateway_id)
+       VALUES (?, ?, NULL, NULL, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, NULL, ?, ?, ?, ?, ?)`, row.txn_id, row.txn_status, row.amount, row.currency, row.type, row.status, row.ip, row.ipn, sha256Hex(row.ipn), row.note, now, now, row.invoice_id, row.gateway_id);
+  return Number(info);
 }
 
-export function updateTransactionRow(
+export async function updateTransactionRow(
   id: number,
   fields: Partial<{
     txn_id: string | null; txn_status: string | null; amount: string | null;
@@ -2011,22 +2023,22 @@ export function updateTransactionRow(
     error: string | null; error_code: number | null; invoice_id: number;
     gateway_id: number;
   }>,
-): void {
+): Promise<void> {
   const entries = Object.entries(fields);
   if (entries.length === 0) return;
   const sets = entries.map(([k]) => `${k} = ?`).join(", ");
   const vals = entries.map(([, v]) => v);
-  getDbWrite()
+  await getDbWrite()
     .prepare(`UPDATE "transaction" SET ${sets}, updated_at = ? WHERE id = ?`)
     .run(...(vals as never[]), nowTimestamp(), id);
 }
 
-export function deleteTransactionRow(id: number): void {
-  getDbWrite().prepare('DELETE FROM "transaction" WHERE id = ?').run(id);
+export async function deleteTransactionRow(id: number): Promise<void> {
+  await getDbWrite().prepare('DELETE FROM "transaction" WHERE id = ?').run(id);
 }
 
-export function transactionStatusCounts(): Record<string, number> {
-  const rows = getDb()
+export async function transactionStatusCounts(): Promise<Record<string, number>> {
+  const rows = await getDb()
     .prepare('SELECT status, COUNT(*) AS n FROM "transaction" GROUP BY status')
     .all() as unknown as { status: string; n: number }[];
   const out: Record<string, number> = {};
@@ -2049,61 +2061,56 @@ export interface SubscriptionRowFull {
   rel_type: string | null;
 }
 
-export function findSubscriptionById(id: number): SubscriptionRowFull | undefined {
-  return getDb().prepare("SELECT * FROM subscription WHERE id = ?").get(id) as
+export async function findSubscriptionById(id: number): Promise<SubscriptionRowFull | undefined> {
+  return await getDb().prepare("SELECT * FROM subscription WHERE id = ?").get(id) as
     | SubscriptionRowFull
     | undefined;
 }
 
-export function findSubscriptionBySid(sid: string): SubscriptionRowFull | undefined {
-  return getDb().prepare("SELECT * FROM subscription WHERE sid = ?").get(sid) as
+export async function findSubscriptionBySid(sid: string): Promise<SubscriptionRowFull | undefined> {
+  return await getDb().prepare("SELECT * FROM subscription WHERE sid = ?").get(sid) as
     | SubscriptionRowFull
     | undefined;
 }
 
-export function listSubscriptions(): SubscriptionRowFull[] {
-  return getDb().prepare("SELECT * FROM subscription ORDER BY id DESC").all() as unknown as SubscriptionRowFull[];
+export async function listSubscriptions(): Promise<SubscriptionRowFull[]> {
+  return await getDb().prepare("SELECT * FROM subscription ORDER BY id DESC").all() as unknown as SubscriptionRowFull[];
 }
 
-export function insertSubscription(row: {
+export async function insertSubscription(row: {
   sid: string | null; period: string | null; amount: string | null; currency: string | null;
   status: string | null; client_id: number | null; pay_gateway_id: number | null;
   rel_id: number | null; rel_type: string | null;
-}): number {
+}): Promise<number> {
   const now = nowTimestamp();
-  const info = getDbWrite()
-    .prepare(
-      "INSERT INTO subscription (sid, period, amount, currency, status, created_at, updated_at, client_id, pay_gateway_id, rel_id, rel_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    )
-    .run(row.sid, row.period, row.amount, row.currency, row.status, now, now,
-      row.client_id, row.pay_gateway_id, row.rel_id, row.rel_type);
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId("INSERT INTO subscription (sid, period, amount, currency, status, created_at, updated_at, client_id, pay_gateway_id, rel_id, rel_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row.sid, row.period, row.amount, row.currency, row.status, now, now, row.client_id, row.pay_gateway_id, row.rel_id, row.rel_type);
+  return Number(info);
 }
 
-export function updateSubscriptionRow(
+export async function updateSubscriptionRow(
   id: number,
   fields: Partial<{
     sid: string | null; period: string | null; amount: string | null;
     currency: string | null; status: string | null; rel_id: number | null; rel_type: string | null;
   }>,
-): void {
+): Promise<void> {
   const entries = Object.entries(fields);
   if (entries.length === 0) return;
   const sets = entries.map(([k]) => `${k} = ?`).join(", ");
   const vals = entries.map(([, v]) => v);
-  getDbWrite()
+  await getDbWrite()
     .prepare(`UPDATE subscription SET ${sets}, updated_at = ? WHERE id = ?`)
     .run(...(vals as never[]), nowTimestamp(), id);
 }
 
-export function deleteSubscriptionRow(id: number): void {
-  getDbWrite().prepare("DELETE FROM subscription WHERE id = ?").run(id);
+export async function deleteSubscriptionRow(id: number): Promise<void> {
+  await getDbWrite().prepare("DELETE FROM subscription WHERE id = ?").run(id);
 }
 
-export function findGatewayFull(id: number): {
+export async function findGatewayFull(id: number): Promise<{
   id: number; gateway: string; enabled: number; name: string | null;
-} | undefined {
-  return getDb()
+} | undefined> {
+  return await getDb()
     .prepare("SELECT id, gateway, enabled, name FROM pay_gateway WHERE id = ?")
     .get(id) as
     | { id: number; gateway: string; enabled: number; name: string | null }
@@ -2111,11 +2118,11 @@ export function findGatewayFull(id: number): {
 }
 
 /** Full pay_gateway row for payment-adapter config merging. */
-export function findPayGatewayRow(id: number): {
+export async function findPayGatewayRow(id: number): Promise<{
   id: number; gateway: string; name: string | null; enabled: number;
   test_mode: number; allow_single: number; allow_recurrent: number; config: string | null;
-} | undefined {
-  return getDb()
+} | undefined> {
+  return await getDb()
     .prepare(
       "SELECT id, gateway, name, enabled, test_mode, allow_single, allow_recurrent, config FROM pay_gateway WHERE id = ?",
     )
@@ -2131,31 +2138,27 @@ function sha256Hex(text: string): string {
   return createHash("sha256").update(text).digest("hex");
 }
 
-export function insertOrderStatusReturningId(orderId: number, status: string, notes: string | null): number {
+export async function insertOrderStatusReturningId(orderId: number, status: string, notes: string | null): Promise<number> {
   const now = nowTimestamp();
-  const info = getDbWrite()
-    .prepare("INSERT INTO client_order_status (status, notes, created_at, updated_at, client_order_id) VALUES (?, ?, ?, ?, ?)")
-    .run(status, notes, now, now, orderId);
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId("INSERT INTO client_order_status (status, notes, created_at, updated_at, client_order_id) VALUES (?, ?, ?, ?, ?)", status, notes, now, now, orderId);
+  return Number(info);
 }
 
-export function insertCustomService(clientId: number, config: string | null): number {
+export async function insertCustomService(clientId: number, config: string | null): Promise<number> {
   const now = nowTimestamp();
-  const info = getDbWrite()
-    .prepare("INSERT INTO service_custom (client_id, plugin, plugin_config, config, created_at, updated_at) VALUES (?, NULL, NULL, ?, ?, ?)")
-    .run(clientId, config, now, now);
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId("INSERT INTO service_custom (client_id, plugin, plugin_config, config, created_at, updated_at) VALUES (?, NULL, NULL, ?, ?, ?)", clientId, config, now, now);
+  return Number(info);
 }
 
-export function creditNoteIdsFor(invoiceId: number): number[] {
-  const rows = getDb()
+export async function creditNoteIdsFor(invoiceId: number): Promise<number[]> {
+  const rows = await getDb()
     .prepare("SELECT id FROM invoice WHERE credit_note_for_invoice_id = ? ORDER BY id ASC")
     .all(invoiceId) as unknown as { id: number }[];
   return rows.map((r) => r.id);
 }
 
-export function nextNrForSerie(serie: string): number {
-  const row = getDb()
+export async function nextNrForSerie(serie: string): Promise<number> {
+  const row = await getDb()
     .prepare("SELECT MAX(CAST(nr AS INTEGER)) AS m FROM invoice WHERE serie = ?")
     .get(serie) as { m: number | null };
   return (row.m ?? 0) + 1;
@@ -2170,8 +2173,8 @@ export interface InvoiceEventRow {
   created_at: string | null;
 }
 
-export function listInvoiceEvents(invoiceId: number): InvoiceEventRow[] {
-  return getDb()
+export async function listInvoiceEvents(invoiceId: number): Promise<InvoiceEventRow[]> {
+  return await getDb()
     .prepare(
       "SELECT id, type, admin_id, client_id, snapshot, created_at FROM invoice_event WHERE invoice_id = ? ORDER BY id ASC",
     )
@@ -2181,7 +2184,7 @@ export function listInvoiceEvents(invoiceId: number): InvoiceEventRow[] {
 
 /** Full-control invoice insert for credit/debit notes (batch 4):
  * snapshots and link fields are copied from the original invoice. */
-export function insertInvoiceNote(row: {
+export async function insertInvoiceNote(row: {
   client_id: number;
   serie: string;
   nr: string | null;
@@ -2219,26 +2222,11 @@ export function insertInvoiceNote(row: {
   gateway_id: number | null;
   hash_expires_at?: string | null;
   base_income?: number;
-}): number {
+}): Promise<number> {
   const now = nowTimestamp();
-  const info = getDbWrite()
-    .prepare(
-      `INSERT INTO invoice (client_id, serie, nr, hash, currency, currency_rate, credit, base_income, base_refund, refund, notes, text_1, text_2, status, credit_note_for_invoice_id, debit_note_for_invoice_id, replaces_invoice_id, replaced_by_invoice_id, seller_company, seller_company_vat, seller_company_number, seller_address, seller_phone, seller_email, buyer_first_name, buyer_last_name, buyer_company, buyer_company_vat, buyer_company_number, buyer_address, buyer_city, buyer_state, buyer_country, buyer_zip, buyer_phone, buyer_email, issued, taxname, taxrate, due_at, reminded_at, paid_at, hash_expires_at, created_at, updated_at, gateway_id)
-       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, 0, NULL, ?, NULL, NULL, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`,
-    )
-    .run(
-      row.client_id, row.serie, row.nr, row.hash, row.currency, row.currency_rate,
-      row.base_income ?? 0,
-      row.notes, row.status, row.credit_note_for_invoice_id, row.debit_note_for_invoice_id,
-      row.replaces_invoice_id,
-      row.seller_company, row.seller_company_vat, row.seller_company_number, row.seller_address,
-      row.seller_phone, row.seller_email,
-      row.buyer_first_name, row.buyer_last_name, row.buyer_company, row.buyer_company_vat,
-      row.buyer_company_number, row.buyer_address, row.buyer_city, row.buyer_state,
-      row.buyer_country, row.buyer_zip, row.buyer_phone, row.buyer_email,
-      row.issued, row.taxname, row.taxrate, row.due_at, row.paid_at, row.hash_expires_at ?? null, now, now, row.gateway_id,
-    );
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId(`INSERT INTO invoice (client_id, serie, nr, hash, currency, currency_rate, credit, base_income, base_refund, refund, notes, text_1, text_2, status, credit_note_for_invoice_id, debit_note_for_invoice_id, replaces_invoice_id, replaced_by_invoice_id, seller_company, seller_company_vat, seller_company_number, seller_address, seller_phone, seller_email, buyer_first_name, buyer_last_name, buyer_company, buyer_company_vat, buyer_company_number, buyer_address, buyer_city, buyer_state, buyer_country, buyer_zip, buyer_phone, buyer_email, issued, taxname, taxrate, due_at, reminded_at, paid_at, hash_expires_at, created_at, updated_at, gateway_id)
+       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, 0, NULL, ?, NULL, NULL, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`, row.client_id, row.serie, row.nr, row.hash, row.currency, row.currency_rate, row.base_income ?? 0, row.notes, row.status, row.credit_note_for_invoice_id, row.debit_note_for_invoice_id, row.replaces_invoice_id, row.seller_company, row.seller_company_vat, row.seller_company_number, row.seller_address, row.seller_phone, row.seller_email, row.buyer_first_name, row.buyer_last_name, row.buyer_company, row.buyer_company_vat, row.buyer_company_number, row.buyer_address, row.buyer_city, row.buyer_state, row.buyer_country, row.buyer_zip, row.buyer_phone, row.buyer_email, row.issued, row.taxname, row.taxrate, row.due_at, row.paid_at, row.hash_expires_at ?? null, now, now, row.gateway_id);
+  return Number(info);
 }
 
 /* ------------------------------------------------------------------ */
@@ -2257,9 +2245,9 @@ const CORE_MODULES = new Set([
   "staff", "stats", "support", "system", "theme", "orderbutton", "formbuilder", "widgets",
 ]);
 
-export function isModuleActive(mod: string): boolean {
+export async function isModuleActive(mod: string): Promise<boolean> {
   if (CORE_MODULES.has(mod)) return true;
-  const row = getDb()
+  const row = await getDb()
     .prepare("SELECT 1 AS one FROM extension WHERE type = 'mod' AND name = ? AND status = 'installed'")
     .get(mod) as { one: number } | undefined;
   return !!row;
@@ -2298,20 +2286,18 @@ export interface FormFieldRow {
   form_id: number | null;
 }
 
-export function insertForm(name: string, style: string): number {
+export async function insertForm(name: string, style: string): Promise<number> {
   const ts = nowTimestamp();
-  const info = getDbWrite()
-    .prepare("INSERT INTO form (name, style, created_at, updated_at) VALUES (?, ?, ?, ?)")
-    .run(name, style, ts, ts);
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId("INSERT INTO form (name, style, created_at, updated_at) VALUES (?, ?, ?, ?)", name, style, ts, ts);
+  return Number(info);
 }
 
-export function findForm(id: number): FormRow | undefined {
-  return getDb().prepare("SELECT * FROM form WHERE id = ?").get(id) as unknown as FormRow | undefined;
+export async function findForm(id: number): Promise<FormRow | undefined> {
+  return await getDb().prepare("SELECT * FROM form WHERE id = ?").get(id) as unknown as FormRow | undefined;
 }
 
-export function listFormsWithCounts(): { id: number; name: string | null; product_count: number; order_count: number }[] {
-  return getDb()
+export async function listFormsWithCounts(): Promise<{ id: number; name: string | null; product_count: number; order_count: number }[]> {
+  return await getDb()
     .prepare(
       `SELECT f.id, f.name, COUNT(p.id) AS product_count, COUNT(co.id) AS order_count
        FROM form f
@@ -2322,44 +2308,44 @@ export function listFormsWithCounts(): { id: number; name: string | null; produc
     .all() as never[];
 }
 
-export function listFormPairs(): { id: number; name: string | null }[] {
-  return getDb().prepare("SELECT id, name FROM form").all() as never[];
+export async function listFormPairs(): Promise<{ id: number; name: string | null }[]> {
+  return await getDb().prepare("SELECT id, name FROM form").all() as never[];
 }
 
-export function updateFormRow(id: number, name: string, style: string): void {
-  getDbWrite()
+export async function updateFormRow(id: number, name: string, style: string): Promise<void> {
+  await getDbWrite()
     .prepare("UPDATE form SET name = ?, style = ?, updated_at = ? WHERE id = ?")
     .run(name, style, nowTimestamp(), id);
 }
 
-export function deleteFormCascade(id: number): void {
+export async function deleteFormCascade(id: number): Promise<void> {
   const w = getDbWrite();
-  w.prepare("DELETE FROM form_field WHERE form_id = ?").run(id);
-  w.prepare("DELETE FROM form WHERE id = ?").run(id);
-  w.prepare("UPDATE product SET form_id = NULL WHERE form_id = ?").run(id);
-  w.prepare("UPDATE client_order SET form_id = NULL WHERE form_id = ?").run(id);
+  await w.prepare("DELETE FROM form_field WHERE form_id = ?").run(id);
+  await w.prepare("DELETE FROM form WHERE id = ?").run(id);
+  await w.prepare("UPDATE product SET form_id = NULL WHERE form_id = ?").run(id);
+  await w.prepare("UPDATE client_order SET form_id = NULL WHERE form_id = ?").run(id);
 }
 
-export function countFormFields(formId: number): number {
-  const row = getDb()
+export async function countFormFields(formId: number): Promise<number> {
+  const row = await getDb()
     .prepare("SELECT COUNT(*) AS n FROM form_field WHERE form_id = ?")
     .get(formId) as { n: number };
   return row.n;
 }
 
-export function listFormFields(formId: number): FormFieldRow[] {
-  return getDb()
+export async function listFormFields(formId: number): Promise<FormFieldRow[]> {
+  return await getDb()
     .prepare("SELECT * FROM form_field WHERE form_id = ? ORDER BY id ASC")
     .all(formId) as unknown as FormFieldRow[];
 }
 
-export function findFormField(id: number): FormFieldRow | undefined {
-  return getDb().prepare("SELECT * FROM form_field WHERE id = ?").get(id) as unknown as
+export async function findFormField(id: number): Promise<FormFieldRow | undefined> {
+  return await getDb().prepare("SELECT * FROM form_field WHERE id = ?").get(id) as unknown as
     | FormFieldRow
     | undefined;
 }
 
-export function insertFormField(f: {
+export async function insertFormField(f: {
   form_id: number | string;
   name: string;
   label: string;
@@ -2378,26 +2364,16 @@ export function insertFormField(f: {
   show_prefix: unknown;
   show_suffix: unknown;
   text_size: unknown;
-}): number {
+}): Promise<number> {
   const ts = nowTimestamp();
-  const info = getDbWrite()
-    .prepare(
-      `INSERT INTO form_field (form_id, name, label, hide_label, description, type, default_value,
+  const info = await getDbWrite().insertAndGetId(`INSERT INTO form_field (form_id, name, label, hide_label, description, type, default_value,
        required, hidden, readonly, options, prefix, suffix, show_initial, show_middle,
        show_prefix, show_suffix, text_size, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .run(
-      f.form_id, f.name, f.label, f.hide_label as never, f.description as never, f.type,
-      f.default_value as never, f.required as never, f.hidden as never, f.readonly as never,
-      f.options as never, f.prefix as never, f.suffix as never, f.show_initial as never,
-      f.show_middle as never, f.show_prefix as never, f.show_suffix as never,
-      f.text_size as never, ts, ts,
-    );
-  return Number(info.lastInsertRowid);
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, f.form_id, f.name, f.label, f.hide_label as never, f.description as never, f.type, f.default_value as never, f.required as never, f.hidden as never, f.readonly as never, f.options as never, f.prefix as never, f.suffix as never, f.show_initial as never, f.show_middle as never, f.show_prefix as never, f.show_suffix as never, f.text_size as never, ts, ts);
+  return Number(info);
 }
 
-export function updateFormFieldRow(
+export async function updateFormFieldRow(
   id: number,
   f: {
     name: string; label: string; hide_label: unknown; description: unknown; default_value: unknown;
@@ -2405,8 +2381,8 @@ export function updateFormFieldRow(
     suffix: unknown; show_initial: unknown; show_middle: unknown; show_prefix: unknown;
     show_suffix: unknown; text_size: unknown;
   },
-): void {
-  getDbWrite()
+): Promise<void> {
+  await getDbWrite()
     .prepare(
       `UPDATE form_field SET name = ?, label = ?, hide_label = ?, description = ?,
        default_value = ?, required = ?, hidden = ?, readonly = ?, options = ?, prefix = ?,
@@ -2421,13 +2397,13 @@ export function updateFormFieldRow(
     );
 }
 
-export function deleteFormFieldRow(id: number): number {
-  const info = getDbWrite().prepare("DELETE FROM form_field WHERE id = ?").run(id);
+export async function deleteFormFieldRow(id: number): Promise<number> {
+  const info = await getDbWrite().prepare("DELETE FROM form_field WHERE id = ?").run(id);
   return Number(info.changes);
 }
 
-export function countFormFieldsNamed(formId: number | null, name: string, excludeId: number): number {
-  const row = getDb()
+export async function countFormFieldsNamed(formId: number | null, name: string, excludeId: number): Promise<number> {
+  const row = await getDb()
     .prepare("SELECT COUNT(*) AS n FROM form_field WHERE form_id = ? AND name = ? AND id != ?")
     .get(formId, name, excludeId) as { n: number };
   return row.n;
@@ -2445,69 +2421,58 @@ export interface ExtensionMetaRow {
   updated_at: string | null;
 }
 
-export function listExtensionMetaByExtension(extension: string): ExtensionMetaRow[] {
-  return getDb()
+export async function listExtensionMetaByExtension(extension: string): Promise<ExtensionMetaRow[]> {
+  return await getDb()
     .prepare("SELECT * FROM extension_meta WHERE extension = ? ORDER BY id ASC")
     .all(extension) as unknown as ExtensionMetaRow[];
 }
 
-export function findExtensionMetaById(extension: string, id: number): ExtensionMetaRow | undefined {
-  return getDb()
+export async function findExtensionMetaById(extension: string, id: number): Promise<ExtensionMetaRow | undefined> {
+  return await getDb()
     .prepare("SELECT * FROM extension_meta WHERE extension = ? AND id = ?")
     .get(extension, id) as unknown as ExtensionMetaRow | undefined;
 }
 
-export function insertExtensionMeta(extension: string, metaKey: string, metaValue: string): number {
+export async function insertExtensionMeta(extension: string, metaKey: string, metaValue: string): Promise<number> {
   const ts = nowTimestamp();
-  const info = getDbWrite()
-    .prepare(
-      "INSERT INTO extension_meta (extension, meta_key, meta_value, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
-    )
-    .run(extension, metaKey, metaValue, ts, ts);
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId("INSERT INTO extension_meta (extension, meta_key, meta_value, created_at, updated_at) VALUES (?, ?, ?, ?, ?)", extension, metaKey, metaValue, ts, ts);
+  return Number(info);
 }
 
-export function updateExtensionMetaRow(id: number, metaKey: string, metaValue: string): void {
-  getDbWrite()
+export async function updateExtensionMetaRow(id: number, metaKey: string, metaValue: string): Promise<void> {
+  await getDbWrite()
     .prepare("UPDATE extension_meta SET meta_key = ?, meta_value = ?, updated_at = ? WHERE id = ?")
     .run(metaKey, metaValue, nowTimestamp(), id);
 }
 
-export function deleteExtensionMetaRow(id: number): void {
-  getDbWrite().prepare("DELETE FROM extension_meta WHERE id = ?").run(id);
+export async function deleteExtensionMetaRow(id: number): Promise<void> {
+  await getDbWrite().prepare("DELETE FROM extension_meta WHERE id = ?").run(id);
 }
 
-export function insertActivityClientEmail(row: {
+export async function insertActivityClientEmail(row: {
   client_id: number | null;
   sender: string | null;
   recipients: string | null;
   subject: string;
   content_html: string | null;
   content_text: string | null;
-}): number {
-  const info = getDbWrite()
-    .prepare(
-      `INSERT INTO activity_client_email (client_id, sender, recipients, subject, content_html,
+}): Promise<number> {
+  const info = await getDbWrite().insertAndGetId(`INSERT INTO activity_client_email (client_id, sender, recipients, subject, content_html,
        content_text, attachment_name, attachment_content, attachment_mime, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NULL, ?)`,
-    )
-    .run(
-      row.client_id, row.sender, row.recipients, row.subject, row.content_html,
-      row.content_text, nowTimestamp(),
-    );
-  return Number(info.lastInsertRowid);
+       VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NULL, ?)`, row.client_id, row.sender, row.recipients, row.subject, row.content_html, row.content_text, nowTimestamp());
+  return Number(info);
 }
 
-export function listProductPairs(filters: {
+export async function listProductPairs(filters: {
   productsOnly: boolean;
   activeOnly: boolean;
   type: string | null;
-}): { id: number; title: string | null }[] {
+}): Promise<{ id: number; title: string | null }[]> {
   const where: string[] = [];
   const vals: unknown[] = [];
   if (filters.productsOnly) { where.push("is_addon = 0"); }
   if (filters.activeOnly) { where.push("active = 1"); }
   if (filters.type) { where.push("type = ?"); vals.push(filters.type); }
   const sql = `SELECT id, title FROM product ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY id ASC`;
-  return getDb().prepare(sql).all(...(vals as never[])) as never[];
+  return await getDb().prepare(sql).all(...(vals as never[])) as never[];
 }

@@ -24,41 +24,41 @@ function cronPath(): string {
   return dbPath ? join(dirname(dirname(dbPath)), "cron.php") : "cron.php";
 }
 
-export function runCronJobs(): void {
-  runBatchActivatePaid();
-  runBatchSendReminders();
-  runBatchSuspendExpired();
-  runBatchCancelSuspended();
-  runBatchCancelUnpaid();
+export async function runCronJobs(): Promise<void> {
+  await runBatchActivatePaid();
+  await runBatchSendReminders();
+  await runBatchSuspendExpired();
+  await runBatchCancelSuspended();
+  await runBatchCancelUnpaid();
   void getDb;
-  setSettingValue("last_cron_exec", nowTimestamp());
+  await setSettingValue("last_cron_exec", nowTimestamp());
 }
 
-register("admin", "cron", "info", (ctx: CallContext) => {
+register("admin", "cron", "info", async (ctx: CallContext) => {
   requireAdmin(ctx);
   return {
     cron_path: cronPath(),
-    last_cron_exec: getSetting("last_cron_exec"),
+    last_cron_exec: await getSetting("last_cron_exec"),
   };
 });
 
-register("admin", "cron", "run", (ctx: CallContext) => {
+register("admin", "cron", "run", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  runCronJobs();
+  await runCronJobs();
   return true;
 });
 
-register("guest", "cron", "run", (ctx: CallContext) => {
+register("guest", "cron", "run", async (ctx: CallContext) => {
   // Mirrors PHP: the guest trigger needs the module's guest_cron
   // setting enabled AND the configured security hash.
-  const enabled = getSetting("cron_guest_enabled");
-  const hash = getSetting("cron_hash");
+  const enabled = await getSetting("cron_guest_enabled");
+  const hash = await getSetting("cron_hash");
   if (enabled !== "1" || !hash) {
     throw new FbError("You do not have permission to perform this action", 403);
   }
   if ((ctx.params["hash"] ?? "") !== hash) {
     throw new FbError("You do not have permission to perform this action", 403);
   }
-  runCronJobs();
+  await runCronJobs();
   return true;
 });

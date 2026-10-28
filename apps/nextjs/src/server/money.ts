@@ -40,8 +40,8 @@ export function round2(n: number): number {
 }
 
 /** Client\Service::isClientTaxable — the tax_enabled gate + tax_exempt. */
-export function isClientTaxable(client: ClientRow): boolean {
-  const enabled = findSettingValue("tax_enabled");
+export async function isClientTaxable(client: ClientRow): Promise<boolean> {
+  const enabled = await findSettingValue("tax_enabled");
   if (!enabled || enabled === "0") return false;
   return !client.tax_exempt;
 }
@@ -51,14 +51,14 @@ export function isClientTaxable(client: ClientRow): boolean {
  * then any rule for the country, then the global rule, else 0. The
  * stored rate is a PERCENTAGE (21 = 21%) — see money-map.md.
  */
-export function resolveTaxForClient(client: ClientRow): { rate: string; name: string } {
-  if (!isClientTaxable(client)) return { rate: "0", name: "" };
+export async function resolveTaxForClient(client: ClientRow): Promise<{ rate: string; name: string }> {
+  if (!await isClientTaxable(client)) return { rate: "0", name: "" };
   const country = client.country ?? null;
   const state = client.state ?? null;
   let rule = undefined;
-  if (state !== null && country !== null) rule = findTaxRule(state, country);
-  if (!rule && country !== null) rule = findTaxRuleByCountry(country);
-  if (!rule) rule = findGlobalTaxRule();
+  if (state !== null && country !== null) rule = await findTaxRule(state, country);
+  if (!rule && country !== null) rule = await findTaxRuleByCountry(country);
+  if (!rule) rule = await findGlobalTaxRule();
   if (!rule) return { rate: "0", name: "" };
   return { rate: String(rule.taxrate), name: rule.name ?? "" };
 }
@@ -94,14 +94,14 @@ export function invoiceTotals(
 }
 
 /** reserveNextNumericParamValue('invoice_starting_number') + max guard. */
-export function nextInvoiceNumber(serie: string | null): string {
-  const raw = findSettingValue("invoice_starting_number");
+export async function nextInvoiceNumber(serie: string | null): Promise<string> {
+  const raw = await findSettingValue("invoice_starting_number");
   let candidate = raw ? parseInt(raw, 10) : 1;
   if (!Number.isFinite(candidate) || candidate < 1) candidate = 1;
-  if (invoiceNrExists(serie, String(candidate))) {
-    candidate = maxInvoiceNr(serie) + 1;
+  if (await invoiceNrExists(serie, String(candidate))) {
+    candidate = await maxInvoiceNr(serie) + 1;
   }
-  setSettingValue("invoice_starting_number", String(candidate + 1));
+  await setSettingValue("invoice_starting_number", String(candidate + 1));
   return String(candidate);
 }
 
@@ -111,24 +111,24 @@ export function nextInvoiceNumber(serie: string | null): string {
  * rate/name, serie and hash. Items start pending_payment and move
  * to pending_setup when the invoice is paid.
  */
-export function prepareInvoice(
+export async function prepareInvoice(
   client: ClientRow,
   items: InvoiceItemInput[],
   gatewayId: number | null,
-): number {
-  const serie = findSettingValue("invoice_series");
-  const tax = resolveTaxForClient(client);
-  const dueDaysRaw = findSettingValue("invoice_due_days");
+): Promise<number> {
+  const serie = await findSettingValue("invoice_series");
+  const tax = await resolveTaxForClient(client);
+  const dueDaysRaw = await findSettingValue("invoice_due_days");
   const dueDays = dueDaysRaw ? parseInt(dueDaysRaw, 10) : 5;
   const due = new Date(Date.now() + dueDays * 86400_000);
   const dueAt = due.toISOString().slice(0, 19).replace("T", " ");
-  const hashLifetimeRaw = findSettingValue("invoice_hash_lifetime_days");
+  const hashLifetimeRaw = await findSettingValue("invoice_hash_lifetime_days");
   const hashDays = hashLifetimeRaw ? parseInt(hashLifetimeRaw, 10) : 90;
   const hashExpires = new Date(Date.now() + hashDays * 86400_000)
     .toISOString().slice(0, 19).replace("T", " ");
   const currency = client.currency ?? "USD";
-  const currencyRate = findCurrencyByCode(currency)?.conversion_rate ?? 1;
-  const id = insertInvoice({
+  const currencyRate = (await findCurrencyByCode(currency))?.conversion_rate ?? 1;
+  const id = await insertInvoice({
     client_id: client.id,
     serie,
     nr: null,
@@ -143,10 +143,10 @@ export function prepareInvoice(
     taxrate: tax.rate,
     gateway_id: gatewayId,
     due_at: dueAt,
-    notes: findSettingValue("invoice_default_note"),
+    notes: await findSettingValue("invoice_default_note"),
   });
   for (const it of items) {
-    insertInvoiceItem({
+    await insertInvoiceItem({
       invoice_id: id,
       type: it.type ?? "custom",
       rel_id: it.rel_id ?? null,
@@ -165,10 +165,10 @@ export function prepareInvoice(
 
 /** Freeze buyer (client) + seller (company) onto the invoice, as PHP
  * does once at issuance. */
-function snapshotParties(invoiceId: number, client: ClientRow): void {
-  const company = getCompany();
+async function snapshotParties(invoiceId: number, client: ClientRow): Promise<void> {
+  const company = await getCompany();
   const address = [client.address_1, client.address_2].filter(Boolean).join(" ") || null;
-  updateInvoiceRow(invoiceId, {
+  await updateInvoiceRow(invoiceId, {
     buyer_first_name: client.first_name,
     buyer_last_name: client.last_name,
     buyer_company: client.company,
@@ -199,80 +199,80 @@ function snapshotParties(invoiceId: number, client: ClientRow): void {
  * parties, marks issued, writes the journal event, then optionally
  * pays from the client's credit balance.
  */
-export function issueInvoice(
+export async function issueInvoice(
   invoiceId: number,
   client: ClientRow,
   opts: { useCredits?: boolean } = {},
-): void {
-  snapshotParties(invoiceId, client);
-  const serie = findSettingValue("invoice_series");
-  const nr = nextInvoiceNumber(serie);
-  getDbWrite()
+): Promise<void> {
+  await snapshotParties(invoiceId, client);
+  const serie = await findSettingValue("invoice_series");
+  const nr = await nextInvoiceNumber(serie);
+  await getDbWrite()
     .prepare("UPDATE invoice SET serie = ?, nr = ?, issued = 1, updated_at = ? WHERE id = ?")
     .run(serie, nr, nowTimestamp(), invoiceId);
-  insertInvoiceEvent(invoiceId, "issued", {
+  await insertInvoiceEvent(invoiceId, "issued", {
     serie_nr: `${serie ?? ""}${nr}`,
     status: "unpaid",
     issued: true,
   });
   // PHP queues the 'Invoice Created' email via the issued event.
-  queueInvoiceEmail("mod_invoice_created", invoiceId);
-  if (opts.useCredits) tryPayWithCredits(invoiceId);
+  await queueInvoiceEmail("mod_invoice_created", invoiceId);
+  if (opts.useCredits) await tryPayWithCredits(invoiceId);
 }
 
 /** Invoice\Service::tryPayWithCredits + markAsPaid(charge: false). */
-export function tryPayWithCredits(invoiceId: number): boolean {
-  const items = listInvoiceItems(invoiceId);
-  const { total } = invoiceTotals(items, currentTaxrate(invoiceId));
+export async function tryPayWithCredits(invoiceId: number): Promise<boolean> {
+  const items = await listInvoiceItems(invoiceId);
+  const { total } = invoiceTotals(items, await currentTaxrate(invoiceId));
   if (total <= 0) return false;
-  const clientId = currentClientId(invoiceId);
+  const clientId = await currentClientId(invoiceId);
   if (clientId === null) return false;
-  const balance = clientBalanceSum(clientId);
+  const balance = await clientBalanceSum(clientId);
   if (round2(balance) < round2(total)) return false;
-  const nr = currentNr(invoiceId);
-  insertBalanceRow({
+  const nr = await currentNr(invoiceId);
+  await insertBalanceRow({
     client_id: clientId,
     type: "invoice",
     rel_id: invoiceId,
     amount: -total,
     description: `Payment for invoice #${nr ?? invoiceId} using account credit.`,
   });
-  markInvoicePaid(invoiceId);
+  await markInvoicePaid(invoiceId);
   return true;
 }
 
-export function markInvoicePaid(invoiceId: number): void {
+export async function markInvoicePaid(invoiceId: number): Promise<void> {
   // PHP records base_income (total converted at the invoice's frozen
   // rate) when an invoice is paid, and moves items from
   // pending_payment to pending_setup (awaiting execution). The
   // charged amounts stay untouched on the admin/Custom path — they
   // are written when item tasks actually execute.
-  const row = findInvoiceRow(invoiceId);
+  const row = await findInvoiceRow(invoiceId);
   const rate = Number(row?.["currency_rate"] ?? 1) || 1;
-  const { total } = invoiceTotals(listInvoiceItems(invoiceId), currentTaxrate(invoiceId));
-  updateInvoiceRow(invoiceId, { status: "paid", paid_at: nowTimestamp() });
+  const { total } = invoiceTotals(await listInvoiceItems(invoiceId), await currentTaxrate(invoiceId));
+  await updateInvoiceRow(invoiceId, { status: "paid", paid_at: nowTimestamp() });
   const w = getDbWrite();
-  w.prepare("UPDATE invoice SET base_income = ? WHERE id = ?")
+  await w.prepare("UPDATE invoice SET base_income = ? WHERE id = ?")
     .run(round2(total * rate), invoiceId);
-  w.prepare(
+  await w.prepare(
     "UPDATE invoice_item SET status = 'pending_setup', updated_at = ? WHERE invoice_id = ? AND status = 'pending_payment'",
   ).run(nowTimestamp(), invoiceId);
-  insertInvoiceEvent(invoiceId, "paid", { status: "paid" });
+  await insertInvoiceEvent(invoiceId, "paid", { status: "paid" });
   // PHP queues the 'Payment Received' email via the paid event.
-  queueInvoiceEmail("mod_invoice_paid", invoiceId);
+  await queueInvoiceEmail("mod_invoice_paid", invoiceId);
 }
 
-function currentTaxrate(invoiceId: number): string {
-  const row = findInvoiceRow(invoiceId);
+async function currentTaxrate(invoiceId: number): Promise<string> {
+  const row = await findInvoiceRow(invoiceId);
   return String(row?.["taxrate"] ?? "0");
 }
-function currentClientId(invoiceId: number): number | null {
-  const row = findInvoiceRow(invoiceId);
+async function currentClientId(invoiceId: number): Promise<number | null> {
+  const row = await findInvoiceRow(invoiceId);
   const v = row?.["client_id"];
   return typeof v === "number" ? v : null;
 }
-function currentNr(invoiceId: number): string | null {
-  const row = findInvoiceRow(invoiceId);
+async function currentNr(invoiceId: number): Promise<string | null> {
+  const row = await findInvoiceRow(invoiceId);
   const v = row?.["nr"];
   return typeof v === "string" && v !== "" ? v : null;
 }

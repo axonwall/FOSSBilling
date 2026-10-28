@@ -32,14 +32,14 @@ function phpEmpty(v: unknown): boolean {
   return v === null || v === undefined || v === "" || v === "0" || v === 0 || v === false;
 }
 
-function dashboardProfile(clientId: number): Record<string, unknown> {
-  const row = findClientById(clientId);
+async function dashboardProfile(clientId: number): Promise<Record<string, unknown>> {
+  const row = await findClientById(clientId);
   if (!row) throw new FbError("Client not found");
   const out: Record<string, unknown> = {
     ...clientBaseArray(row),
-    balance: clientBalanceSum(clientId),
+    balance: await clientBalanceSum(clientId),
   };
-  const config = readExtensionConfig("mod_client");
+  const config = await readExtensionConfig("mod_client");
   const customFields = config["custom_fields"] as Record<string, { active?: unknown }> | undefined;
   if (customFields && typeof customFields === "object") {
     for (let i = 1; i <= 20; i++) {
@@ -51,14 +51,14 @@ function dashboardProfile(clientId: number): Record<string, unknown> {
   return out;
 }
 
-function statusCounts(
+async function statusCounts(
   sql: string,
   clientId: number,
   buckets: string[],
-): Record<string, number> {
+): Promise<Record<string, number>> {
   const counts: Record<string, number> = { total: 0 };
   for (const b of buckets) counts[b] = 0;
-  const rows = getDb().prepare(sql).all(clientId) as unknown as { status: string; total: number }[];
+  const rows = await getDb().prepare(sql).all(clientId) as unknown as { status: string; total: number }[];
   for (const r of rows) {
     counts["total"] = (counts["total"] ?? 0) + r.total;
     if (buckets.includes(r.status)) counts[r.status] = r.total;
@@ -70,15 +70,15 @@ function fmtTs(d: Date): string {
   return d.toISOString().slice(0, 19).replace("T", " ");
 }
 
-function recentOrders(clientId: number): Record<string, unknown>[] {
-  const ids = getDb()
+async function recentOrders(clientId: number): Promise<Record<string, unknown>[]> {
+  const ids = await getDb()
     .prepare(
       "SELECT id FROM client_order WHERE client_id = ? AND group_master = 1 ORDER BY updated_at DESC LIMIT 5",
     )
     .all(clientId) as unknown as { id: number }[];
   const out: Record<string, unknown>[] = [];
   for (const { id } of ids) {
-    const row = getDb().prepare("SELECT * FROM client_order WHERE id = ?").get(id) as unknown as Record<
+    const row = await getDb().prepare("SELECT * FROM client_order WHERE id = ?").get(id) as unknown as Record<
       string,
       unknown
     > | null;
@@ -92,7 +92,7 @@ function recentOrders(clientId: number): Record<string, unknown>[] {
         config = [];
       }
     }
-    const metaRows = getDb()
+    const metaRows = await getDb()
       .prepare("SELECT name, value FROM client_order_meta WHERE client_order_id = ?")
       .all(id) as unknown as { name: string; value: string | null }[];
     let meta: unknown = [];
@@ -102,13 +102,13 @@ function recentOrders(clientId: number): Record<string, unknown>[] {
       meta = m;
     }
     const activeTickets = (
-      getDb()
+      (await getDb()
         .prepare(
           "SELECT COUNT(*) AS n FROM support_ticket WHERE rel_id = ? AND rel_type = 'order' AND (status = 'open' OR status = 'on_hold')",
         )
-        .get(id) as { n: number }
+        .get(id)) as { n: number }
     ).n;
-    const clientRow = findClientById(Number(row["client_id"]));
+    const clientRow = await findClientById(Number(row["client_id"]));
     out.push({
       ...row,
       config,
@@ -122,15 +122,15 @@ function recentOrders(clientId: number): Record<string, unknown>[] {
   return out;
 }
 
-function clientSummary(clientId: number): { id: number; first_name: string; last_name: string } {
-  const row = getDb()
+async function clientSummary(clientId: number): Promise<{ id: number; first_name: string; last_name: string }> {
+  const row = await getDb()
     .prepare("SELECT id, first_name, last_name FROM client WHERE id = ?")
     .get(clientId) as unknown as { id: number; first_name: string; last_name: string };
   return { id: row.id, first_name: row.first_name, last_name: row.last_name };
 }
 
-function clientAuthor(clientId: number): Record<string, unknown> {
-  const row = getDb()
+async function clientAuthor(clientId: number): Promise<Record<string, unknown>> {
+  const row = await getDb()
     .prepare("SELECT id, first_name, last_name, email FROM client WHERE id = ?")
     .get(clientId) as unknown as { id: number; first_name: string; last_name: string; email: string };
   return {
@@ -143,14 +143,14 @@ function clientAuthor(clientId: number): Record<string, unknown> {
   };
 }
 
-function messageAuthor(
+async function messageAuthor(
   msg: Record<string, unknown>,
   ticket: Record<string, unknown>,
-): Record<string, unknown> {
+): Promise<Record<string, unknown>> {
   const adminId = msg["admin_id"];
   const clientId = msg["client_id"];
   if (adminId !== null && adminId !== undefined) {
-    const row = getDb().prepare("SELECT name FROM admin WHERE id = ?").get(Number(adminId)) as unknown as {
+    const row = await getDb().prepare("SELECT name FROM admin WHERE id = ?").get(Number(adminId)) as unknown as {
       name: string;
     } | null;
     if (!row) return {};
@@ -158,7 +158,7 @@ function messageAuthor(
   }
   if (clientId !== null && clientId !== undefined) {
     try {
-      return { name: (clientAuthor(Number(clientId))["name"] as string) ?? "", role: "client" };
+      return { name: ((await clientAuthor(Number(clientId)))["name"] as string) ?? "", role: "client" };
     } catch {
       return {};
     }
@@ -173,8 +173,8 @@ function messageAuthor(
   return {};
 }
 
-function recentTickets(clientId: number): Record<string, unknown>[] {
-  const ids = getDb()
+async function recentTickets(clientId: number): Promise<Record<string, unknown>[]> {
+  const ids = await getDb()
     .prepare(
       "SELECT id FROM support_ticket WHERE client_id = ? ORDER BY updated_at DESC LIMIT 5",
     )
@@ -182,13 +182,13 @@ function recentTickets(clientId: number): Record<string, unknown>[] {
   const idList = ids.map((r) => r.id);
   if (idList.length === 0) return [];
   const marks = idList.map(() => "?").join(",");
-  const replyRows = getDb()
+  const replyRows = await getDb()
     .prepare(
       `SELECT support_ticket_id, COUNT(id) AS counter FROM support_ticket_message WHERE support_ticket_id IN (${marks}) GROUP BY support_ticket_id`,
     )
     .all(...idList) as unknown as { support_ticket_id: number; counter: number }[];
   const replies = new Map(replyRows.map((r) => [r.support_ticket_id, r.counter]));
-  const firstRows = getDb()
+  const firstRows = await getDb()
     .prepare(
       `SELECT support_ticket_id, MIN(id) AS message_id FROM support_ticket_message WHERE support_ticket_id IN (${marks}) GROUP BY support_ticket_id`,
     )
@@ -196,7 +196,7 @@ function recentTickets(clientId: number): Record<string, unknown>[] {
   const firstIds = new Map(firstRows.map((r) => [r.support_ticket_id, r.message_id]));
   const out: Record<string, unknown>[] = [];
   for (const id of idList) {
-    const ticket = getDb().prepare("SELECT * FROM support_ticket WHERE id = ?").get(id) as unknown as Record<
+    const ticket = await getDb().prepare("SELECT * FROM support_ticket WHERE id = ?").get(id) as unknown as Record<
       string,
       unknown
     > | null;
@@ -219,7 +219,7 @@ function recentTickets(clientId: number): Record<string, unknown>[] {
     data["replies"] = replies.get(id) ?? 0;
     const firstId = firstIds.get(id);
     if (firstId !== undefined) {
-      const msg = getDb()
+      const msg = await getDb()
         .prepare("SELECT * FROM support_ticket_message WHERE id = ?")
         .get(firstId) as unknown as Record<string, unknown> | null;
       data["first"] = msg
@@ -229,7 +229,7 @@ function recentTickets(clientId: number): Record<string, unknown>[] {
             attachment: msg["attachment"],
             created_at: msg["created_at"],
             updated_at: msg["updated_at"],
-            author: messageAuthor(msg, ticket),
+            author: await messageAuthor(msg, ticket),
           }
         : null;
     } else {
@@ -237,7 +237,7 @@ function recentTickets(clientId: number): Record<string, unknown>[] {
     }
     const helpdeskId = ticket["support_helpdesk_id"];
     if (helpdeskId !== null && helpdeskId !== undefined) {
-      const hd = getDb().prepare("SELECT * FROM support_helpdesk WHERE id = ?").get(Number(helpdeskId)) as unknown as {
+      const hd = await getDb().prepare("SELECT * FROM support_helpdesk WHERE id = ?").get(Number(helpdeskId)) as unknown as {
         id: number;
         name: string;
         can_reopen: number | null;
@@ -264,8 +264,8 @@ function recentTickets(clientId: number): Record<string, unknown>[] {
     } else {
       const cid = Number(tid);
       try {
-        data["author"] = clientAuthor(cid);
-        data["client"] = clientSummary(cid);
+        data["author"] = await clientAuthor(cid);
+        data["client"] = await clientSummary(cid);
       } catch {
         data["author"] = {
           name: ticket["author_name"] ?? "",
@@ -280,47 +280,47 @@ function recentTickets(clientId: number): Record<string, unknown>[] {
   return out;
 }
 
-register("client", "index", "get_dashboard", (ctx) => {
+register("client", "index", "get_dashboard", async (ctx) => {
   requireClient(ctx);
   const clientId = ctx.session!.client!.id;
-  const tickets = statusCounts(
+  const tickets = await statusCounts(
     "SELECT status, COUNT(*) AS total FROM support_ticket WHERE client_id = ? GROUP BY status",
     clientId,
     ["open", "on_hold", "closed"],
   );
-  const invoices = statusCounts(
+  const invoices = await statusCounts(
     "SELECT status, COUNT(*) AS total FROM invoice WHERE client_id = ? AND issued = 1 GROUP BY status",
     clientId,
     ["paid", "unpaid"],
   );
-  const orders = statusCounts(
+  const orders = await statusCounts(
     "SELECT status, COUNT(*) AS total FROM client_order WHERE client_id = ? AND group_master = 1 GROUP BY status",
     clientId,
     ["active"],
   );
   // Expiring: DATEDIFF calendar-date stand-in — expires_at before the
   // start of day (days + 1) from today, mirroring Index Service.
-  const daysRaw = getSetting("invoice_issue_days_before_expire");
+  const daysRaw = await getSetting("invoice_issue_days_before_expire");
   const days = daysRaw === null ? 14 : parseInt(daysRaw, 10);
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
   const expiresBefore = fmtTs(new Date(today.getTime() + (days + 1) * 86400000));
   const expiring = (
-    getDb()
+    (await getDb()
       .prepare(
         `SELECT COUNT(*) AS n FROM client_order WHERE client_id = ? AND group_master = 1
          AND status = 'active' AND invoice_option = 'issue-invoice' AND period IS NOT NULL
          AND expires_at IS NOT NULL AND unpaid_invoice_id IS NULL AND expires_at < ?`,
       )
-      .get(clientId, expiresBefore) as { n: number }
+      .get(clientId, expiresBefore)) as { n: number }
   ).n;
   orders["expiring"] = expiring;
   return {
-    profile: dashboardProfile(clientId),
+    profile: await dashboardProfile(clientId),
     tickets,
     invoices,
     orders,
-    recent_orders: recentOrders(clientId),
-    recent_tickets: recentTickets(clientId),
+    recent_orders: await recentOrders(clientId),
+    recent_tickets: await recentTickets(clientId),
   };
 });

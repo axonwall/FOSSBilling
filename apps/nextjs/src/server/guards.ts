@@ -408,10 +408,10 @@ export const ADMIN_GUARDS: Record<string, [string, string | null][]> = {
   "admin/widgets/rebuild": [["widgets", "manage"]],
 };
 
-export function enforceAdminGuards(ctx: CallContext, role: string, module: string, method: string) {
+export async function enforceAdminGuards(ctx: CallContext, role: string, module: string, method: string) {
   const guards = ADMIN_GUARDS[`${role}/${module}/${method}`];
   if (!guards) return;
-  for (const [mod, key] of guards) requirePermission(ctx, mod, key);
+  for (const [mod, key] of guards) await requirePermission(ctx, mod, key);
 }
 
 /**
@@ -426,9 +426,9 @@ const CORE_MODULES = new Set([
   "support", "system", "theme", "orderbutton", "formbuilder", "widgets",
 ]);
 
-function isModuleActive(module: string): boolean {
+async function isModuleActive(module: string): Promise<boolean> {
   if (CORE_MODULES.has(module)) return true;
-  const row = getDb()
+  const row = await getDb()
     .prepare("SELECT 1 AS x FROM extension WHERE type = ? AND name = ? AND status = ? LIMIT 1")
     .get("mod", module, "installed") as { x: number } | undefined;
   return !!row;
@@ -457,17 +457,17 @@ function isModuleActive(module: string): boolean {
  * param-invalid AND method-denied gets the param error from PHP but
  * the 403 from TS. Only that combined case differs.
  */
-export function enforceDispatcherGates(ctx: CallContext, role: string, module: string, method: string) {
+export async function enforceDispatcherGates(ctx: CallContext, role: string, module: string, method: string) {
   if (role === "admin" && !ctx.session?.admin) throw new FbError("Authentication Failed", 201);
   if (role === "client" && !ctx.session?.client) throw new FbError("Authentication Failed", 201);
-  if (!isModuleActive(module)) {
+  if (!await isModuleActive(module)) {
     throw new FbError(`FOSSBilling module ${module} is not installed/activated`, 715);
   }
   if (role === "admin") {
     const adminId = ctx.session!.admin!.id;
-    if (!hasPermission(adminId, module)) {
+    if (!await hasPermission(adminId, module)) {
       throw new FbError(`You do not have access to the ${module} module`, 725);
     }
   }
-  enforceAdminGuards(ctx, role, module, method);
+  await enforceAdminGuards(ctx, role, module, method);
 }

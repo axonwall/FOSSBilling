@@ -27,13 +27,13 @@ interface CustomRow {
   config: string | null;
 }
 
-function findOrder(id: number): OrderRow | undefined {
-  return getDb().prepare("SELECT * FROM client_order WHERE id = ?").get(id) as unknown as OrderRow | undefined;
+async function findOrder(id: number): Promise<OrderRow | undefined> {
+  return await getDb().prepare("SELECT * FROM client_order WHERE id = ?").get(id) as unknown as OrderRow | undefined;
 }
 
-function findCustomService(order: OrderRow): CustomRow | undefined {
+async function findCustomService(order: OrderRow): Promise<CustomRow | undefined> {
   if (order.service_id === null || order.service_type !== "custom") return undefined;
-  return getDb().prepare("SELECT * FROM service_custom WHERE id = ?").get(order.service_id) as unknown as
+  return await getDb().prepare("SELECT * FROM service_custom WHERE id = ?").get(order.service_id) as unknown as
     | CustomRow
     | undefined;
 }
@@ -52,7 +52,7 @@ function bracketConfig(params: Record<string, string>): Record<string, string> |
   return found ? out : undefined;
 }
 
-register("admin", "servicecustom", "update", (ctx: CallContext) => {
+register("admin", "servicecustom", "update", async (ctx: CallContext) => {
   requireAdmin(ctx);
   if (!ctx.params["order_id"]) throw new FbError("Order ID is required");
   // PHP Admin::update only calls updateConfig when config is an array,
@@ -63,11 +63,11 @@ register("admin", "servicecustom", "update", (ctx: CallContext) => {
   const config =
     raw !== null && typeof raw === "object" ? (raw as Record<string, unknown>) : bracketConfig(ctx.params);
   if (config === undefined) return true;
-  const order = findOrder(Number(ctx.params["order_id"]));
+  const order = await findOrder(Number(ctx.params["order_id"]));
   if (!order) throw new FbError("Order not found");
-  const svc = findCustomService(order);
+  const svc = await findCustomService(order);
   if (!svc) throw new FbError("Order is not activated");
-  getDbWrite()
+  await getDbWrite()
     .prepare("UPDATE service_custom SET config = ?, updated_at = ? WHERE id = ?")
     .run(JSON.stringify(config), nowTimestamp(), svc.id);
   return true;

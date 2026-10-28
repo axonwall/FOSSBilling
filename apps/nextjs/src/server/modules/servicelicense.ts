@@ -44,19 +44,19 @@ interface LicenseRow {
 
 const GENERIC_ERROR = "An unexpected error occurred. Please try again later.";
 
-function findOrder(id: number): OrderRow | undefined {
-  return getDb().prepare("SELECT * FROM client_order WHERE id = ?").get(id) as unknown as OrderRow | undefined;
+async function findOrder(id: number): Promise<OrderRow | undefined> {
+  return await getDb().prepare("SELECT * FROM client_order WHERE id = ?").get(id) as unknown as OrderRow | undefined;
 }
 
-function findOrderForClient(id: number, clientId: number): OrderRow | undefined {
-  return getDb()
+async function findOrderForClient(id: number, clientId: number): Promise<OrderRow | undefined> {
+  return await getDb()
     .prepare("SELECT * FROM client_order WHERE id = ? AND client_id = ?")
     .get(id, clientId) as unknown as OrderRow | undefined;
 }
 
-function licenseByOrder(order: OrderRow): LicenseRow | undefined {
+async function licenseByOrder(order: OrderRow): Promise<LicenseRow | undefined> {
   if (order.service_id === null || order.service_type !== "license") return undefined;
-  return getDb().prepare("SELECT * FROM service_license WHERE id = ?").get(order.service_id) as unknown as
+  return await getDb().prepare("SELECT * FROM service_license WHERE id = ?").get(order.service_id) as unknown as
     | LicenseRow
     | undefined;
 }
@@ -67,22 +67,22 @@ function assertUsable(order: OrderRow): void {
   }
 }
 
-function getServiceAdmin(ctx: CallContext): LicenseRow {
+async function getServiceAdmin(ctx: CallContext): Promise<LicenseRow> {
   if (!ctx.params["order_id"]) throw new FbError("Order ID is required");
-  const order = findOrder(Number(ctx.params["order_id"]));
+  const order = await findOrder(Number(ctx.params["order_id"]));
   if (!order) throw new FbError("Order not found");
-  const svc = licenseByOrder(order);
+  const svc = await licenseByOrder(order);
   if (!svc) throw new FbError("Order is not activated");
   return svc;
 }
 
-function getServiceClient(ctx: CallContext): LicenseRow {
+async function getServiceClient(ctx: CallContext): Promise<LicenseRow> {
   if (!ctx.params["order_id"]) throw new FbError("Order ID is required");
-  const order = findOrderForClient(Number(ctx.params["order_id"]), ctx.session!.client!.id);
+  const order = await findOrderForClient(Number(ctx.params["order_id"]), ctx.session!.client!.id);
   if (!order) throw new FbError("Order not found");
   assertUsable(order);
   if (order.status !== "active") throw new FbError("Order is not activated");
-  const svc = licenseByOrder(order);
+  const svc = await licenseByOrder(order);
   if (!svc) throw new FbError("Order is not activated");
   return svc;
 }
@@ -118,9 +118,9 @@ function parseList(json: string | null): string[] {
   }
 }
 
-function storeLicense(svc: LicenseRow, patch: Partial<LicenseRow>): void {
+async function storeLicense(svc: LicenseRow, patch: Partial<LicenseRow>): Promise<void> {
   const next = { ...svc, ...patch };
-  getDbWrite()
+  await getDbWrite()
     .prepare(
       `UPDATE service_license SET plugin = ?, validate_ip = ?, validate_host = ?, validate_path = ?,
        validate_version = ?, license_key = ?, ips = ?, hosts = ?, paths = ?, versions = ?,
@@ -161,9 +161,9 @@ register("admin", "servicelicense", "plugin_get_pairs", (ctx) => {
   return Object.keys(out).length > 0 ? out : [];
 });
 
-register("admin", "servicelicense", "update", (ctx) => {
+register("admin", "servicelicense", "update", async (ctx) => {
   requireAdmin(ctx);
-  const svc = getServiceAdmin(ctx);
+  const svc = await getServiceAdmin(ctx);
   const patch: Partial<LicenseRow> = {
     plugin: (pick(ctx, "plugin") as string | undefined) ?? svc.plugin,
     validate_ip: pick(ctx, "validate_ip") !== undefined ? (phpBool(pick(ctx, "validate_ip")) ? 1 : 0) : svc.validate_ip,
@@ -194,33 +194,33 @@ register("admin", "servicelicense", "update", (ctx) => {
       patch[key] = JSON.stringify(v.split("\n").map((s) => s.trim()).filter((s) => s !== ""));
     }
   }
-  storeLicense(svc, patch);
+  await storeLicense(svc, patch);
   return true;
 });
 
-register("admin", "servicelicense", "reset", (ctx) => {
+register("admin", "servicelicense", "reset", async (ctx) => {
   requireAdmin(ctx);
-  const svc = getServiceAdmin(ctx);
-  storeLicense(svc, { ips: "[]", hosts: "[]", paths: "[]", versions: "[]" });
+  const svc = await getServiceAdmin(ctx);
+  await storeLicense(svc, { ips: "[]", hosts: "[]", paths: "[]", versions: "[]" });
   return true;
 });
 
-register("client", "servicelicense", "reset", (ctx) => {
+register("client", "servicelicense", "reset", async (ctx) => {
   requireClient(ctx);
-  const svc = getServiceClient(ctx);
-  storeLicense(svc, { ips: "[]", hosts: "[]", paths: "[]", versions: "[]" });
+  const svc = await getServiceClient(ctx);
+  await storeLicense(svc, { ips: "[]", hosts: "[]", paths: "[]", versions: "[]" });
   return true;
 });
 
-register("admin", "servicelicense", "_getService", (ctx) => {
+register("admin", "servicelicense", "_getService", async (ctx) => {
   requireAdmin(ctx);
-  getServiceAdmin(ctx);
+  await getServiceAdmin(ctx);
   return {}; // PHP returns the bare entity, which serializes as {}
 });
 
-register("client", "servicelicense", "_getService", (ctx) => {
+register("client", "servicelicense", "_getService", async (ctx) => {
   requireClient(ctx);
-  getServiceClient(ctx);
+  await getServiceClient(ctx);
   return {};
 });
 
@@ -235,20 +235,20 @@ class LogicFailure extends Error {
   }
 }
 
-function findLicenseByKey(key: string): LicenseRow | undefined {
-  return getDb().prepare("SELECT * FROM service_license WHERE license_key = ?").get(key) as unknown as
+async function findLicenseByKey(key: string): Promise<LicenseRow | undefined> {
+  return await getDb().prepare("SELECT * FROM service_license WHERE license_key = ?").get(key) as unknown as
     | LicenseRow
     | undefined;
 }
 
-function findOrderForLicense(lic: LicenseRow): OrderRow | undefined {
-  return getDb()
+async function findOrderForLicense(lic: LicenseRow): Promise<OrderRow | undefined> {
+  return await getDb()
     .prepare("SELECT * FROM client_order WHERE service_type = 'license' AND service_id = ? ORDER BY id ASC LIMIT 1")
     .get(lic.id) as unknown as OrderRow | undefined;
 }
 
-function isLicenseActive(lic: LicenseRow): boolean {
-  const order = findOrderForLicense(lic);
+async function isLicenseActive(lic: LicenseRow): Promise<boolean> {
+  const order = await findOrderForLicense(lic);
   if (!order) return false;
   if (order.status !== "active") return false;
   if (order.expires_at && new Date(order.expires_at).getTime() <= Date.now()) return false;
@@ -256,11 +256,11 @@ function isLicenseActive(lic: LicenseRow): boolean {
 }
 
 /** isValid*: append-and-true when the list is empty or validation is off. */
-function isValid(lic: LicenseRow, listKey: "ips" | "hosts" | "paths" | "versions", flag: number, value: string): boolean {
+async function isValid(lic: LicenseRow, listKey: "ips" | "hosts" | "paths" | "versions", flag: number, value: string): Promise<boolean> {
   const list = parseList(lic[listKey]);
   if (list.length === 0 || !flag) {
     const next = [...new Set([...list, value])];
-    getDbWrite().prepare(`UPDATE service_license SET ${listKey} = ?, updated_at = ? WHERE id = ?`).run(
+    await getDbWrite().prepare(`UPDATE service_license SET ${listKey} = ?, updated_at = ? WHERE id = ?`).run(
       JSON.stringify(next),
       nowTimestamp(),
       lic.id,
@@ -270,7 +270,7 @@ function isValid(lic: LicenseRow, listKey: "ips" | "hosts" | "paths" | "versions
   return list.includes(value);
 }
 
-register("guest", "servicelicense", "check", (ctx) => {
+register("guest", "servicelicense", "check", async (ctx) => {
   const format2 = ctx.params["format"] === "2" || (ctx.rawParams as Record<string, unknown>)["format"] === 2;
   const fail = (e: LogicFailure) => {
     if (format2) {
@@ -289,34 +289,34 @@ register("guest", "servicelicense", "check", (ctx) => {
     const p = ctx.params;
     const licenseKey = p["license"];
     if (!licenseKey) throw new LogicFailure("License key is not present in call", 1001);
-    const lic = findLicenseByKey(licenseKey);
+    const lic = await findLicenseByKey(licenseKey);
     if (!lic) throw new LogicFailure("Your license key is invalid.", 1005);
     // pinged_at is stamped before the remaining validations (PHP order).
-    storeLicense(lic, { pinged_at: nowTimestamp() });
+    await storeLicense(lic, { pinged_at: nowTimestamp() });
     const host = p["host"];
     if (!host) throw new LogicFailure("Host key is not present in call", 1002);
     const version = p["version"];
     if (!version) throw new LogicFailure("Version key is not present in call", 1003);
     const path = p["path"];
     if (!path) throw new LogicFailure("Path key is not present in call", 1004);
-    if (!isLicenseActive(lic)) throw new LogicFailure("License is not active", 1006);
-    if (!isValid(lic, "ips", lic.validate_ip, ctx.ip)) {
+    if (!await isLicenseActive(lic)) throw new LogicFailure("License is not active", 1006);
+    if (!await isValid(lic, "ips", lic.validate_ip, ctx.ip)) {
       throw new LogicFailure(`Ip "${ctx.ip}" is not allowed for this license`, 1007);
     }
-    if (!isValid(lic, "hosts", lic.validate_host, host)) {
+    if (!await isValid(lic, "hosts", lic.validate_host, host)) {
       throw new LogicFailure(`Host "${host}" is not allowed for this license`, 1008);
     }
-    if (!isValid(lic, "versions", lic.validate_version, version)) {
+    if (!await isValid(lic, "versions", lic.validate_version, version)) {
       throw new LogicFailure(`Version "${version}" is invalid for this license`, 1009);
     }
-    if (!isValid(lic, "paths", lic.validate_path, path)) {
+    if (!await isValid(lic, "paths", lic.validate_path, path)) {
       throw new LogicFailure(`Software install path "${path}" is invalid for this license`, 1010);
     }
-    const client = getDb().prepare("SELECT first_name, last_name FROM client WHERE id = ?").get(lic.client_id) as
+    const client = await getDb().prepare("SELECT first_name, last_name FROM client WHERE id = ?").get(lic.client_id) as
       | { first_name: string | null; last_name: string | null }
       | undefined;
     const licensedTo = client ? `${client.first_name ?? ""} ${client.last_name ?? ""}`.trim() : "";
-    const order = findOrderForLicense(lic);
+    const order = await findOrderForLicense(lic);
     const result: Record<string, unknown> = {
       licensed_to: licensedTo,
       created_at: lic.created_at,

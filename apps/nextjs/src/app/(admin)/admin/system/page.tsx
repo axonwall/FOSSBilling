@@ -19,7 +19,7 @@ export default async function SystemSettingsPage() {
   }
 
   if (error || !params) {
-    const session = readSession(opts.cookieHeader ?? null);
+    const session = await readSession(opts.cookieHeader ?? null);
     return (
       <main className="mx-auto max-w-4xl p-8">
         <h1 className="text-2xl font-semibold">System settings</h1>

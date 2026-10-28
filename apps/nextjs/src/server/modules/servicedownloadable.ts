@@ -49,16 +49,16 @@ interface FileDef {
   description: string | null;
 }
 
-function findProduct(id: number): ProductRow {
-  const row = getDb().prepare("SELECT id, config FROM product WHERE id = ?").get(id) as unknown as
+async function findProduct(id: number): Promise<ProductRow> {
+  const row = await getDb().prepare("SELECT id, config FROM product WHERE id = ?").get(id) as unknown as
     | ProductRow
     | undefined;
   if (!row) throw new FbError("Product not found");
   return row;
 }
 
-function findOrder(id: number): OrderRow {
-  const row = getDb().prepare("SELECT * FROM client_order WHERE id = ?").get(id) as unknown as
+async function findOrder(id: number): Promise<OrderRow> {
+  const row = await getDb().prepare("SELECT * FROM client_order WHERE id = ?").get(id) as unknown as
     | OrderRow
     | undefined;
   if (!row) throw new FbError("Order not found");
@@ -109,31 +109,31 @@ function optionalText(v: unknown): string | null {
   return t === "" ? null : t;
 }
 
-function saveProductConfig(product: ProductRow, cfg: Record<string, unknown>): void {
-  getDbWrite()
+async function saveProductConfig(product: ProductRow, cfg: Record<string, unknown>): Promise<void> {
+  await getDbWrite()
     .prepare("UPDATE product SET config = ?, updated_at = ? WHERE id = ?")
     .run(JSON.stringify(cfg), nowTimestamp(), product.id);
 }
 
-function saveOrderConfig(order: OrderRow, cfg: Record<string, unknown>): void {
-  getDbWrite()
+async function saveOrderConfig(order: OrderRow, cfg: Record<string, unknown>): Promise<void> {
+  await getDbWrite()
     .prepare("UPDATE client_order SET config = ?, updated_at = ? WHERE id = ?")
     .run(JSON.stringify(cfg), nowTimestamp(), order.id);
 }
 
-function serviceFiles(serviceId: number): ServiceFileRow[] {
-  return getDb()
+async function serviceFiles(serviceId: number): Promise<ServiceFileRow[]> {
+  return await getDb()
     .prepare("SELECT * FROM service_downloadable_file WHERE service_downloadable_id = ? ORDER BY sort_order ASC")
     .all(serviceId) as unknown as ServiceFileRow[];
 }
 
-function ordersForProduct(productId: number): OrderRow[] {
-  return getDb().prepare("SELECT * FROM client_order WHERE product_id = ? ORDER BY id ASC").all(productId) as unknown as OrderRow[];
+async function ordersForProduct(productId: number): Promise<OrderRow[]> {
+  return await getDb().prepare("SELECT * FROM client_order WHERE product_id = ? ORDER BY id ASC").all(productId) as unknown as OrderRow[];
 }
 
-function downloadableServiceFor(order: OrderRow): number | null {
+async function downloadableServiceFor(order: OrderRow): Promise<number | null> {
   if (order.service_id === null || order.service_type !== "downloadable") return null;
-  const row = getDb().prepare("SELECT id FROM service_downloadable WHERE id = ?").get(order.service_id) as unknown as
+  const row = await getDb().prepare("SELECT id FROM service_downloadable WHERE id = ?").get(order.service_id) as unknown as
     | { id: number }
     | undefined;
   return row ? row.id : null;
@@ -145,20 +145,20 @@ function uploadsDir(): string | null {
   return join(dirname(dbPath), "uploads");
 }
 
-function isStoredFilenameReferenced(stored: string): boolean {
-  const inFiles = getDb()
+async function isStoredFilenameReferenced(stored: string): Promise<boolean> {
+  const inFiles = await getDb()
     .prepare("SELECT COUNT(*) AS c FROM service_downloadable_file WHERE stored_filename = ?")
     .get(stored) as unknown as { c: number };
   if (inFiles.c > 0) return true;
-  const inProducts = getDb()
+  const inProducts = await getDb()
     .prepare("SELECT COUNT(*) AS c FROM product WHERE config LIKE ?")
     .get(`%${stored}%`) as unknown as { c: number };
   return inProducts.c > 0;
 }
 
-function removeStoredFileIfOrphaned(stored: string): void {
+async function removeStoredFileIfOrphaned(stored: string): Promise<void> {
   if (!/^[a-f0-9]{64}$/.test(stored)) return;
-  if (isStoredFilenameReferenced(stored)) return;
+  if (await isStoredFilenameReferenced(stored)) return;
   const dir = uploadsDir();
   if (!dir) return;
   const p = join(dir, stored);
@@ -241,8 +241,8 @@ function createUploadedFileDefinition(
   };
 }
 
-function insertServiceFile(svcId: number, def: FileDef, sortOrder: number): void {
-  getDbWrite()
+async function insertServiceFile(svcId: number, def: FileDef, sortOrder: number): Promise<void> {
+  await getDbWrite()
     .prepare(
       "INSERT INTO service_downloadable_file (label, description, downloads, sort_order, file_key, filename, stored_filename, created_at, updated_at, service_downloadable_id) VALUES (?, ?, 0, ?, ?, ?, ?, ?, ?, ?)",
     )
@@ -267,19 +267,19 @@ function attachmentDisposition(displayName: string): string {
 /** Service::sendFile / sendProductFile shared response: missing disk
  * file -> the 404 message; countDownload=true (client path) bumps the
  * downloads counter, false (admin order path) leaves it alone. */
-function sendStoredFile(
+async function sendStoredFile(
   storedFilename: string,
   displayName: string,
   countDownload: boolean,
   serviceFileId: number | null,
-): Response {
+): Promise<Response> {
   const dir = uploadsDir();
   const p = dir ? join(dir, storedFilename) : "";
   if (!dir || !existsSync(p)) {
     throw new FbError("File cannot be downloaded at the moment. Please contact support.", 404);
   }
   if (countDownload && serviceFileId !== null) {
-    getDbWrite()
+    await getDbWrite()
       .prepare("UPDATE service_downloadable_file SET downloads = downloads + 1 WHERE id = ?")
       .run(serviceFileId);
   }
@@ -296,10 +296,10 @@ function sendStoredFile(
   });
 }
 
-register("admin", "servicedownloadable", "upload", (ctx) => {
+register("admin", "servicedownloadable", "upload", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("Product ID was not passed");
-  const product = findProduct(Number(ctx.params["id"]));
+  const product = await findProduct(Number(ctx.params["id"]));
   // Api::upload checks file presence itself ('File was not uploaded.'),
   // unlike the service-level message used by update().
   const file = ctx.files?.["file_data"];
@@ -309,66 +309,66 @@ register("admin", "servicedownloadable", "upload", (ctx) => {
   const files = productFiles(product);
   files.push(definition);
   cfg["files"] = files;
-  saveProductConfig(product, cfg);
+  await saveProductConfig(product, cfg);
   if (normalizeBoolean(cfg["update_orders"] ?? false)) {
-    for (const order of ordersForProduct(product.id)) {
+    for (const order of await ordersForProduct(product.id)) {
       const orderCfg = parseConfig(order.config);
       const ofiles = Array.isArray(orderCfg["files"]) ? (orderCfg["files"] as FileDef[]) : [];
       ofiles.push(definition);
       orderCfg["files"] = ofiles;
-      saveOrderConfig(order, orderCfg);
-      const svcId = downloadableServiceFor(order);
+      await saveOrderConfig(order, orderCfg);
+      const svcId = await downloadableServiceFor(order);
       if (svcId !== null) {
-        insertServiceFile(svcId, definition, serviceFiles(svcId).length);
+        await insertServiceFile(svcId, definition, (await serviceFiles(svcId)).length);
       }
     }
   }
   return true;
 });
 
-register("admin", "servicedownloadable", "update", (ctx) => {
+register("admin", "servicedownloadable", "update", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["order_id"]) throw new FbError("Order ID (order_id) was not passed");
-  const order = findOrder(Number(ctx.params["order_id"]));
-  const svcId = downloadableServiceFor(order);
+  const order = await findOrder(Number(ctx.params["order_id"]));
+  const svcId = await downloadableServiceFor(order);
   if (svcId === null) throw new FbError("Order is not activated");
   const file = ctx.files?.["file_data"];
   if (!file) throw new FbError("File upload failed: no files in request.");
   const definition = createUploadedFileDefinition(file, ctx.params);
-  insertServiceFile(svcId, definition, serviceFiles(svcId).length);
+  await insertServiceFile(svcId, definition, (await serviceFiles(svcId)).length);
   const orderCfg = parseConfig(order.config);
   const ofiles = Array.isArray(orderCfg["files"]) ? (orderCfg["files"] as FileDef[]) : [];
   ofiles.push(definition);
   orderCfg["files"] = ofiles;
-  saveOrderConfig(order, orderCfg);
+  await saveOrderConfig(order, orderCfg);
   return true;
 });
 
-register("admin", "servicedownloadable", "send_file", (ctx) => {
+register("admin", "servicedownloadable", "send_file", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("Product ID was not passed");
   if (!ctx.params["file_id"]) throw new FbError("File ID was not passed");
-  const product = findProduct(Number(ctx.params["id"]));
+  const product = await findProduct(Number(ctx.params["id"]));
   const key = validateFileKey(ctx.params["file_id"]);
   const files = productFiles(product);
   const idx = findDefIndex(files, key);
-  return sendStoredFile(files[idx].stored_filename, files[idx].filename, false, null);
+  return await sendStoredFile(files[idx].stored_filename, files[idx].filename, false, null);
 });
 
-register("admin", "servicedownloadable", "send_order_file", (ctx) => {
+register("admin", "servicedownloadable", "send_order_file", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["order_id"]) throw new FbError("Order ID was not passed");
   if (!ctx.params["file_id"]) throw new FbError("File ID was not passed");
-  const order = findOrder(Number(ctx.params["order_id"]));
-  const svcId = downloadableServiceFor(order);
+  const order = await findOrder(Number(ctx.params["order_id"]));
+  const svcId = await downloadableServiceFor(order);
   if (svcId === null) throw new FbError("Order is not activated");
   const fileId = Number(ctx.params["file_id"]);
-  const row = serviceFiles(svcId).find((f) => f.id === fileId);
+  const row = (await serviceFiles(svcId)).find((f) => f.id === fileId);
   if (!row) throw new FbError("File not found");
-  return sendStoredFile(row.stored_filename, row.filename, false, null);
+  return await sendStoredFile(row.stored_filename, row.filename, false, null);
 });
 
-register("client", "servicedownloadable", "send_file", (ctx) => {
+register("client", "servicedownloadable", "send_file", async (ctx) => {
   requireClient(ctx);
   // Api::send_file: RequiredParams plus the explicit empty() check on
   // order_id (so "0" is also 'required'); file_id "0" passes the
@@ -376,7 +376,7 @@ register("client", "servicedownloadable", "send_file", (ctx) => {
   const orderIdRaw = ctx.params["order_id"];
   if (!orderIdRaw || orderIdRaw === "0") throw new FbError("Order ID is required");
   if (!ctx.params["file_id"]) throw new FbError("File ID is required");
-  const order = getDb()
+  const order = await getDb()
     .prepare("SELECT * FROM client_order WHERE id = ? AND client_id = ?")
     .get(Number(orderIdRaw), ctx.session!.client!.id) as unknown as OrderRow | undefined;
   if (!order) throw new FbError("Order not found");
@@ -387,19 +387,19 @@ register("client", "servicedownloadable", "send_file", (ctx) => {
   ) {
     throw new FbError("Subscription expired");
   }
-  const svcId = downloadableServiceFor(order);
+  const svcId = await downloadableServiceFor(order);
   if (svcId === null || order.status !== "active") throw new FbError("Order is not activated");
   const fileId = Number(ctx.params["file_id"]);
-  const row = serviceFiles(svcId).find((f) => f.id === fileId);
+  const row = (await serviceFiles(svcId)).find((f) => f.id === fileId);
   if (!row) throw new FbError("File not found");
-  return sendStoredFile(row.stored_filename, row.filename, true, row.id);
+  return await sendStoredFile(row.stored_filename, row.filename, true, row.id);
 });
 
-register("admin", "servicedownloadable", "file_update", (ctx) => {
+register("admin", "servicedownloadable", "file_update", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("Product ID was not passed");
   if (!ctx.params["file_id"]) throw new FbError("File ID was not passed");
-  const product = findProduct(Number(ctx.params["id"]));
+  const product = await findProduct(Number(ctx.params["id"]));
   const key = validateFileKey(ctx.params["file_id"]);
   const cfg = parseConfig(product.config);
   const files = productFiles(product);
@@ -414,9 +414,9 @@ register("admin", "servicedownloadable", "file_update", (ctx) => {
   }
   files[idx] = { ...files[idx], label, description };
   cfg["files"] = files;
-  saveProductConfig(product, cfg);
+  await saveProductConfig(product, cfg);
   if (normalizeBoolean(cfg["update_orders"] ?? false)) {
-    for (const order of ordersForProduct(product.id)) {
+    for (const order of await ordersForProduct(product.id)) {
       const orderCfg = parseConfig(order.config);
       const ofiles = Array.isArray(orderCfg["files"]) ? (orderCfg["files"] as FileDef[]) : [];
       let changed = false;
@@ -428,16 +428,16 @@ register("admin", "servicedownloadable", "file_update", (ctx) => {
       }
       if (changed) {
         orderCfg["files"] = ofiles;
-        saveOrderConfig(order, orderCfg);
+        await saveOrderConfig(order, orderCfg);
       } else {
         // PHP still rewrites the order config even when nothing matched.
-        saveOrderConfig(order, orderCfg);
+        await saveOrderConfig(order, orderCfg);
       }
-      const svcId = downloadableServiceFor(order);
+      const svcId = await downloadableServiceFor(order);
       if (svcId !== null) {
-        const row = serviceFiles(svcId).find((f) => f.file_key === key);
+        const row = (await serviceFiles(svcId)).find((f) => f.file_key === key);
         if (row) {
-          getDbWrite()
+          await getDbWrite()
             .prepare("UPDATE service_downloadable_file SET label = ?, description = ? WHERE id = ?")
             .run(label, description, row.id);
         }
@@ -447,11 +447,11 @@ register("admin", "servicedownloadable", "file_update", (ctx) => {
   return true;
 });
 
-register("admin", "servicedownloadable", "file_delete", (ctx) => {
+register("admin", "servicedownloadable", "file_delete", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("Product ID was not passed");
   if (!ctx.params["file_id"]) throw new FbError("File ID was not passed");
-  const product = findProduct(Number(ctx.params["id"]));
+  const product = await findProduct(Number(ctx.params["id"]));
   const key = validateFileKey(ctx.params["file_id"]);
   const cfg = parseConfig(product.config);
   const files = productFiles(product);
@@ -459,54 +459,54 @@ register("admin", "servicedownloadable", "file_delete", (ctx) => {
   const stored = files[idx].stored_filename;
   files.splice(idx, 1);
   cfg["files"] = files;
-  saveProductConfig(product, cfg);
+  await saveProductConfig(product, cfg);
   if (normalizeBoolean(cfg["update_orders"] ?? false)) {
-    for (const order of ordersForProduct(product.id)) {
+    for (const order of await ordersForProduct(product.id)) {
       const orderCfg = parseConfig(order.config);
       const ofiles = Array.isArray(orderCfg["files"]) ? (orderCfg["files"] as FileDef[]) : [];
       orderCfg["files"] = ofiles.filter((f) => f.id !== key);
-      saveOrderConfig(order, orderCfg);
-      const svcId = downloadableServiceFor(order);
+      await saveOrderConfig(order, orderCfg);
+      const svcId = await downloadableServiceFor(order);
       if (svcId !== null) {
-        const row = serviceFiles(svcId).find((f) => f.file_key === key);
+        const row = (await serviceFiles(svcId)).find((f) => f.file_key === key);
         if (row) {
-          getDbWrite().prepare("DELETE FROM service_downloadable_file WHERE id = ?").run(row.id);
+          await getDbWrite().prepare("DELETE FROM service_downloadable_file WHERE id = ?").run(row.id);
         }
       }
     }
   }
-  removeStoredFileIfOrphaned(stored);
+  await removeStoredFileIfOrphaned(stored);
   return true;
 });
 
-register("admin", "servicedownloadable", "order_file_delete", (ctx) => {
+register("admin", "servicedownloadable", "order_file_delete", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["order_id"]) throw new FbError("Order ID was not passed");
   if (!ctx.params["file_id"]) throw new FbError("File ID was not passed");
-  const order = findOrder(Number(ctx.params["order_id"]));
-  const svcId = downloadableServiceFor(order);
+  const order = await findOrder(Number(ctx.params["order_id"]));
+  const svcId = await downloadableServiceFor(order);
   if (svcId === null) throw new FbError("Order is not activated");
   const fileId = Number(ctx.params["file_id"]);
-  const row = serviceFiles(svcId).find((f) => f.id === fileId);
+  const row = (await serviceFiles(svcId)).find((f) => f.id === fileId);
   if (!row) throw new FbError("File not found");
   const stored = row.stored_filename;
   const key = row.file_key;
-  getDbWrite().prepare("DELETE FROM service_downloadable_file WHERE id = ?").run(row.id);
+  await getDbWrite().prepare("DELETE FROM service_downloadable_file WHERE id = ?").run(row.id);
   const orderCfg = parseConfig(order.config);
   const ofiles = Array.isArray(orderCfg["files"]) ? (orderCfg["files"] as FileDef[]) : [];
   orderCfg["files"] = ofiles.filter((f) => f.id !== key);
-  saveOrderConfig(order, orderCfg);
-  removeStoredFileIfOrphaned(stored);
+  await saveOrderConfig(order, orderCfg);
+  await removeStoredFileIfOrphaned(stored);
   return true;
 });
 
-register("admin", "servicedownloadable", "config_save", (ctx) => {
+register("admin", "servicedownloadable", "config_save", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params["id"]) throw new FbError("Product ID was not passed");
-  const product = findProduct(Number(ctx.params["id"]));
+  const product = await findProduct(Number(ctx.params["id"]));
   const cfg = parseConfig(product.config);
   const raw = (ctx.rawParams as Record<string, unknown>)["update_orders"];
   cfg["update_orders"] = normalizeBoolean(raw !== undefined ? raw : ctx.params["update_orders"], false);
-  saveProductConfig(product, cfg);
+  await saveProductConfig(product, cfg);
   return true;
 });

@@ -59,7 +59,7 @@ function normalizeEnum(values: unknown, allowed: string[], field: string, strict
   return allowed.filter((a) => selected.has(a));
 }
 
-function normalizeIds(values: unknown, table: string, field: string, strict: boolean): number[] {
+async function normalizeIds(values: unknown, table: string, field: string, strict: boolean): Promise<number[]> {
   if (values === null || values === undefined || (Array.isArray(values) && values.length === 0)) return [];
   if (!Array.isArray(values)) return invalidFilter(field, strict) as [];
   const ids: number[] = [];
@@ -73,14 +73,14 @@ function normalizeIds(values: unknown, table: string, field: string, strict: boo
   }
   const unique = [...new Set(ids)].sort((a, b) => a - b);
   const placeholders = unique.map(() => "?").join(",");
-  const existing = getDb().prepare(`SELECT id FROM ${table} WHERE id IN (${placeholders})`).all(...unique) as unknown as { id: number }[];
+  const existing = await getDb().prepare(`SELECT id FROM ${table} WHERE id IN (${placeholders})`).all(...unique) as unknown as { id: number }[];
   const existingIds = existing.map((r) => r.id).sort((a, b) => a - b);
   if (existingIds.length !== unique.length) return invalidFilter(field, strict) as [];
   return existingIds;
 }
 
 /** PHP normalizeFilter: non-strict drops bad fields, strict throws. */
-export function normalizeFilter(filter: unknown, strict: boolean): Record<string, unknown> {
+export async function normalizeFilter(filter: unknown, strict: boolean): Promise<Record<string, unknown>> {
   let parsed: unknown = filter;
   if (typeof parsed === "string") {
     const trimmed = parsed.trim();
@@ -97,27 +97,27 @@ export function normalizeFilter(filter: unknown, strict: boolean): Record<string
   const out: Record<string, unknown> = {};
   const cs = normalizeEnum(obj.client_status, CLIENT_STATUSES, "client_status", strict);
   if (cs.length) out.client_status = cs;
-  const cg = normalizeIds(obj.client_groups, "client_group", "client_groups", strict);
+  const cg = await normalizeIds(obj.client_groups, "client_group", "client_groups", strict);
   if (cg.length) out.client_groups = cg;
-  const ho = normalizeIds(obj.has_order, "product", "has_order", strict);
+  const ho = await normalizeIds(obj.has_order, "product", "has_order", strict);
   if (ho.length) out.has_order = ho;
   const hs = normalizeEnum(obj.has_order_with_status, ORDER_STATUSES, "has_order_with_status", strict);
   if (hs.length) out.has_order_with_status = hs;
   return out;
 }
 
-function serializeFilter(filter: unknown): string {
-  return JSON.stringify(normalizeFilter(filter, true));
+async function serializeFilter(filter: unknown): Promise<string> {
+  return JSON.stringify(await normalizeFilter(filter, true));
 }
 
-function messageToApi(row: MessageRow): Record<string, unknown> {
+async function messageToApi(row: MessageRow): Promise<Record<string, unknown>> {
   return {
     id: row.id,
     from_email: row.from_email,
     from_name: row.from_name,
     subject: row.subject,
     content: row.content,
-    filter: normalizeFilter(row.filter, false),
+    filter: await normalizeFilter(row.filter, false),
     status: row.status,
     sent_at: row.sent_at,
     created_at: row.created_at,
@@ -125,8 +125,8 @@ function messageToApi(row: MessageRow): Record<string, unknown> {
   };
 }
 
-function getMessageOrThrow(id: number): MessageRow {
-  const row = getDb().prepare("SELECT * FROM mod_massmailer WHERE id = ?").get(id) as unknown as MessageRow | undefined;
+async function getMessageOrThrow(id: number): Promise<MessageRow> {
+  const row = await getDb().prepare("SELECT * FROM mod_massmailer WHERE id = ?").get(id) as unknown as MessageRow | undefined;
   if (!row) throw new FbError("Message not found");
   return row;
 }
@@ -141,8 +141,8 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
-function getMessageReceivers(model: MessageRow): { id: number }[] {
-  const filter = normalizeFilter(model.filter, true);
+async function getMessageReceivers(model: MessageRow): Promise<{ id: number }[]> {
+  const filter = await normalizeFilter(model.filter, true);
   const clauses: string[] = ["c.email IS NOT NULL AND TRIM(c.email) != ''"];
   const params: unknown[] = [];
   const inClause = (col: string, values: unknown[]) => {
@@ -158,15 +158,15 @@ function getMessageReceivers(model: MessageRow): { id: number }[] {
   }
   inClause("co.product_id", (filter.has_order as unknown[] | undefined) ?? []);
   inClause("co.status", (filter.has_order_with_status as unknown[] | undefined) ?? []);
-  const rows = getDb().prepare(
+  const rows = await getDb().prepare(
     `SELECT DISTINCT c.id, c.email FROM client c LEFT JOIN client_order co ON co.client_id = c.id
      WHERE ${clauses.join(" AND ")} ORDER BY c.id DESC`
   ).all(...(params as (string | number)[])) as unknown as { id: number; email: string }[];
   return rows.filter((r) => isValidEmail(r.email)).map((r) => ({ id: r.id }));
 }
 
-function testClientId(): number {
-  const config = readExtensionConfig("mod_massmailer");
+async function testClientId(): Promise<number> {
+  const config = await readExtensionConfig("mod_massmailer");
   const raw = config.test_client_id;
   if (raw === undefined || raw === null || raw === "") {
     throw new FbError("Client ID needs to be configured in mass mailer settings.");
@@ -179,12 +179,12 @@ function decodeEntities(s: string): string {
     .replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&#39;/g, "'").replace(/&apos;/g, "'");
 }
 
-function getParsed(model: MessageRow, clientId: number): [string, string] {
-  const clientRow = findClientById(clientId);
+async function getParsed(model: MessageRow, clientId: number): Promise<[string, string]> {
+  const clientRow = await findClientById(clientId);
   if (!clientRow) throw new FbError("Client not found");
-  const company = { name: getSetting("company_name"), email: getSetting("company_email"), signature: getSetting("company_signature") };
+  const company = { name: await getSetting("company_name"), email: await getSetting("company_email"), signature: await getSetting("company_signature") };
   const ctx = {
-    c: clientAdminArray(clientRow),
+    c: await clientAdminArray(clientRow),
     guest: { system_company: company, system_email: { signature: company.signature } },
     default_currency: "USD",
     FOSSBillingVersion: "0.8.9",
@@ -201,9 +201,9 @@ function pager<T>(ctx: CallContext, items: T[]) {
   return p;
 }
 
-register("admin", "massmailer", "get_list", (ctx) => {
+register("admin", "massmailer", "get_list", async (ctx) => {
   requireAdmin(ctx);
-  let rows = getDb().prepare("SELECT * FROM mod_massmailer").all() as unknown as MessageRow[];
+  let rows = await getDb().prepare("SELECT * FROM mod_massmailer").all() as unknown as MessageRow[];
   const p = ctx.params;
   if (p.id) rows = rows.filter((r) => r.id === parseInt(p.id, 10));
   if (p.status) rows = rows.filter((r) => r.status === p.status);
@@ -233,27 +233,27 @@ register("admin", "massmailer", "get_list", (ctx) => {
   } else {
     rows = [...rows].sort((a, b) => -cmp(a.created_at, b.created_at));
   }
-  return pager(ctx, rows.map(messageToApi));
+  return pager(ctx, await Promise.all(rows.map(messageToApi)));
 });
 
-register("admin", "massmailer", "get", (ctx) => {
+register("admin", "massmailer", "get", async (ctx) => {
   requireAdmin(ctx);
-  return messageToApi(getMessageOrThrow(messageIdParam(ctx)));
+  return await messageToApi(await getMessageOrThrow(messageIdParam(ctx)));
 });
 
-register("admin", "massmailer", "update", (ctx) => {
+register("admin", "massmailer", "update", async (ctx) => {
   requireAdmin(ctx);
-  const model = getMessageOrThrow(messageIdParam(ctx));
+  const model = await getMessageOrThrow(messageIdParam(ctx));
   const filterRaw = ctx.rawParams?.["filter"] ?? ctx.params.filter;
   // PHP serializes the filter (strict) before the from_* checks.
-  const serializedFilter = filterRaw !== undefined ? serializeFilter(filterRaw) : model.filter;
+  const serializedFilter = filterRaw !== undefined ? await serializeFilter(filterRaw) : model.filter;
   if (ctx.params.from_name !== undefined && ctx.params.from_name === "") {
     throw new FbError("Message from name cannot be empty");
   }
   if (ctx.params.from_email !== undefined && !isValidEmail(ctx.params.from_email)) {
     throw new FbError("Email address is invalid");
   }
-  getDbWrite().prepare(
+  await getDbWrite().prepare(
     `UPDATE mod_massmailer SET content = ?, subject = ?, status = ?, filter = ?, from_name = ?, from_email = ?, updated_at = ? WHERE id = ?`
   ).run(
     ctx.params.content ?? model.content,
@@ -268,75 +268,65 @@ register("admin", "massmailer", "update", (ctx) => {
   return true;
 });
 
-register("admin", "massmailer", "create", (ctx) => {
+register("admin", "massmailer", "create", async (ctx) => {
   requireAdmin(ctx);
   if (!ctx.params.subject) throw new FbError("Message subject was not passed");
-  const info = getDbWrite().prepare(
-    `INSERT INTO mod_massmailer (from_email, from_name, subject, content, filter, status, sent_at, created_at, updated_at)
-     VALUES (?, ?, ?, ?, '[]', 'draft', NULL, ?, ?)`
-  ).run(
-    getSetting("company_email"), getSetting("company_name"), ctx.params.subject,
-    ctx.params.content ?? DEFAULT_CONTENT, nowTimestamp(), nowTimestamp(),
-  );
-  return Number(info.lastInsertRowid);
+  const info = await getDbWrite().insertAndGetId(`INSERT INTO mod_massmailer (from_email, from_name, subject, content, filter, status, sent_at, created_at, updated_at)
+     VALUES (?, ?, ?, ?, '[]', 'draft', NULL, ?, ?)`, await getSetting("company_email"), await getSetting("company_name"), ctx.params.subject, ctx.params.content ?? DEFAULT_CONTENT, nowTimestamp(), nowTimestamp());
+  return Number(info);
 });
 
-register("admin", "massmailer", "send_test", (ctx) => {
+register("admin", "massmailer", "send_test", async (ctx) => {
   requireAdmin(ctx);
-  const model = getMessageOrThrow(messageIdParam(ctx));
-  const clientId = testClientId();
+  const model = await getMessageOrThrow(messageIdParam(ctx));
+  const clientId = await testClientId();
   if (!model.content) throw new FbError("Add some content before sending message");
-  getParsed(model, clientId); // strict render: a broken template errors here, like PHP
+  await getParsed(model, clientId); // strict render: a broken template errors here, like PHP
   return true; // dev early-return: no queue row, exactly like PHP outside production
 });
 
-register("admin", "massmailer", "send", (ctx) => {
+register("admin", "massmailer", "send", async (ctx) => {
   requireAdmin(ctx);
-  const model = getMessageOrThrow(messageIdParam(ctx));
+  const model = await getMessageOrThrow(messageIdParam(ctx));
   if (!model.content) throw new FbError("Add some content before sending message");
-  getMessageReceivers(model); // strict filter validation, like PHP
-  getDbWrite().prepare("UPDATE mod_massmailer SET status = 'sent', sent_at = ?, updated_at = ? WHERE id = ?")
+  await getMessageReceivers(model); // strict filter validation, like PHP
+  await getDbWrite().prepare("UPDATE mod_massmailer SET status = 'sent', sent_at = ?, updated_at = ? WHERE id = ?")
     .run(nowTimestamp(), nowTimestamp(), model.id);
   return true;
 });
 
-register("admin", "massmailer", "copy", (ctx) => {
+register("admin", "massmailer", "copy", async (ctx) => {
   requireAdmin(ctx);
-  const model = getMessageOrThrow(messageIdParam(ctx));
-  const info = getDbWrite().prepare(
-    `INSERT INTO mod_massmailer (from_email, from_name, subject, content, filter, status, sent_at, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, 'draft', NULL, ?, ?)`
-  ).run(
-    model.from_email, model.from_name, `${model.subject ?? ""} (Copy)`, model.content,
-    model.filter, nowTimestamp(), nowTimestamp(),
-  );
-  return Number(info.lastInsertRowid);
+  const model = await getMessageOrThrow(messageIdParam(ctx));
+  const info = await getDbWrite().insertAndGetId(`INSERT INTO mod_massmailer (from_email, from_name, subject, content, filter, status, sent_at, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, 'draft', NULL, ?, ?)`, model.from_email, model.from_name, `${model.subject ?? ""} (Copy)`, model.content, model.filter, nowTimestamp(), nowTimestamp());
+  return Number(info);
 });
 
-register("admin", "massmailer", "receivers", (ctx) => {
+register("admin", "massmailer", "receivers", async (ctx) => {
   requireAdmin(ctx);
-  return getMessageReceivers(getMessageOrThrow(messageIdParam(ctx)));
+  return await getMessageReceivers(await getMessageOrThrow(messageIdParam(ctx)));
 });
 
-register("admin", "massmailer", "delete", (ctx) => {
+register("admin", "massmailer", "delete", async (ctx) => {
   requireAdmin(ctx);
-  const model = getMessageOrThrow(messageIdParam(ctx));
-  getDbWrite().prepare("DELETE FROM mod_massmailer WHERE id = ?").run(model.id);
+  const model = await getMessageOrThrow(messageIdParam(ctx));
+  await getDbWrite().prepare("DELETE FROM mod_massmailer WHERE id = ?").run(model.id);
   return true;
 });
 
-register("admin", "massmailer", "preview", (ctx) => {
+register("admin", "massmailer", "preview", async (ctx) => {
   requireAdmin(ctx);
-  const model = getMessageOrThrow(messageIdParam(ctx));
-  const clientId = testClientId();
-  const [subject, content] = getParsed(model, clientId);
+  const model = await getMessageOrThrow(messageIdParam(ctx));
+  const clientId = await testClientId();
+  const [subject, content] = await getParsed(model, clientId);
   const recipients: { email: string; name: string }[] = [];
   const include = ctx.params.include_recipients;
   // PHP truthiness: any present string except "" and "0" counts.
   const wantRecipients = include !== undefined && include !== null && include !== "" && include !== "0";
   if (wantRecipients) {
-    for (const r of getMessageReceivers(model)) {
-      const clientRow = findClientById(r.id);
+    for (const r of await getMessageReceivers(model)) {
+      const clientRow = await findClientById(r.id);
       if (!clientRow) throw new FbError("Client not found");
       recipients.push({ email: clientRow.email, name: `${clientRow.first_name} ${clientRow.last_name}` });
     }
@@ -344,10 +334,10 @@ register("admin", "massmailer", "preview", (ctx) => {
   return { subject, content, recipients };
 });
 
-register("admin", "massmailer", "get_test_client", (ctx) => {
+register("admin", "massmailer", "get_test_client", async (ctx) => {
   requireAdmin(ctx);
   try {
-    const clientRow = findClientById(testClientId());
+    const clientRow = await findClientById(await testClientId());
     if (!clientRow) return "Unknown";
     return clientRow.email ?? "Unknown";
   } catch {

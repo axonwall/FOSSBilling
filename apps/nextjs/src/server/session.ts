@@ -38,10 +38,10 @@ function cookieValue(cookieHeader: string | null, name: string): string | undefi
   return undefined;
 }
 
-export function readSession(cookieHeader: string | null): SessionInfo | null {
+export async function readSession(cookieHeader: string | null): Promise<SessionInfo | null> {
   const sid = cookieValue(cookieHeader, "fossbilling_session");
   if (!sid) return null;
-  const row = findSession(sid);
+  const row = await findSession(sid);
   if (!row) return null;
   if (row.lifetime && row.lifetime < Math.floor(Date.now() / 1000)) return null;
   let attrs: Record<string, unknown> = {};
@@ -78,7 +78,7 @@ export function readSession(cookieHeader: string | null): SessionInfo | null {
  * new session cookie is queued on the context for the route to attach
  * to the response.
  */
-export function loginAsAdmin(ctx: CallContext, admin: Identity): SessionInfo {
+export async function loginAsAdmin(ctx: CallContext, admin: Identity): Promise<SessionInfo> {
   const old = ctx.session;
   const attrs: Record<string, string | number | Record<string, string | number | null>> = {};
   if (old?.csrfToken) attrs["csrf_token"] = old.csrfToken;
@@ -86,18 +86,18 @@ export function loginAsAdmin(ctx: CallContext, admin: Identity): SessionInfo {
   const id = randomBytes(16).toString("hex");
   const empty = phpSerialize({});
   const content = `_sf2_attributes|${phpSerialize(attrs)}_symfony_flashes|${empty}_sf2_meta|${empty}`;
-  insertSession(id, content, Math.floor(Date.now() / 1000) + 86400);
+  await insertSession(id, content, Math.floor(Date.now() / 1000) + 86400);
   // Deliberately no deleteSessionRow(old.id): PHP leaves the old row.
   ctx.setCookies.push(`fossbilling_session=${id}; Path=/; HttpOnly; SameSite=Lax`);
   ctx.session = { id, csrfToken: old?.csrfToken, admin: { id: admin.id, email: admin.email, name: admin.name } };
   return ctx.session;
 }
-export function ensureSession(ctx: CallContext): SessionInfo {
+export async function ensureSession(ctx: CallContext): Promise<SessionInfo> {
   if (ctx.session) return ctx.session;
   const id = randomBytes(16).toString("hex");
   const empty = phpSerialize({});
   const content = `_sf2_attributes|${empty}_symfony_flashes|${empty}_sf2_meta|${empty}`;
-  insertSession(id, content, Math.floor(Date.now() / 1000) + 86400);
+  await insertSession(id, content, Math.floor(Date.now() / 1000) + 86400);
   ctx.setCookies.push(`fossbilling_session=${id}; Path=/; HttpOnly; SameSite=Lax`);
   ctx.session = { id };
   return ctx.session;

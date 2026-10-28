@@ -199,10 +199,10 @@ const NAV_DECLS: Record<string, { group?: NavGroupDecl; subpages: NavSubDecl[] }
 };
 
 /** Support Service::kbEnabled: mod_support config kb_enable, default true. */
-function supportKbEnabled(): boolean {
+async function supportKbEnabled(): Promise<boolean> {
   let cfg: Record<string, unknown> = {};
   try {
-    const row = getDb()
+    const row = await getDb()
       .prepare("SELECT meta_value FROM extension_meta WHERE extension = ? AND meta_key = ? LIMIT 1")
       .get("mod_support", "config") as { meta_value: string | null } | undefined;
     const plain = decryptV2(row?.meta_value ?? null);
@@ -249,19 +249,19 @@ function phpUrlPath(uri: string | null | undefined): string | null {
  * from the session cookie — the same code and data as the endpoint,
  * not a second implementation.
  */
-export function buildAdminNavigation(adminId: number, urlParam?: string | null) {
+export async function buildAdminNavigation(adminId: number, urlParam?: string | null) {
   const base = (process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080").replace(/\/$/, "");
   const adminLink = (path: string) => `${base}/admin/${path}`;
   const installed = (
-    getDb()
+    (await getDb()
       .prepare("SELECT name FROM extension WHERE type = ? AND status = ? ORDER BY id")
-      .all("mod", "installed") as { name: string }[]
+      .all("mod", "installed")) as { name: string }[]
   ).map((r) => r.name);
   const modules = [
     ...CORE_DECLARING,
     ...installed.filter((m) => NONCORE_DECLARING.includes(m)),
   ];
-  const kb = supportKbEnabled();
+  const kb = await supportKbEnabled();
   interface BuiltSub {
     orig: number;
     label: string;
@@ -284,7 +284,7 @@ export function buildAdminNavigation(adminId: number, urlParam?: string | null) 
   const flatSubs: { location: string; label: string; uri: string; index: number; cls: string }[] =
     [];
   for (const mod of modules) {
-    if (!hasPermission(adminId, mod)) continue;
+    if (!await hasPermission(adminId, mod)) continue;
     const decl = NAV_DECLS[mod];
     if (!decl) continue;
     if (decl.group && !groups.has(decl.group.location)) {
@@ -354,7 +354,7 @@ export function buildAdminNavigation(adminId: number, urlParam?: string | null) 
   return Object.keys(out).length > 0 ? out : [];
 }
 
-register("admin", "extension", "get_navigation", (ctx) => {
+register("admin", "extension", "get_navigation", async (ctx) => {
   requireAdmin(ctx);
-  return buildAdminNavigation(ctx.session!.admin!.id, ctx.params["url"] ?? null);
+  return await buildAdminNavigation(ctx.session!.admin!.id, ctx.params["url"] ?? null);
 });

@@ -58,13 +58,13 @@ export function requestedCsvHeaders(
   return [];
 }
 
-export function exportCsvResponse(
+export async function exportCsvResponse(
   table: string,
   filename: string,
   exportable: string[],
   defaults: string[],
   requested: string[],
-): Response {
+): Promise<Response> {
   const headersRequested = requested.length > 0;
   let headers = headersRequested ? exportable.filter((h) => requested.includes(h)) : [...defaults];
   if (headers.length === 0) headers = [...defaults];
@@ -82,7 +82,7 @@ export function exportCsvResponse(
     return new Response("", { headers: headersOut });
   }
 
-  const rows = getDb().prepare(`SELECT * FROM ${table}`).all() as Record<string, unknown>[];
+  const rows = await getDb().prepare(`SELECT * FROM ${table}`).all() as Record<string, unknown>[];
   // Factory fallback (unreachable after the service default, kept for
   // fidelity): no headers -> derive them from the first row's keys
   // minus sensitive columns; no rows at all -> an empty body.
