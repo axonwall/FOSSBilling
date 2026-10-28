@@ -1,0 +1,13 @@
+{
+ "envelope": {
+  "error": null,
+  "result": true
+ },
+ "state": {
+  "error": {
+   "code": 9999,
+   "message": "Invoice was not found"
+  },
+  "result": null
+ }
+}

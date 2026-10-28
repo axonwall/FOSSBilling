@@ -1,21 +1,14 @@
 import Link from "next/link";
 import { adminApi } from "@/lib/fossbilling";
 import { sessionOpts } from "@/lib/session";
+import ClientEditForm, { type ClientEditable } from "./ClientEditForm";
 
 export const dynamic = "force-dynamic";
 
-interface ClientDetail {
+interface ClientDetail extends ClientEditable {
   id: number;
-  first_name?: string;
-  last_name?: string;
-  email?: string;
-  company?: string;
-  status?: string;
   balance?: string | number;
-  currency?: string;
   created_at?: string;
-  country?: string;
-  city?: string;
 }
 
 export default async function AdminClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -59,6 +52,7 @@ export default async function AdminClientDetailPage({ params }: { params: Promis
                 </div>
               ))}
           </dl>
+          <ClientEditForm clientId={c.id} initial={c} />
         </>
       )}
     </main>

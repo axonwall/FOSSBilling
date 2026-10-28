@@ -2,6 +2,7 @@ import Link from "next/link";
 import { adminApi } from "@/lib/fossbilling";
 import { sessionOpts } from "@/lib/session";
 import StaffReply from "./StaffReply";
+import TicketActions from "./TicketActions";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,7 @@ export default async function AdminTicketDetailPage({ params }: { params: Promis
             ))}
           </div>
           <StaffReply ticketId={ticket.id} />
+          <TicketActions ticketId={ticket.id} status={ticket.status ?? ""} />
         </>
       )}
     </main>

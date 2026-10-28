@@ -1,0 +1,10 @@
+{
+ "envelope": {
+  "error": {
+   "code": 9999,
+   "message": "Email required"
+  },
+  "result": null
+ },
+ "state": {}
+}

@@ -1,0 +1,10 @@
+{
+ "envelope": {
+  "error": {
+   "code": 9999,
+   "message": "This email address is already registered."
+  },
+  "result": null
+ },
+ "state": {}
+}

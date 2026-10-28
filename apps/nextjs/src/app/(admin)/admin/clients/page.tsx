@@ -25,6 +25,11 @@ export default async function AdminClientsPage() {
   return (
     <main className="mx-auto max-w-4xl p-8">
       <h1 className="text-2xl font-semibold">Clients</h1>
+      <p className="mt-2 text-sm">
+        <Link className="text-blue-700 underline" href="/admin/clients/new">
+          New client
+        </Link>
+      </p>
       {error ? (
         <p className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm">{error}</p>
       ) : (

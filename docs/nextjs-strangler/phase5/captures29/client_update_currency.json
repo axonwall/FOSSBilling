@@ -1,0 +1,10 @@
+{
+ "envelope": {
+  "error": {
+   "code": 9999,
+   "message": "Currency cannot be changed. Client already has invoices issued."
+  },
+  "result": null
+ },
+ "state": {}
+}

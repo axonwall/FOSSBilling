@@ -566,9 +566,18 @@ register("admin", "invoice", "mark_as_paid", (ctx: CallContext) => {
   if (inv.status === "canceled" || inv.replaced_by_invoice_id !== null) {
     throw new FbError("This invoice was canceled and cannot be marked as paid");
   }
-  const gatewayId = ctx.params["gateway_id"] ? Number(ctx.params["gateway_id"]) : inv.gateway_id;
-  const gateway = gatewayId ? findGatewayFull(gatewayId) : undefined;
+  // PHP validateAdminMarkAsPaidRequest order: non-empty gateway_id wins
+  // (cast to int; non-numeric casts to 0), else the invoice's gateway,
+  // else 0 -> "required". Then missing row -> "not found", then disabled.
+  const rawGateway = ctx.params["gateway_id"];
+  const hasRaw =
+    rawGateway !== undefined && rawGateway !== null && rawGateway !== "" &&
+    rawGateway !== "0" && Number(rawGateway) !== 0;
+  const gatewayId = hasRaw ? Math.trunc(Number(rawGateway)) || 0 : (inv.gateway_id ?? 0);
+  if (gatewayId <= 0) throw new FbError("Payment gateway is required when marking an invoice as paid.");
+  const gateway = findGatewayFull(gatewayId);
   if (!gateway) throw new FbError("Payment gateway not found");
+  if (!gateway.enabled) throw new FbError("Payment gateway is not enabled");
   const transactionId = ctx.params["transactionId"] ?? null;
   if (transactionId) {
     const existing = findTransactionByTxnId(transactionId);

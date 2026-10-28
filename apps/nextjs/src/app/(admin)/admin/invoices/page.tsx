@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { adminApi } from "@/lib/fossbilling";
 import { listOf, sessionOpts } from "@/lib/session";
 
@@ -42,7 +43,11 @@ export default async function AdminInvoicesPage() {
           <tbody>
             {rows.map((inv) => (
               <tr key={inv.id} className="border-b">
-                <td className="py-2">{inv.serie_nr ?? inv.id}</td>
+                <td className="py-2">
+                  <Link className="text-blue-700 underline" href={`/admin/invoices/${inv.id}`}>
+                    {inv.serie_nr ?? inv.id}
+                  </Link>
+                </td>
                 <td>{inv.client ? `${inv.client.first_name ?? ""} ${inv.client.last_name ?? ""}`.trim() || inv.client.email : ""}</td>
                 <td>
                   {inv.total} {inv.currency}

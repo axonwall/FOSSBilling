@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { adminApi } from "@/lib/fossbilling";
 import { sessionOpts } from "@/lib/session";
+import OrderActions from "./OrderActions";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                 </div>
               ))}
           </dl>
+          <OrderActions orderId={o.id} status={o.status ?? ""} />
         </>
       )}
     </main>
