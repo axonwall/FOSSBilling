@@ -37,5 +37,6 @@ import "./serviceapikey";
 import "./cookieconsent";
 import "./page";
 import "./indexmod";
+import "./theme";
 
 export { findHandler, tsModulesEnabled } from "../dispatch";

@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Invalid \"client\" parameter.",
+    "code": 9999
+  }
+}

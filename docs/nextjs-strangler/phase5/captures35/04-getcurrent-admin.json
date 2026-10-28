@@ -1,0 +1,56 @@
+{
+  "result": {
+    "name": "Default (Admin Area)",
+    "version": "1.0.0",
+    "description": "Copy this theme and create your own admin area theme",
+    "icon": "screenshot.jpg",
+    "author": "FOSSBilling",
+    "author_url": "https://fossbilling.org/",
+    "markdown_attributes": {
+      "\\League\\CommonMark\\Extension\\Table\\Table": {
+        "class": "table table-hover"
+      },
+      "\\League\\CommonMark\\Extension\\CommonMark\\Node\\Inline\\Image": {
+        "class": "img-fluid"
+      },
+      "\\League\\CommonMark\\Extension\\CommonMark\\Node\\Block\\BlockQuote": {
+        "class": "blockquote"
+      }
+    },
+    "url": "http://127.0.0.1:8080/themes/default/admin/",
+    "code": "default/admin",
+    "paths": [
+      "/home/hatch/scratch/fossbilling/runtime/src/themes/default/admin/html",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Activity/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Antispam/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Client/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Cron/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Currency/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Custompages/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Email/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Extension/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Formbuilder/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Invoice/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Massmailer/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/News/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Notification/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Order/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Orderbutton/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Product/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Redirect/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Security/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Servicecustom/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Servicedomain/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Servicedownloadable/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Servicehosting/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Servicelicense/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Staff/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Support/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/System/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Theme/templates/admin",
+      "/home/hatch/scratch/fossbilling/runtime/src/modules/Widgets/templates/admin"
+    ],
+    "hasSettings": false
+  },
+  "error": null
+}

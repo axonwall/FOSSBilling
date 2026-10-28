@@ -3,6 +3,7 @@ import { enforceCsrf, envelope, errorEnvelope, findHandler, tsModulesEnabled } f
 import { enforceDispatcherGates } from "@/server/guards";
 import { REMOVED_SYSTEM_ADMIN } from "@/server/modules/system";
 import { REMOVED_EXTENSION_ADMIN, REMOVED_EXTENSION_GUEST } from "@/server/modules/extension";
+import { REMOVED_THEME_ADMIN } from "@/server/modules/theme";
 import { readSession } from "@/server/session";
 import "@/server/modules";
 
@@ -140,12 +141,14 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
         // R2a dispatcher gates (Api\Dispatcher order: identity 201,
         // activation 715, admin module access 725, method guards 403):
         // after CSRF, before the handler. Removed system endpoints are
-        // exempt by R1 design and removed extension endpoints by R4a
-        // design — they throw the removal error before any auth check,
-        // for every caller.
+        // exempt by R1 design, removed extension endpoints by R4a
+        // design, and removed theme endpoints by R4c design — they
+        // throw the removal error before any auth check, for every
+        // caller.
         const isRemoved =
           (role === "admin" && module === "system" && REMOVED_SYSTEM_ADMIN.includes(method)) ||
           (role === "admin" && module === "extension" && REMOVED_EXTENSION_ADMIN.includes(method)) ||
+          (role === "admin" && module === "theme" && REMOVED_THEME_ADMIN.includes(method)) ||
           (role === "guest" && module === "extension" && REMOVED_EXTENSION_GUEST.includes(method));
         if (!isRemoved) {
           await enforceDispatcherGates(callCtx, role, module, method);

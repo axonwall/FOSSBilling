@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Theme was not found in path /home/hatch/scratch/fossbilling/runtime/src/themes/nosuchtheme",
+    "code": 9999
+  }
+}
