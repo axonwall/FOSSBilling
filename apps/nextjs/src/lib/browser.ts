@@ -20,6 +20,37 @@ export async function ensureCsrf(): Promise<void> {
 }
 
 /**
+ * POST a JSON body to the TS seam through the same-origin /api/fb proxy.
+ * Unlike fbPost (urlencoded, which stringifies every value), a JSON body
+ * reaches the seam as rawParams with real types — numbers, booleans,
+ * nested objects and arrays survive intact. That is the only correct
+ * shape for admin/extension/config_save: the seam stores the parsed
+ * object, so a urlencoded post would corrupt config value types.
+ * Invalid JSON never reaches a handler: the route's JSON.parse throws
+ * before dispatch and the seam writes nothing.
+ */
+export async function fbPostJson<T = unknown>(
+  role: "guest" | "client" | "admin",
+  module: string,
+  method: string,
+  params: Record<string, unknown> = {},
+): Promise<T> {
+  await ensureCsrf();
+  const csrf = csrfFromCookie();
+  const body = { ...params, ...(csrf ? { CSRFToken: csrf } : {}) };
+  const res = await fetch(`/api/fb/${role}/${module}/${method}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const json = await res.json().catch(() => null);
+  if (!res.ok || !json || json.error) {
+    throw new Error(json?.error?.message ?? `HTTP ${res.status}`);
+  }
+  return json.result as T;
+}
+
+/**
  * POST to the PHP dispatcher through the same-origin /api/fb proxy.
  * Returns the unwrapped result or throws with the API error message.
  */

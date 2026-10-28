@@ -30,6 +30,13 @@ const NEXT_ROUTES: Record<string, string> = {
   support: "/admin/tickets",
   product: "/admin/products",
   system: "/admin/system",
+  // R4b: the Extensions group's Overview subpage (path "extension")
+  // maps here. The Languages subpage has no route, so it is dropped
+  // by the filter — it is a removed endpoint anyway. The section
+  // renders only for callers with extension module access: the nav
+  // builder skips modules the caller may not access, so the gating is
+  // the builder's own, fail-closed (the R2d Staff-section pattern).
+  extension: "/admin/extensions",
 };
 
 interface NavSub {

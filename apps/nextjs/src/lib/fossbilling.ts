@@ -123,6 +123,10 @@ export const clientApi = {
 export const adminApi = {
   getNavigation: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
     fbCall("admin", "extension", "get_navigation", params, opts),
+  extensionGetList: (params: Record<string, unknown> = {}, opts?: CallOptions) =>
+    fbCall("admin", "extension", "get_list", params, opts),
+  extensionConfigGet: (ext: string, opts?: CallOptions) =>
+    fbCall("admin", "extension", "config_get", { ext }, opts),
   profile: (opts?: CallOptions) => fbCall("admin", "profile", "get", {}, opts),
   statsSummary: (opts?: CallOptions) => fbCall("admin", "stats", "get_summary", {}, opts),
   statsOrderStatuses: (opts?: CallOptions) =>
