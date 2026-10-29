@@ -1,0 +1,128 @@
+{
+ "php_prod": {
+  "basic": {
+   "qrow": null,
+   "mock": [
+    {
+     "type": "accepted",
+     "ts": "2026-10-29T15:35:32.753Z",
+     "mailFrom": "sender@example.com",
+     "rcptTo": [
+      "user@example.com"
+     ],
+     "auth": "LOGIN",
+     "data": "From: Send Name <sender@example.com>\r\nTo: Rcpt Name <user@example.com>\r\nSubject: R5e basic\r\nMessage-ID: <effc2519ae51dcd7a4743ce5bb8d3a13@example.com>\r\nMIME-Version: 1.0\r\nDate: Thu, 29 Oct 2026 15:35:32 +0000\r\nContent-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n<p>Hello basic</p>\r\n"
+    }
+   ]
+  },
+  "attach": {
+   "qrow": null,
+   "mock": [
+    {
+     "type": "accepted",
+     "ts": "2026-10-29T15:35:33.145Z",
+     "mailFrom": "sender@example.com",
+     "rcptTo": [
+      "att@example.com"
+     ],
+     "auth": "LOGIN",
+     "data": "From: Send Name <sender@example.com>\r\nTo: Rcpt Name <att@example.com>\r\nSubject: R5e attach\r\nMessage-ID: <3f852d4d88827c116c50cdf944840e2f@example.com>\r\nMIME-Version: 1.0\r\nDate: Thu, 29 Oct 2026 15:35:33 +0000\r\nContent-Type: multipart/mixed; boundary=kuUjBi_c\r\n\r\n--kuUjBi_c\r\nContent-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n<p>See attached</p>\r\n\r\n--kuUjBi_c\r\nContent-Type: application/pdf; name=invoice.pdf\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; name=invoice.pdf; filename=invoice.pdf\r\n\r\nJVBERi1GQUtFLUJZVEVT\r\n--kuUjBi_c--\r\n"
+    }
+   ]
+  },
+  "queue_count": 62,
+  "activity_count": 7,
+  "bcc": {
+   "qrow": null,
+   "mock": [
+    {
+     "type": "accepted",
+     "ts": "2026-10-29T15:35:38.905Z",
+     "mailFrom": "sender@example.com",
+     "rcptTo": [
+      "bcc@example.com",
+      "bcc1@example.com",
+      "bcc2@example.com"
+     ],
+     "auth": "LOGIN",
+     "data": "From: Send Name <sender@example.com>\r\nTo: Rcpt Name <bcc@example.com>\r\nSubject: R5e bcc\r\nReply-To: reply@example.com\r\nMessage-ID: <2e6899ce44931517a0d452eab24dbad1@example.com>\r\nMIME-Version: 1.0\r\nDate: Thu, 29 Oct 2026 15:35:38 +0000\r\nContent-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n<p>Bcc case</p>\r\n"
+    }
+   ]
+  },
+  "fail550": {
+   "qrow": {
+    "id": 471,
+    "recipient": "fail@example.com",
+    "sender": "sender@example.com",
+    "subject": "R5e fail",
+    "status": "failed",
+    "priority": 0,
+    "tries": 1,
+    "attachment_name": null,
+    "attachment_mime": null
+   }
+  },
+  "nohost": {
+   "qrow": {
+    "id": 472,
+    "recipient": "nohost@example.com",
+    "sender": "sender@example.com",
+    "subject": "R5e nohost",
+    "status": "failed",
+    "priority": 0,
+    "tries": 1,
+    "attachment_name": null,
+    "attachment_mime": null
+   }
+  },
+  "unknown_mailer": {
+   "qrow": {
+    "id": 473,
+    "recipient": "pigeon@example.com",
+    "sender": "sender@example.com",
+    "subject": "R5e pigeon",
+    "status": "failed",
+    "priority": 0,
+    "tries": 1,
+    "attachment_name": null,
+    "attachment_mime": null
+   }
+  }
+ },
+ "php_dev": {
+  "skip": {
+   "qrow": {
+    "id": 470,
+    "recipient": "devskip@example.com",
+    "sender": "sender@example.com",
+    "subject": "R5e devskip",
+    "status": "sending",
+    "priority": 1,
+    "tries": 0,
+    "attachment_name": null,
+    "attachment_mime": null
+   },
+   "mock": []
+  }
+ },
+ "ts_prefix": {
+  "flip": {
+   "qrow": {
+    "id": 470,
+    "recipient": "tsuser@example.com",
+    "sender": "sender@example.com",
+    "subject": "R5e ts",
+    "status": "sending",
+    "priority": 1,
+    "tries": 0,
+    "attachment_name": null,
+    "attachment_mime": null
+   },
+   "mock": [],
+   "envelope": {
+    "result": null,
+    "error": null
+   }
+  }
+ }
+}

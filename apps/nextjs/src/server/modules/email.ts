@@ -1,10 +1,11 @@
 // Email module — admin queue/history/templates. Sending is
 // queue-based in PHP: send() writes an email_queue 'pending' row;
-// batch_sendmail flips pending rows to 'sending' and the transport
-// delivers them (no transport exists in the sandbox, and rows stay
-// 'sending' there — mirrored). email_* history endpoints read
-// activity_client_email (delivered mail), NOT the queue.
+// batch_sendmail runs _sendFromQueue over due rows, and the transport
+// (Symfony Mailer in PHP, nodemailer here — R5e) delivers them.
+// email_* history endpoints read activity_client_email (delivered
+// mail), NOT the queue.
 
+import nodemailer from "nodemailer";
 import { FbError, register, requireAdmin, requireClient, type CallContext } from "../dispatch";
 import { findClientById, getDb, getDbWrite, getSetting, nowTimestamp } from "../db";
 import { paginate } from "../util";
@@ -216,11 +217,323 @@ register("admin", "email", "template_render", async (ctx) => {
   });
 });
 
+// ---- Phase 5 R5e: SMTP transport + queue state machine ----
+// PHP truth: Email/Service.php batchSend() + _sendFromQueue(),
+// Mail.php (Symfony Mailer), QueuedEmailRepository.php findDueBatch().
+// The state machine is per-attempt; retries happen across batch runs
+// (findDueBatch re-picks 'failed' rows), so R5f's cron job drives
+// repetition and R5e only implements one attempt faithfully:
+//
+//   due = status IN (unsent, pending, failed) ORDER BY priority DESC, id ASC
+//   batchSend limit = queue_once; limit <= 0 means unlimited; the
+//   time_limit budget (minutes, default 5) breaks AFTER each send when
+//   elapsed > limit (limit 0 never breaks; -1 breaks after 1 send).
+//   _sendFromQueue: demo-active -> false, NO state change. Else status
+//   -> 'sending' + flush, content += "\n" (persisted on failure, and
+//   logged with the newline on success/cancel). Success -> logEmail
+//   if log_enabled -> DELETE row (delete failure only logged).
+//   Failure (ANY exception from transport selection or delivery) ->
+//   priority -1 iff priority truthy, status 'failed', tries +1,
+//   content (with \n) flushed; tries > cancel_after (default 5) ->
+//   logEmail if log_enabled -> DELETE row (delete failure propagates).
+//   throw_exceptions -> rethrow, truncated past 350 chars with the
+//   __trans() prefix. Validation errors (bad/missing SMTP config,
+//   unknown mailer, unported mailer) rethrow UNWRAPPED; transport
+//   errors rethrow WRAPPED as 'Failed to send email via <mailer> with
+//   the exception: <original>' (Mail.php's try/catch boundary).
+//   A row left at 'sending' by a crash is NEVER re-picked (both stacks).
+//   PHP's non-production skip (leave at 'sending', return true) is
+//   NOT mirrored: TS has no production/dev mail distinction (scope
+//   R5e, documented deviation). PHP's per-instance Bcc cache is
+//   mirrored by parsing once per batchSend call.
+
+type EmailSettings = {
+  mailer: string; smtpHost: string; smtpPortRaw: unknown; smtpPort: number | null;
+  smtpUsername: string; smtpPassword: string; replyTo: string; bccEmail: string;
+  logEnabled: boolean; queueOnce: number; timeLimit: number; cancelAfter: number;
+};
+
+/** PHP truthiness: "0", "", 0, false, null, undefined are falsy. */
+function phpTruthy(v: unknown): boolean {
+  return !(v === false || v === 0 || v === "0" || v === "" || v === null || v === undefined);
+}
+
+function cfgStr(v: unknown): string {
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return "";
+}
+
+/** PHP (int) cast for config numbers: absent -> default, else trunc, garbage -> 0. */
+function cfgInt(v: unknown, def: number): number {
+  if (v === undefined || v === null || v === "") return def;
+  const n = typeof v === "number" ? Math.trunc(v) : parseInt(String(v), 10);
+  return Number.isNaN(n) ? 0 : n;
+}
+
+/** Tools::normalizePort: trimmed int 1..65535, else null. */
+function normalizePort(v: unknown): number | null {
+  if (typeof v === "number") return Number.isInteger(v) && v >= 1 && v <= 65535 ? v : null;
+  if (typeof v !== "string") return null;
+  const s = v.trim();
+  if (!/^-?\d+$/.test(s)) return null;
+  const n = parseInt(s, 10);
+  return n >= 1 && n <= 65535 ? n : null;
+}
+
+async function readEmailSettings(): Promise<EmailSettings> {
+  const cfg = await readExtensionConfig("mod_email");
+  const mailer = cfgStr(cfg.mailer) || "sendmail";
+  return {
+    mailer,
+    smtpHost: cfgStr(cfg.smtp_host),
+    smtpPortRaw: cfg.smtp_port,
+    smtpPort: normalizePort(cfg.smtp_port),
+    smtpUsername: cfgStr(cfg.smtp_username),
+    smtpPassword: cfgStr(cfg.smtp_password),
+    replyTo: cfgStr(cfg.reply_to),
+    bccEmail: cfgStr(cfg.bcc_email),
+    logEnabled: phpTruthy(cfg.log_enabled),
+    queueOnce: cfgInt(cfg.queue_once, 0),
+    timeLimit: cfgInt(cfg.time_limit, 5),
+    cancelAfter: cfgInt(cfg.cancel_after, 5),
+  };
+}
+
+function isValidEmail(s: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+}
+
+/** parseBccAddresses: comma-split, trim, valid only (invalid logged, skipped). */
+function parseBccAddresses(raw: string): { valid: string[]; invalid: string[] } {
+  const valid: string[] = [];
+  const invalid: string[] = [];
+  for (const part of raw.split(",")) {
+    const addr = part.trim();
+    if (!addr) continue;
+    if (isValidEmail(addr)) valid.push(addr);
+    else invalid.push(addr);
+  }
+  return { valid, invalid };
+}
+
+/** Validation error: thrown before any transport attempt (unwrapped on rethrow). */
+class ValidationMailError extends Error {}
+/** Transport error: thrown by the delivery attempt (wrapped on rethrow). */
+class TransportMailError extends Error {}
+
+interface QueueRowFull {
+  id: number; recipient: string; sender: string; subject: string; content: string;
+  to_name: string | null; from_name: string | null; client_id: number | null;
+  admin_id: number | null; priority: number | null; tries: number; status: string;
+  attachment_name: string | null; attachment_content: Buffer | string | null;
+  attachment_mime: string | null;
+}
+
+async function queueRowById(id: number): Promise<QueueRowFull | undefined> {
+  return (await getDb().prepare("SELECT * FROM email_queue WHERE id = ?").get(id)) as unknown as QueueRowFull | undefined;
+}
+
+/** Activity/Service.php logEmail(): sender/recipients are the queue strings. */
+async function logEmailRow(row: QueueRowFull, contentWithNewline: string): Promise<void> {
+  const hasAttachment = row.attachment_content !== null && row.attachment_content !== undefined;
+  await getDbWrite().prepare(
+    `INSERT INTO activity_client_email (client_id, sender, recipients, subject, content_html, content_text,
+       attachment_name, attachment_content, attachment_mime, created_at)
+     VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)`,
+  ).run(
+    row.client_id, row.sender, row.recipient, row.subject, contentWithNewline,
+    hasAttachment ? row.attachment_name : null,
+    hasAttachment ? row.attachment_content : null,
+    hasAttachment ? (row.attachment_mime ?? "application/octet-stream") : null,
+    nowTimestamp(),
+  );
+}
+
+function truncateThrowMessage(message: string): string {
+  if (message.length > 350) {
+    return "Error message truncated due to length, please check the error log for the complete message: "
+      + message.slice(0, 350) + "...";
+  }
+  return message;
+}
+
+/** Deliver one queued row via the configured transport. Throws
+ * ValidationMailError (config/transport-selection problems) or
+ * TransportMailError (delivery problems). Never logs credentials. */
+async function deliverQueuedMail(
+  row: QueueRowFull, content: string, settings: EmailSettings, bcc: string[],
+): Promise<void> {
+  const from = row.from_name ? { name: row.from_name, address: row.sender } : row.sender;
+  const to = row.to_name ? { name: row.to_name, address: row.recipient } : row.recipient;
+  const hasAttachment = row.attachment_content !== null && row.attachment_content !== undefined;
+  const attachments = hasAttachment ? [{
+    filename: row.attachment_name ?? "attachment",
+    content: row.attachment_content as Buffer | string,
+    contentType: row.attachment_mime ?? "application/octet-stream",
+  }] : [];
+  // PHP: reply_to set iff non-empty AND valid, else a logger warning.
+  const replyTo = settings.replyTo && isValidEmail(settings.replyTo) ? settings.replyTo : undefined;
+  if (settings.replyTo && !replyTo) console.warn(`[email] Skipping invalid Reply-To address: ${settings.replyTo}`);
+  // Wire-body compensation (parity38 probes): nodemailer trims
+  // exactly ONE trailing newline from SINGLE-PART string html (input
+  // "X\n" decodes to "X"; "X\n\n" decodes to "X\r\n"), while Symfony
+  // QP preserves PHP's appended PHP_EOL as a trailing CRLF. But in
+  // MULTIPART messages nodemailer preserves the newline verbatim, so
+  // the same compensation overshoots by one CRLF there (probe: PHP
+  // part "<p>…</p>\r\n" vs compensated TS "<p>…</p>\r\n\r\n"). Hence
+  // the compensation applies ONLY to single-part mail; multipart
+  // html passes content through unchanged. Both shapes are pinned
+  // by parity38 §A (single) and §B (multipart). The LOGGED content
+  // (activity row) always keeps the single appended newline.
+  const mail = {
+    from, to, subject: row.subject, html: hasAttachment ? content : content + "\n",
+    ...(replyTo ? { replyTo } : {}),
+    ...(bcc.length ? { bcc } : {}),
+    ...(attachments.length ? { attachments } : {}),
+  };
+  if (settings.mailer === "smtp") {
+    // Mail::__smtpDsn: empty host OR port -> 'not configured' (checked
+    // first); unparseable port -> 'invalid'. Auth iff username non-empty.
+    const portRawEmpty = settings.smtpPortRaw === undefined || settings.smtpPortRaw === null
+      || settings.smtpPortRaw === "" || settings.smtpPortRaw === "0" || settings.smtpPortRaw === 0;
+    if (!settings.smtpHost || portRawEmpty) {
+      throw new ValidationMailError("SMTP host or port is not configured");
+    }
+    if (settings.smtpPort === null) {
+      throw new ValidationMailError("SMTP port is invalid");
+    }
+    const auth = settings.smtpUsername
+      ? { user: settings.smtpUsername, pass: settings.smtpPassword }
+      : undefined;
+    const transporter = nodemailer.createTransport({
+      host: settings.smtpHost, port: settings.smtpPort, secure: false,
+      ...(auth ? { auth } : {}),
+      // No TLS upgrade unless the server advertises STARTTLS (the
+      // mock does not); nodemailer opportunistic-upgrades like
+      // Symfony's smtp:// DSN when it is advertised.
+    });
+    try {
+      await transporter.sendMail(mail);
+    } catch (e) {
+      throw new TransportMailError(e instanceof Error ? e.message : String(e));
+    }
+    return;
+  }
+  if (settings.mailer === "sendgrid") {
+    // Mail::send: key required (exact PHP message); the SendGrid
+    // transport itself is a follow-up, NOT this batch.
+    throw new ValidationMailError("A SendGrid API key is required to send emails via SendGrid");
+  }
+  if (settings.mailer === "custom") {
+    // Mail::send: DSN required (exact PHP message); custom-DSN
+    // transport is a follow-up, NOT this batch.
+    throw new ValidationMailError("Unable to send email: 'Custom' transport method was selected without a custom DSN");
+  }
+  if (settings.mailer === "sendmail") {
+    // KNOWN transport, not yet ported (follow-up). Deliberately NOT
+    // PHP's 'Unknown mail transport' message: claiming unknown for a
+    // known transport would be a lie, and parity38 pins this wording.
+    throw new ValidationMailError("Sendmail transport is not yet supported by the Next.js port (SMTP only)");
+  }
+  throw new ValidationMailError(`Unknown mail transport: ${settings.mailer}`);
+}
+
+/** Mirror of Email/Service.php _sendFromQueue(). Returns false only
+ * for the demo-active case; true otherwise (even on failure, unless
+ * throwExceptions rethrows). */
+async function sendFromQueue(
+  row: QueueRowFull, opts: { throwExceptions: boolean; validatedBcc?: string[] },
+): Promise<boolean> {
+  // Demo check FIRST: no state change when the demo extension is active.
+  if (await isModuleActive("demo")) return false;
+  const now = nowTimestamp();
+  await getDbWrite().prepare("UPDATE email_queue SET status = 'sending', updated_at = ? WHERE id = ?")
+    .run(now, row.id);
+  // PHP_EOL appended on EVERY attempt; persisted on failure, logged on success/cancel.
+  const content = row.content + "\n";
+  const settings = await readEmailSettings();
+  const parsed = parseBccAddresses(settings.bccEmail);
+  // Batch runs parse once (PHP's per-instance cache); single sends parse here.
+  const bcc = opts.validatedBcc ?? parsed.valid;
+  if (opts.validatedBcc === undefined) {
+    for (const bad of parsed.invalid) console.warn(`[email] Skipping invalid Bcc address: ${bad}`);
+  }
+  try {
+    await deliverQueuedMail(row, content, settings, bcc);
+  } catch (e) {
+    console.error(`[email] Failed to send queued email ${row.id}: ${e instanceof Error ? e.message : String(e)}`);
+    const priority = row.priority ? row.priority - 1 : row.priority;
+    const tries = row.tries + 1;
+    await getDbWrite().prepare(
+      "UPDATE email_queue SET priority = ?, status = 'failed', tries = ?, content = ?, updated_at = ? WHERE id = ?",
+    ).run(priority, tries, content, nowTimestamp(), row.id);
+    if (tries > settings.cancelAfter) {
+      if (settings.logEnabled) await logEmailRow(row, content);
+      // UNPROTECTED in PHP: a delete failure propagates and aborts the batch.
+      await getDbWrite().prepare("DELETE FROM email_queue WHERE id = ?").run(row.id);
+    }
+    if (opts.throwExceptions) {
+      const message = e instanceof Error ? e.message : String(e);
+      const finalMessage = e instanceof TransportMailError
+        ? `Failed to send email via ${settings.mailer} with the exception: ${message}`
+        : message;
+      throw new FbError(truncateThrowMessage(finalMessage));
+    }
+    return true;
+  }
+  if (settings.logEnabled) await logEmailRow(row, content);
+  try {
+    await getDbWrite().prepare("DELETE FROM email_queue WHERE id = ?").run(row.id);
+  } catch (e) {
+    // PROTECTED in PHP: a delete failure is only logged.
+    console.error(`[email] Failed to delete sent queued email ${row.id}: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  return true;
+}
+
+/** Mirror of Email/Service.php batchSend(). Due rows only, priority
+ * DESC + id ASC, queue_once limit (<=0 unlimited), time_limit budget
+ * in minutes checked AFTER each send. Returns null like PHP (void). */
+async function batchSendMail(): Promise<null> {
+  const settings = await readEmailSettings();
+  const parsed = parseBccAddresses(settings.bccEmail);
+  const bcc = parsed.valid;
+  for (const bad of parsed.invalid) console.warn(`[email] Skipping invalid Bcc address: ${bad}`);
+  const limitClause = settings.queueOnce > 0 ? ` LIMIT ${settings.queueOnce}` : "";
+  const rows = await getDb().prepare(
+    `SELECT * FROM email_queue WHERE status IN ('unsent', 'pending', 'failed')
+     ORDER BY priority DESC, id ASC${limitClause}`,
+  ).all() as unknown as QueueRowFull[];
+  const start = Date.now();
+  const budgetMs = settings.timeLimit * 60 * 1000;
+  for (const row of rows) {
+    await sendFromQueue(row, { throwExceptions: false, validatedBcc: bcc });
+    // PHP breaks AFTER the send when elapsed > budget; limit 0 never breaks.
+    if (settings.timeLimit && Date.now() - start > budgetMs) break;
+  }
+  return null;
+}
+
+/** Queue one templated mail, then immediately attempt it when
+ * send_now is set (PHP sendMail(..., $send_now, $throw_exceptions)).
+ * Attachments are NOT plumbed (pre-existing template_send gap). */
+async function queueOrSendNow(
+  mail: { recipient: string; sender: string; subject: string; content: string;
+    toName?: string | null; fromName?: string | null;
+    clientId?: number | null; adminId?: number | null },
+  sendNow: boolean, throwExceptions: boolean,
+): Promise<void> {
+  const id = await queueEmail(mail);
+  if (!sendNow) return;
+  const row = await queueRowById(id);
+  if (!row) return;
+  await sendFromQueue(row, { throwExceptions });
+}
+
 register("admin", "email", "batch_sendmail", async (ctx) => {
   requireAdmin(ctx);
-  await getDbWrite().prepare("UPDATE email_queue SET status = 'sending', updated_at = ? WHERE status = 'pending'")
-    .run(nowTimestamp());
-  return null;
+  return batchSendMail();
 });
 
 register("admin", "email", "send_test", async (ctx) => {
@@ -538,11 +851,18 @@ register("admin", "email", "template_send", async (ctx) => {
     ?? (company.name || null);
   if (!from) throw new FbError('The "from" email address cannot be empty');
 
-  // send_now/attachments/transport are out of scope for the seam: like
-  // the sandbox PHP install, sends land in the queue as 'pending'.
-  // PHP enters the staff branch whenever to_staff was passed, even
-  // with an empty staff list (sent stays false) — and it parses the
-  // template once first, so a staff-referencing template still throws.
+  // R5e: send_now is honored (PHP sendTemplate -> sendMail send_now):
+  // the mail is queued, then immediately attempted through the same
+  // _sendFromQueue path batch_sendmail uses; throw_exceptions
+  // rethrows the (possibly truncated) send error. Attachments are
+  // still dropped (pre-existing gap, not transport work). PHP enters
+  // the staff branch whenever to_staff was passed, even with an empty
+  // staff list (sent stays false) — and it parses the template once
+  // first, so a staff-referencing template still throws.
+  const sendNowRaw = ctx.rawParams && "send_now" in ctx.rawParams ? ctx.rawParams.send_now : ctx.params.send_now;
+  const throwRaw = ctx.rawParams && "throw_exceptions" in ctx.rawParams ? ctx.rawParams.throw_exceptions : ctx.params.throw_exceptions;
+  const sendNow = phpTruthy(sendNowRaw);
+  const throwExceptions = phpTruthy(throwRaw);
   let sent = false;
   if (has("to_staff")) {
     if (staffList.length === 0) {
@@ -551,32 +871,32 @@ register("admin", "email", "template_send", async (ctx) => {
     for (const staff of staffList) {
       const staffVars = { ...vars, staff: { id: staff.id, email: staff.email, name: staff.name, signature: staff.signature } };
       const [subject, content] = await parseTemplateOrThrow(row, staffVars);
-      await queueEmail({
+      await queueOrSendNow({
         recipient: staff.email, sender: from, subject, content,
         toName: staff.name, fromName, clientId: null, adminId: staff.id,
-      });
+      }, sendNow, throwExceptions);
       sent = true;
     }
   } else if (oneStaff) {
     const [subject, content] = await parseTemplateOrThrow(row, vars);
-    await queueEmail({
+    await queueOrSendNow({
       recipient: oneStaff.email, sender: from, subject, content,
       toName: oneStaff.name, fromName, clientId: null, adminId: oneStaff.id,
-    });
+    }, sendNow, throwExceptions);
     sent = true;
   } else if (customer) {
     const [subject, content] = await parseTemplateOrThrow(row, vars);
-    await queueEmail({
+    await queueOrSendNow({
       recipient: customer.email, sender: from, subject, content,
       toName: `${customer.first_name} ${customer.last_name}`, fromName, clientId: customer.id, adminId: null,
-    });
+    }, sendNow, throwExceptions);
     sent = true;
   } else {
     const [subject, content] = await parseTemplateOrThrow(row, vars);
-    await queueEmail({
+    await queueOrSendNow({
       recipient: ctx.params.to, sender: from, subject, content,
       toName: ctx.params.to_name ?? null, fromName, clientId: null, adminId: null,
-    });
+    }, sendNow, throwExceptions);
     sent = true;
   }
   return sent;
