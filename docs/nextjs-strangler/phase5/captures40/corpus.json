@@ -1,0 +1,1352 @@
+{
+  "run_date": "2026-10-29",
+  "crafted": {
+    "today_early_utc": "2026-10-29 02:00:00",
+    "today_mid_utc": "2026-10-29 07:00:00",
+    "yest_early_utc": "2026-10-28 02:00:00",
+    "first_early_utc": "2026-10-01 02:00:00",
+    "prev_mid_utc": "2026-10-14 02:00:00",
+    "dst_fall_utc": [
+      "2026-11-01 05:30:00",
+      "2026-11-01 06:30:00",
+      "2026-11-01 07:30:00",
+      "2026-11-01 08:30:00"
+    ],
+    "dst_spring_utc": [
+      "2026-03-08 07:30:00",
+      "2026-03-08 08:30:00"
+    ]
+  },
+  "php_utc": {
+    "get_summary": {
+      "result": {
+        "clients_total": 5,
+        "clients_today": 1,
+        "clients_yesterday": 1,
+        "clients_this_month": 5,
+        "clients_last_month": 0,
+        "orders_total": 12,
+        "orders_today": 1,
+        "orders_yesterday": 0,
+        "orders_this_month": 12,
+        "orders_last_month": 0,
+        "invoices_total": 334,
+        "invoices_today": 2,
+        "invoices_yesterday": 1,
+        "invoices_this_month": 328,
+        "invoices_last_month": 0,
+        "tickets_total": 3,
+        "tickets_today": 1,
+        "tickets_yesterday": 0,
+        "tickets_this_month": 3,
+        "tickets_last_month": 0
+      },
+      "error": null
+    },
+    "get_summary_income": {
+      "result": {
+        "total": 6626,
+        "today": 200,
+        "yesterday": 100,
+        "this_month": 6026,
+        "last_month": 0
+      },
+      "error": null
+    },
+    "get_income_run": {
+      "result": [
+        [
+          1793145600000,
+          100
+        ],
+        [
+          1793232000000,
+          200
+        ]
+      ],
+      "error": null
+    },
+    "get_refunds_run": {
+      "result": [
+        [
+          1793145600000,
+          0
+        ],
+        [
+          1793232000000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_clients_run": {
+      "result": [
+        [
+          1793145600000,
+          1
+        ],
+        [
+          1793232000000,
+          1
+        ]
+      ],
+      "error": null
+    },
+    "get_orders_run": {
+      "result": [
+        [
+          1793145600000,
+          0
+        ],
+        [
+          1793232000000,
+          1
+        ]
+      ],
+      "error": null
+    },
+    "get_invoices_run": {
+      "result": [
+        [
+          1793145600000,
+          1
+        ],
+        [
+          1793232000000,
+          2
+        ]
+      ],
+      "error": null
+    },
+    "get_tickets_run": {
+      "result": [
+        [
+          1793145600000,
+          0
+        ],
+        [
+          1793232000000,
+          1
+        ]
+      ],
+      "error": null
+    },
+    "get_product_sales_run": {
+      "result": {
+        "": 1
+      },
+      "error": null
+    },
+    "get_income_dst_fall": {
+      "result": [
+        [
+          1793404800000,
+          0
+        ],
+        [
+          1793491200000,
+          400
+        ],
+        [
+          1793577600000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_refunds_dst_fall": {
+      "result": [
+        [
+          1793404800000,
+          0
+        ],
+        [
+          1793491200000,
+          0
+        ],
+        [
+          1793577600000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_clients_dst_fall": {
+      "result": [
+        [
+          1793404800000,
+          0
+        ],
+        [
+          1793491200000,
+          0
+        ],
+        [
+          1793577600000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_orders_dst_fall": {
+      "result": [
+        [
+          1793404800000,
+          0
+        ],
+        [
+          1793491200000,
+          0
+        ],
+        [
+          1793577600000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_invoices_dst_fall": {
+      "result": [
+        [
+          1793404800000,
+          0
+        ],
+        [
+          1793491200000,
+          4
+        ],
+        [
+          1793577600000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_tickets_dst_fall": {
+      "result": [
+        [
+          1793404800000,
+          0
+        ],
+        [
+          1793491200000,
+          0
+        ],
+        [
+          1793577600000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_product_sales_dst_fall": {
+      "result": [],
+      "error": null
+    },
+    "get_income_dst_spring": {
+      "result": [
+        [
+          1772841600000,
+          0
+        ],
+        [
+          1772928000000,
+          200
+        ],
+        [
+          1773014400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_refunds_dst_spring": {
+      "result": [
+        [
+          1772841600000,
+          0
+        ],
+        [
+          1772928000000,
+          0
+        ],
+        [
+          1773014400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_clients_dst_spring": {
+      "result": [
+        [
+          1772841600000,
+          0
+        ],
+        [
+          1772928000000,
+          0
+        ],
+        [
+          1773014400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_orders_dst_spring": {
+      "result": [
+        [
+          1772841600000,
+          0
+        ],
+        [
+          1772928000000,
+          0
+        ],
+        [
+          1773014400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_invoices_dst_spring": {
+      "result": [
+        [
+          1772841600000,
+          0
+        ],
+        [
+          1772928000000,
+          2
+        ],
+        [
+          1773014400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_tickets_dst_spring": {
+      "result": [
+        [
+          1772841600000,
+          0
+        ],
+        [
+          1772928000000,
+          0
+        ],
+        [
+          1773014400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_product_sales_dst_spring": {
+      "result": [],
+      "error": null
+    }
+  },
+  "ts_utc": {
+    "get_summary": {
+      "result": {
+        "clients_total": 5,
+        "clients_today": 1,
+        "clients_yesterday": 1,
+        "clients_this_month": 5,
+        "clients_last_month": 0,
+        "orders_total": 12,
+        "orders_today": 1,
+        "orders_yesterday": 0,
+        "orders_this_month": 12,
+        "orders_last_month": 0,
+        "invoices_total": 334,
+        "invoices_today": 2,
+        "invoices_yesterday": 1,
+        "invoices_this_month": 328,
+        "invoices_last_month": 0,
+        "tickets_total": 3,
+        "tickets_today": 1,
+        "tickets_yesterday": 0,
+        "tickets_this_month": 3,
+        "tickets_last_month": 0
+      },
+      "error": null
+    },
+    "get_summary_income": {
+      "result": {
+        "total": 6626,
+        "today": 200,
+        "yesterday": 100,
+        "this_month": 6026,
+        "last_month": 0
+      },
+      "error": null
+    },
+    "get_income_run": {
+      "result": [
+        [
+          1793145600000,
+          100
+        ],
+        [
+          1793232000000,
+          200
+        ]
+      ],
+      "error": null
+    },
+    "get_refunds_run": {
+      "result": [
+        [
+          1793145600000,
+          0
+        ],
+        [
+          1793232000000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_clients_run": {
+      "result": [
+        [
+          1793145600000,
+          1
+        ],
+        [
+          1793232000000,
+          1
+        ]
+      ],
+      "error": null
+    },
+    "get_orders_run": {
+      "result": [
+        [
+          1793145600000,
+          0
+        ],
+        [
+          1793232000000,
+          1
+        ]
+      ],
+      "error": null
+    },
+    "get_invoices_run": {
+      "result": [
+        [
+          1793145600000,
+          1
+        ],
+        [
+          1793232000000,
+          2
+        ]
+      ],
+      "error": null
+    },
+    "get_tickets_run": {
+      "result": [
+        [
+          1793145600000,
+          0
+        ],
+        [
+          1793232000000,
+          1
+        ]
+      ],
+      "error": null
+    },
+    "get_product_sales_run": {
+      "result": {
+        "": 1
+      },
+      "error": null
+    },
+    "get_income_dst_fall": {
+      "result": [
+        [
+          1793404800000,
+          0
+        ],
+        [
+          1793491200000,
+          400
+        ],
+        [
+          1793577600000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_refunds_dst_fall": {
+      "result": [
+        [
+          1793404800000,
+          0
+        ],
+        [
+          1793491200000,
+          0
+        ],
+        [
+          1793577600000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_clients_dst_fall": {
+      "result": [
+        [
+          1793404800000,
+          0
+        ],
+        [
+          1793491200000,
+          0
+        ],
+        [
+          1793577600000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_orders_dst_fall": {
+      "result": [
+        [
+          1793404800000,
+          0
+        ],
+        [
+          1793491200000,
+          0
+        ],
+        [
+          1793577600000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_invoices_dst_fall": {
+      "result": [
+        [
+          1793404800000,
+          0
+        ],
+        [
+          1793491200000,
+          4
+        ],
+        [
+          1793577600000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_tickets_dst_fall": {
+      "result": [
+        [
+          1793404800000,
+          0
+        ],
+        [
+          1793491200000,
+          0
+        ],
+        [
+          1793577600000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_product_sales_dst_fall": {
+      "result": {},
+      "error": null
+    },
+    "get_income_dst_spring": {
+      "result": [
+        [
+          1772841600000,
+          0
+        ],
+        [
+          1772928000000,
+          200
+        ],
+        [
+          1773014400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_refunds_dst_spring": {
+      "result": [
+        [
+          1772841600000,
+          0
+        ],
+        [
+          1772928000000,
+          0
+        ],
+        [
+          1773014400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_clients_dst_spring": {
+      "result": [
+        [
+          1772841600000,
+          0
+        ],
+        [
+          1772928000000,
+          0
+        ],
+        [
+          1773014400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_orders_dst_spring": {
+      "result": [
+        [
+          1772841600000,
+          0
+        ],
+        [
+          1772928000000,
+          0
+        ],
+        [
+          1773014400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_invoices_dst_spring": {
+      "result": [
+        [
+          1772841600000,
+          0
+        ],
+        [
+          1772928000000,
+          2
+        ],
+        [
+          1773014400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_tickets_dst_spring": {
+      "result": [
+        [
+          1772841600000,
+          0
+        ],
+        [
+          1772928000000,
+          0
+        ],
+        [
+          1773014400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_product_sales_dst_spring": {
+      "result": {},
+      "error": null
+    }
+  },
+  "php_chicago": {
+    "get_summary": {
+      "result": {
+        "clients_total": 5,
+        "clients_today": 1,
+        "clients_yesterday": 1,
+        "clients_this_month": 5,
+        "clients_last_month": 0,
+        "orders_total": 12,
+        "orders_today": 1,
+        "orders_yesterday": 0,
+        "orders_this_month": 12,
+        "orders_last_month": 0,
+        "invoices_total": 334,
+        "invoices_today": 2,
+        "invoices_yesterday": 1,
+        "invoices_this_month": 328,
+        "invoices_last_month": 0,
+        "tickets_total": 3,
+        "tickets_today": 1,
+        "tickets_yesterday": 0,
+        "tickets_this_month": 3,
+        "tickets_last_month": 0
+      },
+      "error": null
+    },
+    "get_summary_income": {
+      "result": {
+        "total": 6626,
+        "today": 200,
+        "yesterday": 100,
+        "this_month": 6026,
+        "last_month": 0
+      },
+      "error": null
+    },
+    "get_income_run": {
+      "result": [
+        [
+          1793163600000,
+          100
+        ],
+        [
+          1793250000000,
+          200
+        ]
+      ],
+      "error": null
+    },
+    "get_refunds_run": {
+      "result": [
+        [
+          1793163600000,
+          0
+        ],
+        [
+          1793250000000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_clients_run": {
+      "result": [
+        [
+          1793163600000,
+          1
+        ],
+        [
+          1793250000000,
+          1
+        ]
+      ],
+      "error": null
+    },
+    "get_orders_run": {
+      "result": [
+        [
+          1793163600000,
+          0
+        ],
+        [
+          1793250000000,
+          1
+        ]
+      ],
+      "error": null
+    },
+    "get_invoices_run": {
+      "result": [
+        [
+          1793163600000,
+          1
+        ],
+        [
+          1793250000000,
+          2
+        ]
+      ],
+      "error": null
+    },
+    "get_tickets_run": {
+      "result": [
+        [
+          1793163600000,
+          0
+        ],
+        [
+          1793250000000,
+          1
+        ]
+      ],
+      "error": null
+    },
+    "get_product_sales_run": {
+      "result": {
+        "": 1
+      },
+      "error": null
+    },
+    "get_income_dst_fall": {
+      "result": [
+        [
+          1793422800000,
+          0
+        ],
+        [
+          1793509200000,
+          400
+        ],
+        [
+          1793599200000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_refunds_dst_fall": {
+      "result": [
+        [
+          1793422800000,
+          0
+        ],
+        [
+          1793509200000,
+          0
+        ],
+        [
+          1793599200000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_clients_dst_fall": {
+      "result": [
+        [
+          1793422800000,
+          0
+        ],
+        [
+          1793509200000,
+          0
+        ],
+        [
+          1793599200000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_orders_dst_fall": {
+      "result": [
+        [
+          1793422800000,
+          0
+        ],
+        [
+          1793509200000,
+          0
+        ],
+        [
+          1793599200000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_invoices_dst_fall": {
+      "result": [
+        [
+          1793422800000,
+          0
+        ],
+        [
+          1793509200000,
+          4
+        ],
+        [
+          1793599200000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_tickets_dst_fall": {
+      "result": [
+        [
+          1793422800000,
+          0
+        ],
+        [
+          1793509200000,
+          0
+        ],
+        [
+          1793599200000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_product_sales_dst_fall": {
+      "result": [],
+      "error": null
+    },
+    "get_income_dst_spring": {
+      "result": [
+        [
+          1772863200000,
+          0
+        ],
+        [
+          1772949600000,
+          200
+        ],
+        [
+          1773032400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_refunds_dst_spring": {
+      "result": [
+        [
+          1772863200000,
+          0
+        ],
+        [
+          1772949600000,
+          0
+        ],
+        [
+          1773032400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_clients_dst_spring": {
+      "result": [
+        [
+          1772863200000,
+          0
+        ],
+        [
+          1772949600000,
+          0
+        ],
+        [
+          1773032400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_orders_dst_spring": {
+      "result": [
+        [
+          1772863200000,
+          0
+        ],
+        [
+          1772949600000,
+          0
+        ],
+        [
+          1773032400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_invoices_dst_spring": {
+      "result": [
+        [
+          1772863200000,
+          0
+        ],
+        [
+          1772949600000,
+          2
+        ],
+        [
+          1773032400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_tickets_dst_spring": {
+      "result": [
+        [
+          1772863200000,
+          0
+        ],
+        [
+          1772949600000,
+          0
+        ],
+        [
+          1773032400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_product_sales_dst_spring": {
+      "result": [],
+      "error": null
+    }
+  },
+  "ts_chicago": {
+    "get_summary": {
+      "result": {
+        "clients_total": 5,
+        "clients_today": 1,
+        "clients_yesterday": 1,
+        "clients_this_month": 5,
+        "clients_last_month": 0,
+        "orders_total": 12,
+        "orders_today": 1,
+        "orders_yesterday": 0,
+        "orders_this_month": 12,
+        "orders_last_month": 0,
+        "invoices_total": 334,
+        "invoices_today": 2,
+        "invoices_yesterday": 1,
+        "invoices_this_month": 328,
+        "invoices_last_month": 0,
+        "tickets_total": 3,
+        "tickets_today": 1,
+        "tickets_yesterday": 0,
+        "tickets_this_month": 3,
+        "tickets_last_month": 0
+      },
+      "error": null
+    },
+    "get_summary_income": {
+      "result": {
+        "total": 6626,
+        "today": 200,
+        "yesterday": 100,
+        "this_month": 6026,
+        "last_month": 0
+      },
+      "error": null
+    },
+    "get_income_run": {
+      "result": [
+        [
+          1793145600000,
+          100
+        ],
+        [
+          1793232000000,
+          200
+        ]
+      ],
+      "error": null
+    },
+    "get_refunds_run": {
+      "result": [
+        [
+          1793145600000,
+          0
+        ],
+        [
+          1793232000000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_clients_run": {
+      "result": [
+        [
+          1793145600000,
+          1
+        ],
+        [
+          1793232000000,
+          1
+        ]
+      ],
+      "error": null
+    },
+    "get_orders_run": {
+      "result": [
+        [
+          1793145600000,
+          0
+        ],
+        [
+          1793232000000,
+          1
+        ]
+      ],
+      "error": null
+    },
+    "get_invoices_run": {
+      "result": [
+        [
+          1793145600000,
+          1
+        ],
+        [
+          1793232000000,
+          2
+        ]
+      ],
+      "error": null
+    },
+    "get_tickets_run": {
+      "result": [
+        [
+          1793145600000,
+          0
+        ],
+        [
+          1793232000000,
+          1
+        ]
+      ],
+      "error": null
+    },
+    "get_product_sales_run": {
+      "result": {
+        "": 1
+      },
+      "error": null
+    },
+    "get_income_dst_fall": {
+      "result": [
+        [
+          1793404800000,
+          0
+        ],
+        [
+          1793491200000,
+          400
+        ],
+        [
+          1793577600000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_refunds_dst_fall": {
+      "result": [
+        [
+          1793404800000,
+          0
+        ],
+        [
+          1793491200000,
+          0
+        ],
+        [
+          1793577600000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_clients_dst_fall": {
+      "result": [
+        [
+          1793404800000,
+          0
+        ],
+        [
+          1793491200000,
+          0
+        ],
+        [
+          1793577600000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_orders_dst_fall": {
+      "result": [
+        [
+          1793404800000,
+          0
+        ],
+        [
+          1793491200000,
+          0
+        ],
+        [
+          1793577600000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_invoices_dst_fall": {
+      "result": [
+        [
+          1793404800000,
+          0
+        ],
+        [
+          1793491200000,
+          4
+        ],
+        [
+          1793577600000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_tickets_dst_fall": {
+      "result": [
+        [
+          1793404800000,
+          0
+        ],
+        [
+          1793491200000,
+          0
+        ],
+        [
+          1793577600000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_product_sales_dst_fall": {
+      "result": {},
+      "error": null
+    },
+    "get_income_dst_spring": {
+      "result": [
+        [
+          1772841600000,
+          0
+        ],
+        [
+          1772928000000,
+          200
+        ],
+        [
+          1773014400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_refunds_dst_spring": {
+      "result": [
+        [
+          1772841600000,
+          0
+        ],
+        [
+          1772928000000,
+          0
+        ],
+        [
+          1773014400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_clients_dst_spring": {
+      "result": [
+        [
+          1772841600000,
+          0
+        ],
+        [
+          1772928000000,
+          0
+        ],
+        [
+          1773014400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_orders_dst_spring": {
+      "result": [
+        [
+          1772841600000,
+          0
+        ],
+        [
+          1772928000000,
+          0
+        ],
+        [
+          1773014400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_invoices_dst_spring": {
+      "result": [
+        [
+          1772841600000,
+          0
+        ],
+        [
+          1772928000000,
+          2
+        ],
+        [
+          1773014400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_tickets_dst_spring": {
+      "result": [
+        [
+          1772841600000,
+          0
+        ],
+        [
+          1772928000000,
+          0
+        ],
+        [
+          1773014400000,
+          0
+        ]
+      ],
+      "error": null
+    },
+    "get_product_sales_dst_spring": {
+      "result": {},
+      "error": null
+    }
+  }
+}

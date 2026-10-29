@@ -1,9 +1,13 @@
 // Stats module (Phase 5 R1 batch 2) — pure SQL aggregation,
 // pinned by capture18.py / captures18/.
 //
-// Fidelity notes:
-// - Day boundaries are server-local midnights, matching PHP's
-//   `new DateTimeImmutable('today')` in the same sandbox TZ.
+// Fidelity notes (R5d: day math is zone math now, not
+// process-local math — see tz.ts):
+// - Day boundaries are midnights in the RESOLVED zone (env TZ >
+//   config i18n.timezone > UTC), matching PHP's
+//   `new DateTimeImmutable('today')` under load.php's
+//   date_default_timezone_set. The old process-local midnights
+//   only matched while the process ran TZ=UTC.
 // - Flot series step from (from + 1 day) while < to: PHP's
 //   do/while pushes then pops the final (== to) entry, so the
 //   series covers from+1 .. to-1. Default windows use
@@ -11,7 +15,9 @@
 //   minus a month / tomorrow, preserving time-of-day — so
 //   default-window series timestamps vary by run time; the
 //   SQL bounds are calendar dates and stable. parity15
-//   compares default series by calendar day + value.
+//   compares default series by calendar day + value. Day steps
+//   are zone-CALENDAR steps (tz.ts addZoneDays), not +24h, so
+//   DST-transition days keep their calendar date.
 // - get_product_summary's RIGHT JOIN + WHERE o.status =
 //   'active' is the classic outer-join-killing WHERE: rows
 //   for products without active orders are filtered out by
@@ -25,52 +31,32 @@
 
 import { FbError, register, requireAdmin } from "../dispatch";
 import { getDb, orderStatusCounts } from "../db";
+import {
+  addZoneDays,
+  addZoneMonths,
+  formatZoneDate,
+  formatZoneDateTime,
+  parseZoneDateTime,
+  resolveZone,
+  zoneMidnightMs,
+  zoneMonthStartMs,
+} from "../tz";
 
 const TABLES = ["client", "client_order", "invoice", "support_ticket"] as const;
 
-function pad(n: number): string {
-  return String(n).padStart(2, "0");
-}
-
-function fmtDate(d: Date): string {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function fmtDateTime(d: Date): string {
-  return `${fmtDate(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-}
-
-function midnightToday(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function addDays(d: Date, n: number): Date {
-  const out = new Date(d);
-  out.setDate(out.getDate() + n);
-  return out;
-}
-
-function addMonths(d: Date, n: number): Date {
-  const out = new Date(d);
-  out.setMonth(out.getMonth() + n);
-  return out;
-}
-
 type Boundaries = Record<string, string>;
 
-function dayBoundaries(): Boundaries {
-  const today = midnightToday();
-  const monthStart = new Date(today);
-  monthStart.setDate(1);
+function dayBoundaries(zone: string): Boundaries {
+  const now = Date.now();
+  const today = zoneMidnightMs(zone, now);
+  const monthStart = zoneMonthStartMs(zone, now);
   return {
-    yesterday_start: fmtDateTime(addDays(today, -1)),
-    today_start: fmtDateTime(today),
-    tomorrow_start: fmtDateTime(addDays(today, 1)),
-    last_month_start: fmtDateTime(addMonths(monthStart, -1)),
-    month_start: fmtDateTime(monthStart),
-    next_month_start: fmtDateTime(addMonths(monthStart, 1)),
+    yesterday_start: formatZoneDateTime(zone, addZoneDays(zone, today, -1)),
+    today_start: formatZoneDateTime(zone, today),
+    tomorrow_start: formatZoneDateTime(zone, addZoneDays(zone, today, 1)),
+    last_month_start: formatZoneDateTime(zone, addZoneMonths(zone, monthStart, -1)),
+    month_start: formatZoneDateTime(zone, monthStart),
+    next_month_start: formatZoneDateTime(zone, addZoneMonths(zone, monthStart, 1)),
   };
 }
 
@@ -91,34 +77,38 @@ async function countWhere(table: string, where: string, params: Record<string, s
   return row.c;
 }
 
-/** PHP strtotime for the inputs stats accepts: Y-m-d (local midnight) or anything Date parses; garbage -> 0. */
-function parseTime(value: string | undefined, fallback: Date): Date {
-  if (!value) return fallback;
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
-  if (m) return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+/** PHP strtotime for the inputs stats accepts, in the resolved zone:
+ * Y-m-d (zone midnight) or Y-m-d H:i:s (that wall time in the zone)
+ * or anything Date parses (absolute); garbage -> 0 (PHP's
+ * strtotime(false) -> date('Y-m-d', 0) = 1970-01-01, and the flot
+ * loop steps from epoch 0 the same way). */
+function parseTime(value: string | undefined, fallbackMs: number, zone: string): number {
+  if (!value) return fallbackMs;
+  const zoned = parseZoneDateTime(zone, value);
+  if (zoned !== null) return zoned;
   const t = Date.parse(value);
-  return Number.isNaN(t) ? new Date(0) : new Date(t);
+  return Number.isNaN(t) ? 0 : t;
 }
 
-function dateInterval(ctx: { params: Record<string, string> }): [Date, Date] {
-  const now = new Date();
-  const from = parseTime(ctx.params["date_from"], addMonths(now, -1));
-  const to = parseTime(ctx.params["date_to"], addDays(now, 1));
+function dateInterval(ctx: { params: Record<string, string> }, zone: string): [number, number] {
+  const now = Date.now();
+  const from = parseTime(ctx.params["date_from"], addZoneMonths(zone, now, -1), zone);
+  const to = parseTime(ctx.params["date_to"], addZoneDays(zone, now, 1), zone);
   return [from, to];
 }
 
-function flotInt(rows: Record<string, number>, from: Date, to: Date): [number, number][] {
+function flotInt(rows: Record<string, number>, from: number, to: number, zone: string): [number, number][] {
   const out: [number, number][] = [];
-  for (let d = addDays(from, 1); d.getTime() < to.getTime(); d = addDays(d, 1)) {
-    out.push([d.getTime(), Math.trunc(rows[fmtDate(d)] ?? 0)]);
+  for (let d = addZoneDays(zone, from, 1); d < to; d = addZoneDays(zone, d, 1)) {
+    out.push([d, Math.trunc(rows[formatZoneDate(zone, d)] ?? 0)]);
   }
   return out;
 }
 
-function flotFloat(rows: Record<string, number>, from: Date, to: Date): [number, number][] {
+function flotFloat(rows: Record<string, number>, from: number, to: number, zone: string): [number, number][] {
   const out: [number, number][] = [];
-  for (let d = addDays(from, 1); d.getTime() < to.getTime(); d = addDays(d, 1)) {
-    out.push([d.getTime(), Math.round((rows[fmtDate(d)] ?? 0) * 100) / 100]);
+  for (let d = addZoneDays(zone, from, 1); d < to; d = addZoneDays(zone, d, 1)) {
+    out.push([d, Math.round((rows[formatZoneDate(zone, d)] ?? 0) * 100) / 100]);
   }
   return out;
 }
@@ -134,7 +124,8 @@ function keyValue(rows: { [k: string]: unknown }[], keyCol: string, valCol: stri
 
 register("admin", "stats", "get_summary", async (ctx) => {
   requireAdmin(ctx);
-  const b = dayBoundaries();
+  const zone = resolveZone();
+  const b = dayBoundaries(zone);
   const stats: Record<string, number> = {};
   for (const [table, prefix] of [["client", "clients"], ["client_order", "orders"], ["invoice", "invoices"], ["support_ticket", "tickets"]] as const) {
     const total = await getDb().prepare(`SELECT COUNT(1) AS c FROM ${table}`).get() as { c: number };
@@ -149,7 +140,8 @@ register("admin", "stats", "get_summary", async (ctx) => {
 
 register("admin", "stats", "get_summary_income", async (ctx) => {
   requireAdmin(ctx);
-  const b = dayBoundaries();
+  const zone = resolveZone();
+  const b = dayBoundaries(zone);
   const base = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE issued = 1 AND (status = 'paid' OR status = 'refunded')";
   const sum = async (where: string, params: Record<string, string>): Promise<number> => {
     const row = await getDb().prepare(`${base} ${where}`).get(namedParams(where, params)) as { income: number };
@@ -189,10 +181,11 @@ register("admin", "stats", "get_product_summary", async (ctx) => {
 
 register("admin", "stats", "get_product_sales", async (ctx) => {
   requireAdmin(ctx);
-  const [from, to] = dateInterval(ctx);
+  const zone = resolveZone();
+  const [from, to] = dateInterval(ctx, zone);
   const rows = await getDb().prepare(
     "SELECT title, COUNT(product_id) AS sales FROM client_order WHERE status = 'active' AND created_at BETWEEN :date_from AND :date_to GROUP BY product_id",
-  ).all({ date_from: fmtDate(from), date_to: fmtDate(to) }) as { title: string; sales: number }[];
+  ).all({ date_from: formatZoneDate(zone, from), date_to: formatZoneDate(zone, to) }) as { title: string; sales: number }[];
   return keyValue(rows, "title", "sales");
 });
 
@@ -206,35 +199,38 @@ register("admin", "stats", "get_income_vs_refunds", async (ctx) => {
 
 register("admin", "stats", "get_refunds", async (ctx) => {
   requireAdmin(ctx);
-  const [from, to] = dateInterval(ctx);
+  const zone = resolveZone();
+  const [from, to] = dateInterval(ctx, zone);
   const rows = await getDb().prepare(
     "SELECT substr(created_at, 1, 10) AS date, COALESCE(SUM(base_refund), 0) AS refund FROM invoice WHERE created_at BETWEEN :date_from AND :date_to AND issued = 1 AND (status = 'refunded' OR (status = 'paid' AND base_refund > 0)) GROUP BY date",
-  ).all({ date_from: fmtDate(from), date_to: fmtDate(to) }) as { date: string; refund: number }[];
+  ).all({ date_from: formatZoneDate(zone, from), date_to: formatZoneDate(zone, to) }) as { date: string; refund: number }[];
   const map: Record<string, number> = {};
   for (const r of rows) map[r.date] = r.refund;
-  return flotFloat(map, from, to);
+  return flotFloat(map, from, to, zone);
 });
 
 register("admin", "stats", "get_income", async (ctx) => {
   requireAdmin(ctx);
-  const [from, to] = dateInterval(ctx);
+  const zone = resolveZone();
+  const [from, to] = dateInterval(ctx, zone);
   const rows = await getDb().prepare(
     "SELECT substr(paid_at, 1, 10) AS date, (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE paid_at BETWEEN :date_from AND :date_to AND issued = 1 AND (status = 'paid' OR status = 'refunded') GROUP BY date",
-  ).all({ date_from: fmtDate(from), date_to: fmtDate(to) }) as { date: string; income: number }[];
+  ).all({ date_from: formatZoneDate(zone, from), date_to: formatZoneDate(zone, to) }) as { date: string; income: number }[];
   const map: Record<string, number> = {};
   for (const r of rows) map[r.date] = r.income;
-  return flotFloat(map, from, to);
+  return flotFloat(map, from, to, zone);
 });
 
 async function tableStats(table: string, ctx: { params: Record<string, string> }): Promise<[number, number][]> {
   if (!(TABLES as readonly string[]).includes(table)) throw new FbError(`Invalid table name: ${table}`);
-  const [from, to] = dateInterval(ctx);
+  const zone = resolveZone();
+  const [from, to] = dateInterval(ctx, zone);
   const rows = await getDb().prepare(
     `SELECT substr(created_at, 1, 10) AS date, COUNT(1) AS count FROM ${table} WHERE created_at BETWEEN :date_from AND :date_to GROUP BY date`,
-  ).all({ date_from: fmtDate(from), date_to: fmtDate(to) }) as { date: string; count: number }[];
+  ).all({ date_from: formatZoneDate(zone, from), date_to: formatZoneDate(zone, to) }) as { date: string; count: number }[];
   const map: Record<string, number> = {};
   for (const r of rows) map[r.date] = r.count;
-  return flotInt(map, from, to);
+  return flotInt(map, from, to, zone);
 }
 
 register("admin", "stats", "get_orders", async (ctx) => {
