@@ -1,0 +1,51 @@
+{
+ "error_reporting_enabled": {
+  "error": {
+   "code": 201,
+   "message": "Authentication Failed"
+  },
+  "result": null
+ },
+ "instance_id": {
+  "error": {
+   "code": 201,
+   "message": "Authentication Failed"
+  },
+  "result": null
+ },
+ "last_error_reporting_change": {
+  "error": {
+   "code": 201,
+   "message": "Authentication Failed"
+  },
+  "result": null
+ },
+ "localization_settings": {
+  "error": {
+   "code": 201,
+   "message": "Authentication Failed"
+  },
+  "result": null
+ },
+ "toggle_error_reporting": {
+  "error": {
+   "code": 201,
+   "message": "Authentication Failed"
+  },
+  "result": null
+ },
+ "update_localization_settings": {
+  "error": {
+   "code": 201,
+   "message": "Authentication Failed"
+  },
+  "result": null
+ },
+ "update_params": {
+  "error": {
+   "code": 201,
+   "message": "Authentication Failed"
+  },
+  "result": null
+ }
+}

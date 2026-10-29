@@ -1,0 +1,8 @@
+{
+ "config_sha256": "d6345cae63632b94e63dc3eaf659560ea759e3281b6bf78673103caaa65693bd",
+ "invoice_reminder_send_time": null,
+ "invoice_starting_number": [
+  "invoice_starting_number",
+  "341"
+ ]
+}

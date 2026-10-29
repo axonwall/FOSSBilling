@@ -1,0 +1,7 @@
+{
+ "error": {
+  "code": 9999,
+  "message": "Reminder send time must be empty or a valid 24-hour time (HH:MM)."
+ },
+ "result": null
+}

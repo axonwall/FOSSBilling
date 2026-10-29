@@ -8,6 +8,14 @@ import {
   updateSessionContent,
   upsertSetting,
 } from "../db";
+import {
+  getConfigProperty,
+  phpBoolCast,
+  phpNormalizeBoolean,
+  phpStringCast,
+  setConfigProperty,
+  type PhpConfigValue,
+} from "../config-store";
 import { FbError, register, requireAdmin, requireParam, type CallContext } from "../dispatch";
 import { hasPermission } from "../permissions";
 import { parseSessionContent, replaceSessionSegment } from "../php-serialize";
@@ -314,11 +322,134 @@ register("admin", "system", "get_params", async (ctx: CallContext) => {
   return out;
 });
 
+/**
+ * R5a — TS port of System\Service::updateParams()' first (validate)
+ * loop. PHP validates every key BEFORE the write loop runs, so a
+ * single invalid value rejects the whole call and nothing is
+ * written (parity34 §D proves the nothing-written half).
+ *
+ * invoice_starting_number: FILTER_VALIDATE_INT, min 1, max
+ * PHP_INT_MAX - 1 (9223372036854775806). String inputs are compared
+ * exactly via BigInt (JS numbers cannot hold the boundary); JSON
+ * numbers must be integers in range (imprecise past 2^53 — the
+ * urlencoded string path is the exact one, and the realistic one).
+ * Non-int/non-string JSON values (null, bool, object) fail, exactly
+ * as PHP's (!is_int && !is_string) branch does.
+ * invoice_reminder_send_time: null or blank passes; otherwise the
+ * trimmed value must match ^([01]\d|2[0-3]):[0-5]\d$.
+ * Key matching is case-insensitive (PHP lowercases the key); the
+ * write loop below still stores the original-case key.
+ * Deliberately NOT added here: canUpdateParam's company-field
+ * permission checks (a separate concern, untouched by R5a scope).
+ */
+const MAX_STARTING_NUMBER = 9223372036854775806n;
+
+function validateSystemParam(key: string, val: unknown): void {
+  const lower = key.toLowerCase();
+  if (lower === "invoice_starting_number") {
+    let ok = false;
+    if (typeof val === "string") {
+      if (/^[+-]?\d+$/.test(val)) {
+        const n = BigInt(val);
+        ok = n >= 1n && n <= MAX_STARTING_NUMBER;
+      }
+    } else if (typeof val === "number") {
+      ok = Number.isInteger(val) && val >= 1 && val <= 9223372036854775806;
+    }
+    if (!ok) {
+      throw new FbError(
+        "Next invoice number must be a positive whole number no greater than 9223372036854775806.",
+      );
+    }
+  }
+  if (lower === "invoice_reminder_send_time") {
+    if (
+      val !== null &&
+      String(val).trim() !== "" &&
+      !/^([01]\d|2[0-3]):[0-5]\d$/.test(String(val).trim())
+    ) {
+      throw new FbError("Reminder send time must be empty or a valid 24-hour time (HH:MM).");
+    }
+  }
+}
+
+/** Raw-aware param read: JSON bodies carry native types in rawParams. */
+function rawOrParam(ctx: CallContext, key: string): unknown {
+  if (ctx.rawParams && key in ctx.rawParams) return ctx.rawParams[key];
+  return ctx.params[key];
+}
+
 register("admin", "system", "update_params", async (ctx: CallContext) => {
   requireAdmin(ctx);
+  for (const [k, v] of Object.entries(ctx.params)) {
+    if (k === "CSRFToken") continue;
+    // Presence-checked, NOT `??`: a JSON null is a real value (PHP
+    // validates it as non-int/non-string), and `??` would replace it
+    // with the stringified params form ("null") — same verdict for
+    // starting_number, but the WRONG verdict for reminder_send_time,
+    // where null is explicitly allowed. Caught by parity34.
+    const val = ctx.rawParams && k in ctx.rawParams ? ctx.rawParams[k] : v;
+    validateSystemParam(k, val);
+  }
   for (const [k, v] of Object.entries(ctx.params)) {
     if (k === "CSRFToken") continue;
     await upsertSetting(k, v ?? "");
   }
   return true;
+});
+
+/**
+ * R5a — the six deferred system endpoints (the other three deferred,
+ * security ip_lookup/run_check/run_checks, belong to R5i).
+ * Permission keys are PHP's, including the pinned asymmetry:
+ * update_localization_settings uses system/update_params, NOT
+ * system/manage_settings — do not "fix" this into uniformity.
+ */
+register("admin", "system", "localization_settings", async (ctx: CallContext) => {
+  requireAdmin(ctx);
+  return {
+    locale: phpStringCast(getConfigProperty("i18n.locale", "en_US")),
+    auto_detect_locale: phpNormalizeBoolean(getConfigProperty("i18n.auto_detect_locale", true), true),
+  };
+});
+
+register("admin", "system", "update_localization_settings", async (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const locale = rawOrParam(ctx, "locale");
+  // PHP: writes locale only when set AND non-empty; always writes
+  // auto_detect_locale normalized (absent/null -> true -> true).
+  if (locale !== undefined && locale !== null && locale !== "") {
+    // Stored as-is, as PHP stores $data['locale'] (a JSON number or
+    // array would land verbatim too; the writer handles both).
+    setConfigProperty("i18n.locale", locale as PhpConfigValue);
+  }
+  setConfigProperty(
+    "i18n.auto_detect_locale",
+    phpNormalizeBoolean(rawOrParam(ctx, "auto_detect_locale") ?? true, true),
+  );
+  return true;
+});
+
+register("admin", "system", "error_reporting_enabled", async (ctx: CallContext) => {
+  requireAdmin(ctx);
+  return phpBoolCast(getConfigProperty("debug_and_monitoring.report_errors", false));
+});
+
+register("admin", "system", "toggle_error_reporting", async (ctx: CallContext) => {
+  requireAdmin(ctx);
+  const current = getConfigProperty("debug_and_monitoring.report_errors", false);
+  setConfigProperty("debug_and_monitoring.report_errors", !phpBoolCast(current));
+  return true;
+});
+
+register("admin", "system", "last_error_reporting_change", async (ctx: CallContext) => {
+  requireAdmin(ctx);
+  // A code constant (SentryHelper::last_change), NOT a setting.
+  return "0.8.8";
+});
+
+register("admin", "system", "instance_id", async (ctx: CallContext) => {
+  requireAdmin(ctx);
+  // PHP defines INSTANCE_ID from info.instance_id at load, default 'Unknown'.
+  return phpStringCast(getConfigProperty("info.instance_id", "Unknown"));
 });

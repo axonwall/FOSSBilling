@@ -1,0 +1,23 @@
+{
+ "after_empty_banana": {
+  "error": null,
+  "result": {
+   "auto_detect_locale": true,
+   "locale": "de_DE"
+  }
+ },
+ "after_write": {
+  "error": null,
+  "result": {
+   "auto_detect_locale": false,
+   "locale": "de_DE"
+  }
+ },
+ "before": {
+  "error": null,
+  "result": {
+   "auto_detect_locale": true,
+   "locale": "en_US"
+  }
+ }
+}

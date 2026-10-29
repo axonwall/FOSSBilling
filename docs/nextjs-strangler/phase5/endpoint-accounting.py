@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Phase 5 R4d closing accounting: reconcile the 579-endpoint catalog
+"""Phase 5 R5a closing accounting: reconcile the 579-endpoint catalog
 against the TS handler registry, the explicit-removal lists, and the
 named R5 deferrals. Re-derived from sources, never copied from R1.
+R5a closed 6 of the deferred-9 (localization x2, error_reporting x3,
+instance_id); only the security trio remains deferred (R5i).
 
 Usage: python3 endpoint-accounting.py
 Exit 0 only when resolving + removed + deferred + proxied == 579.
@@ -38,15 +40,12 @@ REMOVED = {
 }
 
 DEFERRED = {
-    ("admin", "system", m)
-    for m in [
-        "localization_settings", "update_localization_settings",
-        "error_reporting_enabled", "toggle_error_reporting",
-        "last_error_reporting_change", "instance_id",
-    ]
-} | {
     ("admin", "security", m) for m in ["ip_lookup", "run_check", "run_checks"]
 }
+# R5a closed the six system deferrals (localization_settings,
+# update_localization_settings, error_reporting_enabled,
+# toggle_error_reporting, last_error_reporting_change, instance_id) —
+# they now have handlers, so they count as resolving, not deferred.
 
 # Magic __call: served by the servicecustom magic handler (R4d), not by a
 # literal register() call. The catalog holds exactly one __call entry.

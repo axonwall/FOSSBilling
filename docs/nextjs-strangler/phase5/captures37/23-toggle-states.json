@@ -1,0 +1,14 @@
+{
+ "after_toggle_1": {
+  "error": null,
+  "result": true
+ },
+ "after_toggle_2": {
+  "error": null,
+  "result": false
+ },
+ "before": {
+  "error": null,
+  "result": false
+ }
+}

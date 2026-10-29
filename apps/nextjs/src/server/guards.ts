@@ -415,6 +415,14 @@ export const ADMIN_GUARDS: Record<string, [string, string | null][]> = {
   "admin/theme/get_current": [["theme", "view"]],
   "admin/theme/get_list": [["theme", "view"]],
   "admin/system/update_params": [["system", "update_params"]],
+  // R5a: permission keys are PHP's, including the pinned asymmetry —
+  // update_localization_settings uses update_params, NOT manage_settings.
+  "admin/system/localization_settings": [["system", "manage_settings"]],
+  "admin/system/update_localization_settings": [["system", "update_params"]],
+  "admin/system/error_reporting_enabled": [["system", "view"]],
+  "admin/system/toggle_error_reporting": [["system", "toggle_error_reporting"]],
+  "admin/system/last_error_reporting_change": [["system", "view"]],
+  "admin/system/instance_id": [["system", "view"]],
   "admin/widgets/list": [["widgets", "view"]],
   "admin/widgets/rebuild": [["widgets", "manage"]],
 };
