@@ -1,0 +1,373 @@
+{
+ "A_php_full_run": {
+  "http": 200,
+  "result": true,
+  "error": null,
+  "last_cron_exec": "2026-10-29 19:00:20",
+  "queue_pending_before": 5,
+  "queue_pending_after": 0,
+  "queue_sending_after": 67,
+  "invoice_event_before": 776,
+  "invoice_event_after": 836,
+  "session_before": 23,
+  "session_after": 23,
+  "seo_before": null,
+  "seo_after": null,
+  "sync_before": "2026-10-26 03:24:56",
+  "sync_after": "2026-10-26 03:24:56",
+  "invoked_before": "2026-10-24 05:31:25",
+  "invoked_after": "2026-10-29 19:00:18"
+ },
+ "B_ts_prefix_run": {
+  "http": 200,
+  "result": true,
+  "error": null,
+  "last_cron_exec": "2026-10-29 19:00:37",
+  "queue_pending_before": 5,
+  "queue_pending_after": 76,
+  "invoice_event_before": 776,
+  "invoice_event_after": 776,
+  "seo_before": null,
+  "seo_after": null
+ },
+ "C_gate_pending": {
+  "http": 503,
+  "result": null,
+  "error": {
+   "message": "FOSSBilling update finalization is pending. Complete finalization before using the admin API.",
+   "code": 503
+  },
+  "last_before": null,
+  "last_after": null,
+  "queue_pending_before": 5,
+  "queue_pending_after": 5,
+  "events_before": 776,
+  "events_after": 836,
+  "state_after": {
+   "status": "finalized",
+   "from_version": "0.0.1",
+   "target_version": "0.0.1",
+   "branch": "release",
+   "update_type": null,
+   "source": "test",
+   "created_at": "2026-10-29T00:00:00+00:00",
+   "finalized_at": "2026-10-29T19:00:45+00:00",
+   "completed_at": null,
+   "maintenance_mode": {
+    "enabled": false,
+    "allowed_urls": [],
+    "allowed_ips": []
+   }
+  },
+  "maintenance_on_after": false
+ },
+ "C_gate_missing": {
+  "http": 503,
+  "result": null,
+  "error": {
+   "message": "FOSSBilling update finalization is pending. Complete finalization before using the admin API.",
+   "code": 503
+  },
+  "recreated_state": {
+   "status": "finalized",
+   "from_version": null,
+   "target_version": "0.0.1",
+   "branch": "release",
+   "update_type": null,
+   "source": "missing-finalization-state",
+   "created_at": "2026-10-29T19:00:49+00:00",
+   "finalized_at": "2026-10-29T19:00:54+00:00",
+   "completed_at": null,
+   "maintenance_mode": {
+    "enabled": false,
+    "allowed_urls": [],
+    "allowed_ips": []
+   }
+  },
+  "maintenance_on_after": true
+ },
+ "D_guest_throttled": {
+  "http": 200,
+  "result": false,
+  "error": null,
+  "last_after": "2026-10-29 19:00:29"
+ },
+ "D_guest_runs": {
+  "http": 200,
+  "result": true,
+  "error": null,
+  "last_after": "2026-10-29 19:01:16"
+ },
+ "D_guest_wrong_hash": {
+  "http": 403,
+  "error": {
+   "message": "You do not have permission to perform this action",
+   "code": 403
+  }
+ },
+ "D_guest_empty_hash": {
+  "http": 403,
+  "error": {
+   "message": "Guest cron is enabled but no security hash has been configured",
+   "code": 403
+  }
+ },
+ "D_guest_disabled": {
+  "http": 403,
+  "error": {
+   "message": "You do not have permission to perform this action",
+   "code": 403
+  }
+ },
+ "D_ts_guest_settings_source": {
+  "http": 200,
+  "error": {
+   "message": "You do not have permission to perform this action",
+   "code": 403
+  }
+ },
+ "E_generate": {
+  "result": true,
+  "error": null,
+  "invoice_count_before": 326,
+  "invoice_count_after": 331,
+  "single": {
+   "id": 480,
+   "status": "unpaid",
+   "issued": 1,
+   "nr": "358",
+   "serie": "FOSS",
+   "due_at": "2026-11-03 19:01:27",
+   "currency": "USD"
+  },
+  "neg": null,
+  "far": null,
+  "underscore": null,
+  "cancelmeta": null,
+  "merge_pair": [
+   484,
+   484
+  ],
+  "merge_lines": [
+   {
+    "type": "order",
+    "rel_id": "184",
+    "task": "renew",
+    "status": "pending_payment",
+    "price": 25
+   },
+   {
+    "type": "order",
+    "rel_id": "185",
+    "task": "renew",
+    "status": "pending_payment",
+    "price": 25
+   }
+  ],
+  "nonmerge_pair": [
+   481,
+   482
+  ],
+  "reuse": [
+   477,
+   477
+  ],
+  "reuse_row": {
+   "id": 477,
+   "status": "unpaid",
+   "issued": 0,
+   "nr": null,
+   "serie": "FOSS",
+   "due_at": null,
+   "currency": "USD"
+  },
+  "paidlink_new": 483,
+  "paidlink_new_row": {
+   "id": 483,
+   "status": "unpaid",
+   "issued": 1,
+   "nr": "361",
+   "serie": "FOSS",
+   "due_at": "2026-11-03 19:01:27",
+   "currency": "USD"
+  },
+  "pending_paid_renew": null
+ },
+ "F_invoke_due": {
+  "first_result": true,
+  "error": null,
+  "gate_after_first": "2026-10-29 19:01:47",
+  "new_queue_rows": 2,
+  "reminded": {
+   "D1": "2026-10-29 19:01:41",
+   "D2": null,
+   "D3": "2026-10-29 19:01:40",
+   "D4": null,
+   "D5": "2026-10-29 01:00:00",
+   "D6": null
+  }
+ },
+ "F_send_time_deferral": {
+  "send_time": "21:01",
+  "result": true,
+  "new_queue_rows": 0,
+  "reminded": null,
+  "gate_after": "2026-10-29 19:01:57"
+ },
+ "G_warnings": {
+  "result": true,
+  "error": null,
+  "w1_meta": "2026-10-30 07:01:27",
+  "w1_suspension_at": "2026-10-30 07:01:27",
+  "w2_meta": "2026-10-30 07:01:27",
+  "w3_meta": null,
+  "w4_meta": null,
+  "new_queue": [
+   {
+    "subject": "Suspension warning",
+    "content": "Order 179 suspension 2026-10-30 07:01:27"
+   }
+  ]
+ },
+ "G_release_attempt": {
+  "result": true,
+  "error": null,
+  "w5_meta": null,
+  "new_queue": 0
+ },
+ "H_pay": {
+  "result": true,
+  "error": null,
+  "p1": "paid",
+  "p2": "unpaid",
+  "p3": "paid",
+  "p4": "unpaid",
+  "p5": "unpaid",
+  "px": "paid",
+  "py": "unpaid",
+  "bal2": [
+   60,
+   -50
+  ],
+  "bal3": [
+   60,
+   -50
+  ]
+ },
+ "H_ts_prefix_pay": {
+  "result": {},
+  "error": null
+ },
+ "I_sessions_cutoff": {
+  "result": true,
+  "sessions_before": 26,
+  "sessions_after": 24,
+  "s1_present": 0,
+  "s2_present": 0,
+  "s3_present": 1,
+  "fresh_order_status": "pending_setup",
+  "fresh_item_status": "pending_payment",
+  "fresh_item_attempts": 0,
+  "old_order_status": "pending_setup",
+  "old_item_status": "pending_payment",
+  "old_item_attempts": 1,
+  "old_notes": [
+   {
+    "status": "pending_setup",
+    "notes": "Order could not be activated due to error: Module service does not have a service class. Make sure Service.php exists and is valid.."
+   }
+  ]
+ },
+ "J_expired_unpaid": {
+  "result": true,
+  "v1_status": "canceled",
+  "v2_present": 0,
+  "v2_items": 0,
+  "v3_status": "unpaid",
+  "v4_status": "paid",
+  "v1_row": {
+   "id": 477,
+   "client_id": 1,
+   "serie": "FOSS",
+   "nr": null,
+   "hash": "5d9aac9ea282ce6486f3630f51154b48592e2b8a181d09",
+   "currency": "USD",
+   "currency_rate": null,
+   "credit": null,
+   "base_income": null,
+   "base_refund": null,
+   "refund": null,
+   "notes": "2026-10-29 19:03:03: Invoice canceled (voided) without replacement.       \n2026-10-29 19:03:03: Expired unpaid \u2014 automatically voided after 30 days.       \n",
+   "text_1": null,
+   "text_2": null,
+   "status": "canceled",
+   "credit_note_for_invoice_id": null,
+   "debit_note_for_invoice_id": null,
+   "replaces_invoice_id": null,
+   "replaced_by_invoice_id": null,
+   "seller_company": null,
+   "seller_company_vat": null,
+   "seller_company_number": null,
+   "seller_address": null,
+   "seller_phone": null,
+   "seller_email": null,
+   "buyer_first_name": null,
+   "buyer_last_name": null,
+   "buyer_company": null,
+   "buyer_company_vat": null,
+   "buyer_company_number": null,
+   "buyer_address": null,
+   "buyer_city": null,
+   "buyer_state": null,
+   "buyer_country": null,
+   "buyer_zip": null,
+   "buyer_phone": null,
+   "buyer_email": null,
+   "issued": 1,
+   "taxname": null,
+   "taxrate": "0",
+   "due_at": "2026-09-19 19:01:27",
+   "reminded_at": null,
+   "paid_at": null,
+   "hash_expires_at": "2027-01-27 19:03:03",
+   "created_at": "2026-10-29 19:02:42",
+   "updated_at": "2026-10-29 19:03:03",
+   "gateway_id": null
+  }
+ },
+ "K_activity_defaults": {
+  "result": true,
+  "admin_old": 0,
+  "admin_new": 1,
+  "client_old": 0,
+  "system_old": 0,
+  "email_old": 1,
+  "email_new": 1,
+  "pw_old": 0,
+  "pw_fresh": 1
+ },
+ "K_activity_email30": {
+  "result": true,
+  "email_old": 0
+ },
+ "L_domain_sync_stale": {
+  "result": true,
+  "sync_after": "2026-10-29 19:04:00",
+  "domains": 0
+ },
+ "M_prod_sendmail": {
+  "http": 200,
+  "result": true,
+  "error": null,
+  "pending_before": 5,
+  "pending_after": 0,
+  "mock_messages": 5,
+  "mock_subjects": [
+   null,
+   null,
+   null,
+   null,
+   null
+  ]
+ }
+}

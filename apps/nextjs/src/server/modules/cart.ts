@@ -63,6 +63,7 @@ import { currencyToApi } from "./currency";
 import { activateOrderRow } from "./order";
 import { productUnit } from "./product";
 import { formatCurrencyValue } from "../twig";
+import { zoneTodayString } from "../tz";
 
 /**
  * Cart module (guest cart + client checkout + staff baskets) — TS port of
@@ -1906,13 +1907,15 @@ register("admin", "cart", "get", async (ctx: CallContext) => {
   return await staffCartArray(cart, null);
 });
 
-register("admin", "cart", "batch_expire", async (ctx: CallContext) => {
-  requireAdmin(ctx);
-  // 'today' in the server timezone (UTC on the seam) minus 7 days.
-  const now = new Date();
-  const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  const cutoff = new Date(todayUtc.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const cutoffStr = cutoff.toISOString().slice(0, 19).replace("T", " ");
+/**
+ * Cart\Api\Admin::batch_expire (R5f zone fix): cutoff is the
+ * zone-calendar today minus 7 days at 00:00:00 (PHP's
+ * DateTimeImmutable('today') in the process TZ), not UTC today.
+ * Carts with created_at < cutoff and session_id NOT LIKE 'staff:%'
+ * lose their products, then themselves. Returns true.
+ */
+export async function runBatchExpireCarts(): Promise<boolean> {
+  const cutoffStr = zoneTodayString(-7);
   const expired = await getDb()
     .prepare("SELECT id FROM cart WHERE created_at < ? AND session_id NOT LIKE 'staff:%'")
     .all(cutoffStr) as { id: number }[];
@@ -1922,4 +1925,9 @@ register("admin", "cart", "batch_expire", async (ctx: CallContext) => {
     await w.prepare("DELETE FROM cart WHERE id = ?").run(row.id);
   }
   return true;
+}
+
+register("admin", "cart", "batch_expire", async (ctx: CallContext) => {
+  requireAdmin(ctx);
+  return await runBatchExpireCarts();
 });

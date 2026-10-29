@@ -19,6 +19,7 @@ import {
   findCurrencyByCode,
   findDefaultCurrency,
   findInvoiceRow,
+  getDb,
   getDbWrite,
   type ClientRow,
 } from "./db";
@@ -266,9 +267,112 @@ export async function prepareInvoice(
   return id;
 }
 
+/**
+ * Invoice\Service::recordJournalEvent snapshot, as
+ * Invoice\Service::toApiArray computes it: serie_nr (padding 5),
+ * status, issued, subtotal/tax/total, buyer/seller blocks,
+ * gateway_id + gateway name-or-code, paid/due/created dates.
+ * Drafts with no frozen buyer fields display the live client record
+ * (including the phone_cc key); issued invoices keep their frozen
+ * copy. Used by the R5f cron events (generate, reminder,
+ * expired-unpaid cancel); pre-existing issue/paid/canceled callers
+ * keep their partial snapshots (see db.ts insertInvoiceEvent).
+ */
+export async function buildJournalSnapshot(invoiceId: number): Promise<Record<string, unknown>> {
+  const row = await findInvoiceRow(invoiceId);
+  const items = await listInvoiceItems(invoiceId);
+  const { subtotal, tax, total } = invoiceTotals(items, String(row?.["taxrate"] ?? "0"));
+  const isDraft = !row?.["issued"];
+  const client =
+    row?.["client_id"] !== null && row?.["client_id"] !== undefined
+      ? await findClientById(Number(row["client_id"]))
+      : undefined;
+  let buyer: Record<string, unknown> = {
+    first_name: row?.["buyer_first_name"] ?? null,
+    last_name: row?.["buyer_last_name"] ?? null,
+    company: row?.["buyer_company"] ?? null,
+    company_vat: row?.["buyer_company_vat"] ?? null,
+    company_number: row?.["buyer_company_number"] ?? null,
+    address: row?.["buyer_address"] ?? null,
+    city: row?.["buyer_city"] ?? null,
+    state: row?.["buyer_state"] ?? null,
+    country: row?.["buyer_country"] ?? null,
+    phone: row?.["buyer_phone"] ?? null,
+    email: row?.["buyer_email"] ?? null,
+    zip: row?.["buyer_zip"] ?? null,
+  };
+  if (
+    isDraft && client &&
+    !row?.["buyer_first_name"] && !row?.["buyer_last_name"] && !row?.["buyer_company"]
+  ) {
+    buyer = {
+      first_name: client.first_name,
+      last_name: client.last_name,
+      company: client.company,
+      company_vat: client.company_vat,
+      company_number: client.company_number,
+      address: [client.address_1, client.address_2].filter(Boolean).join(" "),
+      city: client.city,
+      state: client.state,
+      country: client.country,
+      phone: [client.phone_cc, client.phone].filter(Boolean).join(" "),
+      phone_cc: client.phone_cc ?? "",
+      email: client.email,
+      zip: client.postcode,
+    };
+  }
+  const company = await getCompany();
+  const liveAddress = [company.address_1, company.address_2, company.address_3]
+    .filter(Boolean)
+    .join(" ");
+  const frozenAddress = !isDraft ? (row?.["seller_address"] as string | null) : null;
+  const seller: Record<string, unknown> = {
+    company: row?.["seller_company"] || company.name || "",
+    company_vat: isDraft ? (company.vat_number ?? "") : (row?.["seller_company_vat"] ?? ""),
+    company_number: isDraft ? (company.number ?? "") : (row?.["seller_company_number"] ?? ""),
+    address: frozenAddress || liveAddress,
+    address_1: frozenAddress || (company.address_1 ?? ""),
+    address_2: frozenAddress !== null ? "" : (company.address_2 ?? ""),
+    address_3: frozenAddress !== null ? "" : (company.address_3 ?? ""),
+    phone: !isDraft ? ((row?.["seller_phone"] as string | null) ?? company.tel ?? "") : (company.tel ?? ""),
+    email: !isDraft ? ((row?.["seller_email"] as string | null) ?? company.email ?? "") : (company.email ?? ""),
+    account_number: company.account_number ?? null,
+    bank_name: company.bank_name ?? null,
+    bic: company.bic ?? null,
+  };
+  const gatewayId = (row?.["gateway_id"] as number | null) ?? null;
+  let gateway: string | null = null;
+  if (gatewayId !== null) {
+    const gw = (await getDb()
+      .prepare("SELECT name, gateway FROM pay_gateway WHERE id = ?")
+      .get(gatewayId)) as unknown as { name: string | null; gateway: string | null } | undefined;
+    gateway = gw ? (gw.name || gw.gateway) : null;
+  }
+  const nr = row?.["nr"];
+  const serieNr = `${row?.["serie"] ?? ""}${(/^\d+$/.test(String(nr ?? "")) ? String(nr) : String(invoiceId)).padStart(5, "0")}`;
+  return {
+    serie_nr: serieNr,
+    status: row?.["status"] ?? null,
+    issued: !!row?.["issued"],
+    subtotal,
+    tax,
+    total,
+    buyer,
+    seller,
+    paid_at: row?.["paid_at"] ?? null,
+    due_at: row?.["due_at"] ?? null,
+    created_at: row?.["created_at"] ?? null,
+    gateway_id: gatewayId,
+    gateway,
+  };
+}
+
 /** Freeze buyer (client) + seller (company) onto the invoice, as PHP
- * does once at issuance. */
+ * does once at issuance. Already-issued invoices are left untouched
+ * (PHP snapshotPartiesFromLiveRecords returns early when issued). */
 async function snapshotParties(invoiceId: number, client: ClientRow): Promise<void> {
+  const existing = await findInvoiceRow(invoiceId);
+  if (existing?.["issued"]) return;
   const company = await getCompany();
   const address = [client.address_1, client.address_2].filter(Boolean).join(" ") || null;
   await updateInvoiceRow(invoiceId, {
@@ -298,48 +402,91 @@ async function snapshotParties(invoiceId: number, client: ClientRow): Promise<vo
 }
 
 /**
- * Invoice\Service::issueInvoice — claims the number, snapshots the
- * parties, marks issued, writes the journal event, then optionally
- * pays from the client's credit balance.
+ * Invoice\Service::issueInvoice — snapshots the parties (skipped when
+ * already issued), claims the number (skipped when a numeric nr
+ * already exists — legacy drafts keep their number), marks issued,
+ * writes the journal event, then optionally pays from the client's
+ * credit balance. The 'Invoice Created' email is queued AFTER the
+ * credit payment, exactly as PHP's AfterAdminInvoiceIssueEvent
+ * listener runs after tryPay: a credits-paid invoice gets no created
+ * email (status is paid by then), and zero-total invoices get none
+ * either (PHP requires total > 0). R5f: fullJournal writes the full
+ * recordJournalEvent snapshot with the real client_id (generate
+ * path); other callers keep the legacy partial snapshot.
  */
 export async function issueInvoice(
   invoiceId: number,
   client: ClientRow,
-  opts: { useCredits?: boolean } = {},
+  opts: { useCredits?: boolean; fullJournal?: boolean } = {},
 ): Promise<void> {
+  const row = await findInvoiceRow(invoiceId);
+  if (!row) throw new FbError("Invoice not found");
+  if (!row["issued"] && row["status"] !== "unpaid") {
+    throw new FbError("Only unpaid draft invoices can be issued.");
+  }
   await snapshotParties(invoiceId, client);
-  const serie = await findSettingValue("invoice_series");
-  const nr = await nextInvoiceNumber(serie);
-  await getDbWrite()
-    .prepare("UPDATE invoice SET serie = ?, nr = ?, issued = 1, updated_at = ? WHERE id = ?")
-    .run(serie, nr, nowTimestamp(), invoiceId);
-  await insertInvoiceEvent(invoiceId, "issued", {
-    serie_nr: `${serie ?? ""}${nr}`,
-    status: "unpaid",
-    issued: true,
-  });
-  // PHP queues the 'Invoice Created' email via the issued event.
-  await queueInvoiceEmail("mod_invoice_created", invoiceId);
+  const existingNr = row["nr"];
+  if (typeof existingNr === "string" && /^\d+$/.test(existingNr)) {
+    await getDbWrite()
+      .prepare("UPDATE invoice SET issued = 1, updated_at = ? WHERE id = ?")
+      .run(nowTimestamp(), invoiceId);
+  } else {
+    const serie = await findSettingValue("invoice_series");
+    const nr = await nextInvoiceNumber(serie);
+    await getDbWrite()
+      .prepare("UPDATE invoice SET serie = ?, nr = ?, issued = 1, updated_at = ? WHERE id = ?")
+      .run(serie, nr, nowTimestamp(), invoiceId);
+  }
+  if (opts.fullJournal) {
+    const snapshot = await buildJournalSnapshot(invoiceId);
+    await insertInvoiceEvent(invoiceId, "issued", snapshot, {
+      clientId: typeof row["client_id"] === "number" ? row["client_id"] : null,
+    });
+  } else {
+    const fresh = await findInvoiceRow(invoiceId);
+    await insertInvoiceEvent(invoiceId, "issued", {
+      serie_nr: `${fresh?.["serie"] ?? ""}${fresh?.["nr"] ?? ""}`,
+      status: "unpaid",
+      issued: true,
+    });
+  }
   if (opts.useCredits) await tryPayWithCredits(invoiceId);
+  // PHP queues the 'Invoice Created' email via the issued event,
+  // which fires after the credit payment above.
+  const after = await findInvoiceRow(invoiceId);
+  const items = await listInvoiceItems(invoiceId);
+  const { total } = invoiceTotals(items, String(after?.["taxrate"] ?? "0"));
+  if (total > 0 && after?.["status"] !== "paid" && after?.["client_id"] !== null && after?.["client_id"] !== undefined) {
+    await queueInvoiceEmail("mod_invoice_created", invoiceId);
+  }
 }
 
-/** Invoice\Service::tryPayWithCredits + markAsPaid(charge: false). */
+/** Invoice\Service::tryPayWithCredits + markAsPaid(charge: false).
+ * Guards live here (PHP locks + refreshes the row first): unissued
+ * or already-paid invoices return false. Zero/negative totals PAY
+ * (PHP pays them without a balance row when the balance covers the
+ * total — a zero total is always covered unless the balance is
+ * negative); only a positive total writes a balance deduction. */
 export async function tryPayWithCredits(invoiceId: number): Promise<boolean> {
+  const row = await findInvoiceRow(invoiceId);
+  if (!row || !row["issued"]) return false;
+  if (row["status"] === "paid") return false;
   const items = await listInvoiceItems(invoiceId);
   const { total } = invoiceTotals(items, await currentTaxrate(invoiceId));
-  if (total <= 0) return false;
   const clientId = await currentClientId(invoiceId);
   if (clientId === null) return false;
   const balance = await clientBalanceSum(clientId);
   if (round2(balance) < round2(total)) return false;
-  const nr = await currentNr(invoiceId);
-  await insertBalanceRow({
-    client_id: clientId,
-    type: "invoice",
-    rel_id: invoiceId,
-    amount: -total,
-    description: `Payment for invoice #${nr ?? invoiceId} using account credit.`,
-  });
+  if (total > 0) {
+    const nr = await currentNr(invoiceId);
+    await insertBalanceRow({
+      client_id: clientId,
+      type: "invoice",
+      rel_id: invoiceId,
+      amount: -total,
+      description: `Payment for invoice #${nr ?? invoiceId} using account credit.`,
+    });
+  }
   await markInvoicePaid(invoiceId);
   return true;
 }

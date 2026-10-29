@@ -4,6 +4,7 @@ import {
   deleteOrderStatusRow,
   findClientById,
   findCurrencyByCode,
+  findDefaultCurrency,
   findOrderById,
   findProductById,
   insertCustomService,
@@ -17,6 +18,7 @@ import {
   insertOrderStatusReturningId,
   listOrderStatusHistory,
   listOrders,
+  nowTimestamp,
   orderStatusCounts,
   updateOrderRow,
   type OrderRowFull,
@@ -32,6 +34,10 @@ import { requirePermission } from "../permissions";
 import { clientBlock } from "./invoice";
 import { issueInvoice, prepareInvoice, round2 } from "../money";
 import { exportCsvResponse, requestedCsvHeaders } from "../csv";
+import { readExtensionConfig } from "../crypt";
+import { companyContext, findEmailTemplate, queueEmail } from "../emailer";
+import { renderTemplateStrict } from "../twig";
+import { zoneTodayString } from "../tz";
 
 /**
  * Order module (Phase 3 batch 3) — TS port of
@@ -422,45 +428,214 @@ register("admin", "order", "activate", async (ctx: CallContext) => {
   return true;
 });
 
-// --- Batch jobs (cron) ---------------------------------------------------------
+// --- Batch jobs (cron, R5f) ---------------------------------------------------
 
-export async function runBatchSuspendExpired(): Promise<void> {
-  const now = fmtTs(new Date());
-  for (const order of await listOrders({ status: "active" })) {
-    if (order.expires_at && order.expires_at < now) {
-      await updateOrderRow(order.id, {
-        status: "suspended",
-        suspended_at: now,
-        reason: "Expired",
+/** PHP truthiness for extension-config flags: false, 0, "0", "", null
+ * are falsy; everything else (including "false") is truthy. */
+function phpTruthy(value: unknown): boolean {
+  return !(value === false || value === null || value === undefined || value === 0 || value === "0" || value === "");
+}
+
+/** Order\Service::resolveBatchAfterDays: null/'' → default 7;
+ * negative → default 7; PHP (int) cast otherwise (non-numeric → 0). */
+function resolveBatchAfterDays(value: unknown, def = 7): number {
+  if (value === null || value === undefined || value === "") return def;
+  const days = typeof value === "number" ? Math.trunc(value) : parseInt(String(value), 10);
+  const n = Number.isFinite(days) ? days : 0;
+  return n < 0 ? def : n;
+}
+
+/**
+ * Order\Service::batchSendSuspensionWarnings. Before/After batch
+ * events have NO listeners outside Order\Service + tests → no-ops.
+ * Candidates: active + expires_at NOT NULL, grace =
+ * MAX(COALESCE(order grace, product grace, 0), 0) > 0, suspension_at
+ * (expires + grace, same time-of-day) in (now, now+1 day]. Per
+ * candidate: reload; claim via client_order_meta
+ * (suspension_warning_for) — an existing row with the SAME value
+ * means already claimed → skip; otherwise update-or-insert the row;
+ * then sendTemplate mod_order_suspension_warning with the order api
+ * array + suspension_at. A send throw RELEASES the claim (delete
+ * the meta row) and the loop continues; the task still returns true.
+ * Template missing/disabled → no queue, claim kept (PHP's
+ * sendTemplate returns false there; TS does not auto-create the
+ * disabled template row PHP's getOrCreateTemplateByCode would —
+ * documented minor divergence, unasserted: parity crafts an enabled
+ * template). The template does NOT exist on the reference, so
+ * parity39 crafts an enabled row first (snapshot-restored).
+ */
+export async function runBatchSendSuspensionWarnings(): Promise<boolean> {
+  const nowStr = nowTimestamp();
+  const tomorrowStr = new Date(Date.now() + 86400_000).toISOString().slice(0, 19).replace("T", " ");
+  const candidates = (await getDb()
+    .prepare(
+      `SELECT due.id, due.suspension_at FROM (
+         SELECT o.id,
+           MAX(COALESCE(o.suspension_grace_days, p.suspension_grace_days, 0), 0) AS grace_days,
+           datetime(o.expires_at, '+' || MAX(COALESCE(o.suspension_grace_days, p.suspension_grace_days, 0), 0) || ' days') AS suspension_at
+         FROM client_order o LEFT JOIN product p ON p.id = o.product_id
+         WHERE o.status = 'active' AND o.expires_at IS NOT NULL
+       ) due
+       WHERE due.grace_days > 0 AND due.suspension_at > ? AND due.suspension_at <= ?
+       ORDER BY due.id`,
+    )
+    .all(nowStr, tomorrowStr)) as unknown as { id: number; suspension_at: string }[];
+  for (const cand of candidates) {
+    const order = await findOrderById(cand.id);
+    if (!order) continue;
+    const existing = (await getDb()
+      .prepare("SELECT id, value FROM client_order_meta WHERE client_order_id = ? AND name = 'suspension_warning_for' ORDER BY id LIMIT 1")
+      .get(order.id)) as unknown as { id: number; value: string | null } | undefined;
+    if (existing && existing.value === cand.suspension_at) continue;
+    const now = nowTimestamp();
+    if (existing) {
+      await getDbWrite().prepare("UPDATE client_order_meta SET value = ?, updated_at = ? WHERE id = ?").run(cand.suspension_at, now, existing.id);
+    } else {
+      await getDbWrite()
+        .prepare("INSERT INTO client_order_meta (client_order_id, name, value, created_at, updated_at) VALUES (?, 'suspension_warning_for', ?, ?, ?)")
+        .run(order.id, cand.suspension_at, now, now);
+    }
+    try {
+      const orderData = await orderArray(order, false);
+      orderData["suspension_at"] = cand.suspension_at;
+      const t = await findEmailTemplate("mod_order_suspension_warning");
+      if (!t || !t.enabled) continue;
+      const client = await findClientById(order.client_id);
+      if (!client) throw new FbError("Client not found");
+      const company = await companyContext();
+      const full: Record<string, unknown> = {
+        order: orderData,
+        c: clientBlock(client),
+        guest: { system_company: company, system_email: { signature: company.signature } },
+        default_currency: (await findDefaultCurrency())?.code ?? "USD",
+        __baseUrl: (process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080") + "/",
+        __currencyFormats: {},
+      };
+      // PHP's sendTemplate renders STRICT (SandboxedStringRenderer):
+      // an unclosed {{ }} throws and the claim is released. The
+      // forgiving renderTemplate would queue a literal render instead,
+      // so the suspension path must use the strict renderer here.
+      const subject = renderTemplateStrict(t.subject, full);
+      const content = renderTemplateStrict(t.content ?? "", full);
+      await queueEmail({
+        recipient: client.email,
+        sender: String(company.email ?? ""),
+        fromName: String(company.name ?? ""),
+        subject,
+        content,
+        clientId: client.id,
       });
-      await insertOrderStatus(order.id, "suspended", "Order suspended (expired)");
+    } catch (e) {
+      await getDbWrite()
+        .prepare("DELETE FROM client_order_meta WHERE client_order_id = ? AND name = 'suspension_warning_for' AND value = ?")
+        .run(order.id, cand.suspension_at);
+      console.error(`[cron] Failed to send order suspension warning email for order #${order.id}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  return true;
+}
+
+/**
+ * Order\Service::batchSuspendExpired, fixed: grace-aware expiry
+ * (expires + MAX(COALESCE(order grace, product grace, 0), 0) <= now,
+ * not a bare expires_at < now), reason from the mod_order config
+ * (batch_suspend_reason trimmed, else 'Non-payment'), PHP note
+ * format 'Order suspended for ' + reason. Per-order try/catch.
+ * Service-call side effect: for custom services PHP's
+ * _callOnService suspend is a no-op in practice (Servicecustom
+ * action_suspend on a plugin-less service); the hosting-manager
+ * call is a PINNED GAP (parity39 uses custom-type orders).
+ */
+export async function runBatchSuspendExpired(): Promise<void> {
+  const config = await readExtensionConfig("mod_order");
+  const configuredReason = String(config["batch_suspend_reason"] ?? "").trim();
+  const reason = configuredReason !== "" ? configuredReason : "Non-payment";
+  const now = nowTimestamp();
+  const rows = (await getDb()
+    .prepare(
+      `SELECT o.id FROM client_order o LEFT JOIN product p ON p.id = o.product_id
+       WHERE o.status = 'active' AND o.expires_at IS NOT NULL
+         AND datetime(o.expires_at, '+' || MAX(COALESCE(o.suspension_grace_days, p.suspension_grace_days, 0), 0) || ' days') <= ?
+       ORDER BY o.id`,
+    )
+    .all(now)) as unknown as { id: number }[];
+  for (const r of rows) {
+    try {
+      const order = await findOrderById(r.id);
+      if (!order || order.status !== "active") throw new FbError("Only active orders can be suspended");
+      await updateOrderRow(order.id, { status: "suspended", reason, suspended_at: now });
+      await insertOrderStatus(order.id, "suspended", `Order suspended for ${reason}`);
+    } catch (e) {
+      console.error(`[cron] batchSuspendExpired order #${r.id}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 }
 
+/**
+ * Order\Service::batchCancelSuspended, fixed: the mod_order config
+ * GATE (batch_cancel_suspended falsy/missing → return false, NO
+ * cancels — on the reference, with no mod_order config, PHP is a
+ * no-op while the old TS job cancelled); calendar-day cutoff via
+ * zone-aware today minus config days (default 7, negative → 7);
+ * suspended_at < cutoff, ORDER BY id DESC; reason from config
+ * (null → 'Order canceled', else 'Canceled order for ' + reason).
+ * cancelFromOrder also nulls expires_at/suspended_at and deletes
+ * the cancel_at_period_end meta — mirrored here. Subscription-cancel
+ * + promo/stock-release internals are no-ops on reference-like
+ * orders (no subscriptions/redemptions on crafted orders).
+ */
 export async function runBatchCancelSuspended(): Promise<boolean> {
-  const cutoff = fmtTs(new Date(Date.now() - 30 * 24 * 3600 * 1000));
-  let any = false;
-  for (const order of await listOrders({ status: "suspended" })) {
-    if (order.suspended_at && order.suspended_at < cutoff) {
-      await updateOrderRow(order.id, { status: "canceled", canceled_at: fmtTs(new Date()) });
-      await insertOrderStatus(order.id, "canceled", "Order canceled (suspended too long)");
-      any = true;
+  const config = await readExtensionConfig("mod_order");
+  if (!phpTruthy(config["batch_cancel_suspended"])) return false;
+  const reasonRaw = config["batch_cancel_suspended_reason"];
+  const reason = reasonRaw === null || reasonRaw === undefined ? null : String(reasonRaw);
+  const days = resolveBatchAfterDays(config["batch_cancel_suspended_after_days"]);
+  const cutoff = zoneTodayString(-days);
+  const rows = (await getDb()
+    .prepare("SELECT id, suspended_at FROM client_order WHERE status = 'suspended' AND suspended_at < ? ORDER BY id DESC")
+    .all(cutoff)) as unknown as { id: number }[];
+  for (const r of rows) {
+    try {
+      const order = await findOrderById(r.id);
+      if (!order) throw new FbError("Order not found");
+      await updateOrderRow(order.id, {
+        status: "canceled",
+        reason,
+        canceled_at: nowTimestamp(),
+        expires_at: null,
+        suspended_at: null,
+      });
+      await getDbWrite()
+        .prepare("DELETE FROM client_order_meta WHERE client_order_id = ? AND name = 'cancel_at_period_end'")
+        .run(order.id);
+      await insertOrderStatus(order.id, "canceled", reason === null ? "Order canceled" : `Canceled order for ${reason}`);
+    } catch (e) {
+      console.error(`[cron] batchCancelSuspended order #${r.id}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
-  return any;
+  return true;
 }
 
+/**
+ * Order\Service::batchCancelUnpaid — GATE ONLY in R5f. The config
+ * gate (batch_cancel_unpaid falsy/missing → false) is added because
+ * it fixes the live reference divergence (PHP no-ops with no
+ * mod_order config; old TS cancelled). The enabled path stays
+ * PINNED DIVERGENT: PHP DELETES stale pending_setup orders (after
+ * removing their linked unpaid invoice), TS marks them canceled —
+ * a full cascade rewrite is out of R5f scope, so parity39 asserts
+ * the gate only, never the enabled path.
+ */
 export async function runBatchCancelUnpaid(): Promise<boolean> {
+  const config = await readExtensionConfig("mod_order");
+  if (!phpTruthy(config["batch_cancel_unpaid"])) return false;
   const cutoff = fmtTs(new Date(Date.now() - 7 * 24 * 3600 * 1000));
-  let any = false;
   for (const order of await listOrders({ status: "pending_setup" })) {
     if (!order.created_at || order.created_at >= cutoff) continue;
     await updateOrderRow(order.id, { status: "canceled", canceled_at: fmtTs(new Date()) });
     await insertOrderStatus(order.id, "canceled", "Order canceled (unpaid)");
-    any = true;
   }
-  return any;
+  return true;
 }
 
 register("admin", "order", "batch_suspend_expired", async (ctx: CallContext) => {
@@ -479,9 +654,9 @@ register("admin", "order", "batch_cancel_unpaid", async (ctx: CallContext) => {
   return await runBatchCancelUnpaid();
 });
 
-register("admin", "order", "batch_send_suspension_warnings", (ctx: CallContext) => {
+register("admin", "order", "batch_send_suspension_warnings", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  return true;
+  return await runBatchSendSuspensionWarnings();
 });
 
 register("admin", "order", "suspend", async (ctx: CallContext) => {

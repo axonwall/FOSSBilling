@@ -495,7 +495,7 @@ async function sendFromQueue(
 /** Mirror of Email/Service.php batchSend(). Due rows only, priority
  * DESC + id ASC, queue_once limit (<=0 unlimited), time_limit budget
  * in minutes checked AFTER each send. Returns null like PHP (void). */
-async function batchSendMail(): Promise<null> {
+export async function batchSendMail(): Promise<null> {
   const settings = await readEmailSettings();
   const parsed = parseBccAddresses(settings.bccEmail);
   const bcc = parsed.valid;

@@ -796,11 +796,22 @@ register("admin", "client", "balance_add_funds", async (ctx) => {
   return true;
 });
 
-register("admin", "client", "batch_expire_password_reminders", async (ctx) => {
-  requireAdmin(ctx);
+/**
+ * Client batch_expire_password_reminders (unchanged in R5f): delete
+ * client_password_reset rows older than 2h. Same PINNED now-TZ note
+ * as ticket auto-close (UTC datetime vs PHP process-TZ wall now;
+ * equal under config UTC). Distinct from the Before listener's 900s
+ * prune — the runner runs BOTH.
+ */
+export async function runBatchExpirePasswordReminders(): Promise<boolean> {
   const cutoff = new Date(Date.now() - 2 * 3600 * 1000).toISOString().replace("T", " ").slice(0, 19);
   await getDbWrite().prepare("DELETE FROM client_password_reset WHERE created_at < ?").run(cutoff);
   return true;
+}
+
+register("admin", "client", "batch_expire_password_reminders", async (ctx) => {
+  requireAdmin(ctx);
+  return await runBatchExpirePasswordReminders();
 });
 
 register("admin", "client", "login_history_get_list", async (ctx) => {

@@ -357,6 +357,37 @@ async function getRate(
   throw new FbError(`Unable to fetch conversion rate for currency: ${to}.`);
 }
 
+/**
+ * Currency\Service::updateRatesBeforeAdminCronRun (R5f Before
+ * listener): runs only when the mod_currency config's sync_rate is
+ * not 'never' (default 'auto'). Default currency → 1.0, manual-rate
+ * currencies skipped, others live-fetched; computed first, then
+ * written (so a fetch failure writes nothing, as PHP's flush-at-end
+ * does). The caller catches failures per-effect, as PHP's listener
+ * does. Sandbox asymmetry, pinned: TS fetches fine while PHP dies
+ * at sandbox TLS and swallows it — so a crafted non-default,
+ * non-manual currency updates on TS but not PHP; parity proves the
+ * default/manual/never-gate paths, NOT live fetch.
+ */
+export async function runCurrencyRatesBeforeCron(): Promise<boolean> {
+  const config = await readExtensionConfig("mod_currency");
+  if ((config["sync_rate"] ?? "auto") === "never") return false;
+  const def = await findDefaultCurrency();
+  if (!def) throw new FbError("Default currency not found. Cannot update rates.");
+  const computed: { code: string; rate: number }[] = [];
+  for (const row of await listCurrencies()) {
+    if (row.is_default === 1) {
+      computed.push({ code: row.code, rate: 1.0 });
+    } else if (row.is_rate_manual === 1) {
+      continue;
+    } else {
+      computed.push({ code: row.code, rate: await getRate(def.code, row.code, config) });
+    }
+  }
+  for (const c of computed) await updateCurrencyRow(c.code, { conversion_rate: c.rate });
+  return true;
+}
+
 async function adminUpdateRates(ctx: CallContext) {
   requireAdmin(ctx);
   const def = await findDefaultCurrency();

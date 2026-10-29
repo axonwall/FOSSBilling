@@ -54,9 +54,11 @@ import {
   listOrders,
   nextNrForSerie,
   nowTimestamp,
+  setSettingValue,
   updateOrderRow,
   type ClientRow,
   type InvoiceRowFull,
+  type OrderRowFull,
 } from "../db";
 import {
   FbError,
@@ -83,6 +85,7 @@ async function isDepositInvoice(invoiceId: number): Promise<boolean> {
 import { clientSubscriptionArray } from "./client";
 import {
   assertCountIncomeWritable,
+  buildJournalSnapshot,
   countIncome,
   invoiceTotals,
   isClientTaxable,
@@ -94,6 +97,7 @@ import {
   tryPayWithCredits,
   type InvoiceItemInput,
 } from "../money";
+import { formatZoneDateTime, parseZoneDateTime, resolveZone, zoneTodayString } from "../tz";
 import { queueInvoiceEmail } from "../emailer";
 import { invoicePdfByHash } from "../pdf";
 import {
@@ -1900,29 +1904,749 @@ register("admin", "invoice", "send_reminder", async (ctx: CallContext) => {
   return true;
 });
 
-// --- Batch jobs ---------------------------------------------------------------
+// --- Batch jobs (cron, R5f) ---------------------------------------------------
+// PHP order in Cron\Service::runCrons: pay_with_credits and
+// activate_paid are NON-isolated (a throw aborts the run before
+// last_cron_exec); the rest are isolated by the runner in cron.ts.
 
+/** PHP's (int) cast: numeric strings truncate, non-numeric → 0. */
+function phpInt(value: unknown): number {
+  if (typeof value === "number") return Number.isFinite(value) ? Math.trunc(value) : 0;
+  if (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value))) {
+    return Math.trunc(Number(value));
+  }
+  return 0;
+}
+
+/** PHP is_numeric for the backfill nr/padding checks. */
+function phpIsNumeric(value: unknown): boolean {
+  if (typeof value === "number") return Number.isFinite(value);
+  return typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value));
+}
+
+function cronLog(task: string, message: string): void {
+  console.error(`[cron] ${task}: ${message}`);
+}
+
+// --- pay_with_credits ---------------------------------------------------------
+
+/**
+ * Invoice\Service::doBatchPayWithCredits (no-ids path — the runner's
+ * path; the ids-based endpoint handler is unchanged, and PHP ignores
+ * ids entirely, reading only an optional client_id filter). The SQL
+ * pre-filter is issued + unpaid + a balance ROW >= a non-deposit
+ * item's PRICE (per-row, not a sum); the SQL says ORDER BY id DESC
+ * but doBatchPayWithCredits reloads via findBy with NO orderBy, so
+ * the effective order is the repository's natural ASC order — the
+ * reload below sorts ASC, so a shared limited balance pays the
+ * lower id first (capture42 §H). Per-invoice try/catch; always true.
+ */
+export async function runBatchPayWithCredits(clientId?: number): Promise<boolean> {
+  const rows = (await getDb()
+    .prepare(
+      `SELECT m.id FROM invoice m
+         LEFT JOIN client_balance cb ON m.client_id = cb.client_id
+         LEFT JOIN invoice_item pi ON pi.invoice_id = m.id
+       WHERE m.status = 'unpaid' AND m.issued = 1
+         AND cb.amount >= pi.price AND pi.type != 'deposit'
+         ${clientId !== undefined ? "AND m.client_id = ?" : ""}
+       GROUP BY m.id ORDER BY m.id DESC`,
+    )
+    .all(...(clientId !== undefined ? [clientId] : []))) as unknown as { id: number }[];
+  const ids = rows.map((r) => r.id).sort((a, b) => a - b);
+  for (const id of ids) {
+    try {
+      await tryPayWithCredits(id);
+    } catch (e) {
+      cronLog("invoice_batch_pay_with_credits", `Failed to cover invoice #${id} with client credits: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  return true;
+}
+
+// --- activate_paid ------------------------------------------------------------
+
+/**
+ * Invoice\Service::doBatchPaidInvoiceActivation, bounded to the
+ * order-driven shape the TS runner already had: pending_setup orders
+ * whose paid invoice satisfies the 10-minute cutoff (paid_at NULL or
+ * <= now-10min — a just-paid invoice is NOT activated on the same
+ * run) are activated, and the order's activate-task items are marked
+ * executed. Renew-task execution is a pinned gap (TS has order-renew
+ * logic but wiring renew-task execution into the batch is a separate
+ * piece); deposit/custom items are likewise not marked here (PHP
+ * marks them executed unconditionally — pinned gap). Divergence,
+ * proven by capture42 §I: a bare order with service_type NULL fails
+ * PHP activation (mod_service('service') throws "Module service
+ * does not have a service class") leaving attempts 1 + a note and
+ * pending_setup, while TS activateOrderRow succeeds — parity39
+ * asserts both shapes explicitly.
+ */
 export async function runBatchActivatePaid(): Promise<void> {
+  const cutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString().slice(0, 19).replace("T", " ");
   const pending = await listOrders({ status: "pending_setup" });
   for (const order of pending) {
     if (!order.unpaid_invoice_id) continue;
     const inv = await findInvoiceById(order.unpaid_invoice_id);
-    if (inv && inv.status === "paid") {
-      await activateOrderRow(order);
-    }
+    if (!inv || inv.status !== "paid") continue;
+    if (inv.paid_at !== null && inv.paid_at !== undefined && inv.paid_at > cutoff) continue;
+    await activateOrderRow(order);
+    await getDbWrite()
+      .prepare(
+        `UPDATE invoice_item SET status = 'executed', updated_at = ?
+         WHERE invoice_id = ? AND type = 'order' AND CAST(rel_id AS INTEGER) = ?
+           AND task = 'activate' AND status NOT IN ('executed', 'failed')`,
+      )
+      .run(nowTimestamp(), inv.id, order.id);
   }
 }
 
-export async function runBatchSendReminders(): Promise<void> {
-  const now = nowTimestamp();
-  const rows = await getDb()
+// --- generate -----------------------------------------------------------------
+
+/** Order\Service::getSoonExpiringActiveOrdersQuery, zone-aware:
+ * expires_before is zone-today + (issue_days_before_expire + 1) at
+ * 00:00:00 (PHP's DateTimeImmutable('today') in the process TZ).
+ * The underscore invoice_option 'issue_invoice' does NOT qualify —
+ * only the hyphenated 'issue-invoice' does. */
+async function getSoonExpiringActiveOrders(): Promise<OrderRowFull[]> {
+  const daysRaw = await getSetting("invoice_issue_days_before_expire");
+  const days = daysRaw === null || daysRaw === undefined ? 14 : phpInt(daysRaw);
+  const expiresBefore = zoneTodayString(days + 1);
+  return (await getDb()
     .prepare(
-      "SELECT id FROM invoice WHERE status = 'unpaid' AND issued = 1 AND due_at IS NOT NULL AND due_at < ?",
+      `SELECT co.* FROM client_order co
+         LEFT JOIN invoice i ON i.id = co.unpaid_invoice_id AND i.status = 'unpaid'
+       WHERE co.status = 'active' AND co.invoice_option = 'issue-invoice'
+         AND co.period IS NOT NULL AND co.expires_at IS NOT NULL AND i.id IS NULL
+         AND NOT EXISTS (SELECT 1 FROM client_order_meta cm WHERE cm.client_order_id = co.id
+           AND cm.name = 'cancel_at_period_end' AND cm.value = '1')
+         AND NOT EXISTS (SELECT 1 FROM invoice_item pi INNER JOIN invoice pinv ON pinv.id = pi.invoice_id
+           WHERE CAST(pi.rel_id AS INTEGER) = co.id AND pi.type = 'order' AND pi.task = 'renew'
+             AND pi.status != 'executed' AND pinv.status = 'paid')
+         AND co.expires_at < ? ORDER BY co.client_id DESC`,
     )
-    .all(now) as unknown as { id: number }[];
-  for (const r of rows) {
-    await queueInvoiceEmail("mod_invoice_payment_reminder", r.id);
-    await updateInvoiceFields(r.id, { reminded_at: now });
+    .all(expiresBefore)) as unknown as OrderRowFull[];
+}
+
+/** Invoice\Service::shouldMergeRenewalsForOrder: per-order meta
+ * override ('1'/'0'), then the client column, then the
+ * invoice_merge_renewals setting (default false). Meta pairs are
+ * last-write-wins, as getPairsForOrder builds them. */
+async function shouldMergeRenewalsForOrder(order: OrderRowFull): Promise<boolean> {
+  const metas = (await getDb()
+    .prepare("SELECT value FROM client_order_meta WHERE client_order_id = ? AND name = 'merge_renewals' ORDER BY id")
+    .all(order.id)) as unknown as { value: string | null }[];
+  const override = metas.length ? metas[metas.length - 1].value : null;
+  if (override === "1") return true;
+  if (override === "0") return false;
+  const client = await findClientById(order.client_id);
+  const preference = client?.merge_renewals;
+  if (preference !== null && preference !== undefined) return !!preference;
+  const setting = await getSetting("invoice_merge_renewals");
+  if (setting === null || setting === undefined) return false;
+  return !(setting === "" || setting === "0");
+}
+
+/** Invoice\ServiceSubscription::hasActiveSubscriptionForOrder: an
+ * 'active' subscription (non-blank sid) joined to an order item for
+ * this order. Reference: 0 subscription rows → always false. */
+async function hasActiveSubscriptionForOrder(order: OrderRowFull): Promise<boolean> {
+  const rows = (await getDb()
+    .prepare(
+      `SELECT s.sid FROM subscription s INNER JOIN invoice_item ii ON ii.invoice_id = s.rel_id
+       WHERE s.rel_type = 'invoice' AND ii.type = 'order' AND CAST(ii.rel_id AS INTEGER) = ?
+         AND s.status = 'active'`,
+    )
+    .all(order.id)) as unknown as { sid: string | null }[];
+  return rows.some((r) => String(r.sid ?? "").trim() !== "");
+}
+
+/**
+ * Invoice\Service::resolveRenewalLine. Non-domain orders keep the
+ * order price/quantity. Domain repricing (TLD renewal via
+ * getProductRenewalLineConfig + getRateByCode) is a PINNED GAP: the
+ * rate lookup still throws PHP's exact message when unconfigured,
+ * but a configured domain order is skipped (logged) rather than
+ * generated at a wrong price — parity39 uses non-domain orders only.
+ */
+async function resolveRenewalLine(order: OrderRowFull): Promise<{ price: number; line: { price: number; quantity: number; title?: string } }> {
+  let price = order.price;
+  let line: { price: number; quantity: number; title?: string } = { price: order.price, quantity: order.quantity };
+  if (["active", "failed_renew", "suspended"].includes(order.status)) {
+    const product = order.product_id ? await findProductById(order.product_id) : undefined;
+    if (product && product.type === "domain") {
+      const rateRow = await findCurrencyByCode(order.currency ?? "USD");
+      if (!rateRow || rateRow.conversion_rate === null || rateRow.conversion_rate === undefined) {
+        throw new FbError(`Currency rate for '${order.currency}' is not configured`);
+      }
+      throw new FbError("Domain renewal repricing is not ported to the TS runner");
+    }
+  }
+  if (price * (line.quantity ?? 1) < 0) {
+    throw new FbError("Invoices are not generated for negative amount orders.");
+  }
+  return { price, line };
+}
+
+/** Invoice\Service::setInvoiceDefaults, as far as a generated draft
+ * observes it: serie from invoice_series, 30–60 hex hash, hash
+ * expiry from invoice_hash_lifetime_days (default '90', ≤0 → null),
+ * tax from getTaxRateForClient, notes from invoice_default_note.
+ * The due_at default (now + invoice_due_days) is overwritten by the
+ * caller below, so it is not written. */
+async function generateInvoiceDefaults(client: ClientRow): Promise<{
+  serie: string | null; hash: string; hashExpiresAt: string | null;
+  taxname: string; taxrate: string; notes: string | null;
+}> {
+  const serie = await getSetting("invoice_series");
+  const lifetimeRaw = await getSetting("invoice_hash_lifetime_days");
+  const lifetimeDays = lifetimeRaw === null || lifetimeRaw === undefined ? 90 : phpInt(lifetimeRaw);
+  const hashExpiresAt =
+    lifetimeDays <= 0
+      ? null
+      : new Date(Date.now() + lifetimeDays * 86400_000).toISOString().slice(0, 19).replace("T", " ");
+  const tax = await resolveTaxForClient(client);
+  return {
+    serie,
+    hash: randomHex(15 + Math.floor(Math.random() * 16)),
+    hashExpiresAt,
+    taxname: tax.name,
+    taxrate: tax.rate,
+    notes: await getSetting("invoice_default_note"),
+  };
+}
+
+/**
+ * Invoice\Service::generateForOrder. The unpaid-invoice REUSE branch
+ * (return the existing unpaid draft) is unreachable from the batch —
+ * the qualifying query excludes unpaid-linked orders — but is
+ * implemented faithfully; a link to a non-unpaid invoice is cleared
+ * first. Currency is the ORDER's, not the client's. The renew item
+ * is taxed via isClientTaxable (the admin renewal handler's hardcoded
+ * taxed:true is wrong for the batch path). Renewal promos are a
+ * PINNED GAP (TS has no renewal-promo path); parity39 uses orders
+ * without recurrent promos. Due = expires_at (batch passes null
+ * due_days); merged invoices use MAX expires_at.
+ */
+export async function generateForOrder(order: OrderRowFull): Promise<number> {
+  if (order.unpaid_invoice_id !== null && order.unpaid_invoice_id !== undefined) {
+    const existing = await findInvoiceById(order.unpaid_invoice_id);
+    if (existing && existing.status === "unpaid") return existing.id;
+    await updateOrderRow(order.id, { unpaid_invoice_id: null });
+  }
+  const { price, line } = await resolveRenewalLine(order);
+  const client = await findClientById(order.client_id);
+  if (!client) throw new FbError("Client not found");
+  const defaults = await generateInvoiceDefaults(client);
+  const id = await insertInvoice({
+    client_id: client.id,
+    serie: defaults.serie,
+    nr: null,
+    hash: defaults.hash,
+    hash_expires_at: defaults.hashExpiresAt,
+    currency: order.currency ?? "USD",
+    currency_rate: null,
+    credit: 0,
+    status: "unpaid",
+    taxname: defaults.taxname,
+    taxrate: defaults.taxrate,
+    gateway_id: null,
+    due_at: order.expires_at as string,
+    notes: defaults.notes,
+  });
+  const taxed = await isClientTaxable(client);
+  await insertInvoiceItem({
+    invoice_id: id,
+    type: "order",
+    rel_id: order.id,
+    task: "renew",
+    status: "pending_payment",
+    title: line.title ?? order.title ?? "",
+    period: order.period,
+    quantity: line.quantity ?? order.quantity,
+    unit: order.unit,
+    price,
+    taxed: taxed ? 1 : 0,
+  });
+  await updateOrderRow(order.id, { unpaid_invoice_id: id });
+  const snapshot = await buildJournalSnapshot(id);
+  await insertInvoiceEvent(id, "created", snapshot, { clientId: client.id });
+  return id;
+}
+
+/** Invoice\Service::generateMergedInvoiceForOrders: all lines resolve
+ * before anything persists; one draft for the bucket, due = MAX
+ * expires_at, every order stamped. */
+export async function generateMergedInvoiceForOrders(orders: OrderRowFull[]): Promise<number> {
+  const first = orders[0];
+  if (!first) throw new FbError("No orders were provided for the merged renewal invoice.");
+  const client = await findClientById(first.client_id);
+  if (!client) throw new FbError("Client not found");
+  const resolved: { order: OrderRowFull; price: number; line: { price: number; quantity: number; title?: string } }[] = [];
+  for (const order of orders) {
+    const r = await resolveRenewalLine(order);
+    resolved.push({ order, price: r.price, line: r.line });
+  }
+  let maxExpires: string | null = null;
+  for (const order of orders) {
+    if (order.expires_at && (maxExpires === null || order.expires_at > maxExpires)) maxExpires = order.expires_at;
+  }
+  const defaults = await generateInvoiceDefaults(client);
+  const id = await insertInvoice({
+    client_id: client.id,
+    serie: defaults.serie,
+    nr: null,
+    hash: defaults.hash,
+    hash_expires_at: defaults.hashExpiresAt,
+    currency: first.currency ?? "USD",
+    currency_rate: null,
+    credit: 0,
+    status: "unpaid",
+    taxname: defaults.taxname,
+    taxrate: defaults.taxrate,
+    gateway_id: null,
+    due_at: maxExpires as string,
+    notes: defaults.notes,
+  });
+  const taxed = await isClientTaxable(client);
+  for (const { order, price, line } of resolved) {
+    await insertInvoiceItem({
+      invoice_id: id,
+      type: "order",
+      rel_id: order.id,
+      task: "renew",
+      status: "pending_payment",
+      title: line.title ?? order.title ?? "",
+      period: order.period,
+      quantity: line.quantity ?? order.quantity,
+      unit: order.unit,
+      price,
+      taxed: taxed ? 1 : 0,
+    });
+    await updateOrderRow(order.id, { unpaid_invoice_id: id });
+  }
+  const snapshot = await buildJournalSnapshot(id);
+  await insertInvoiceEvent(id, "created", snapshot, { clientId: client.id });
+  return id;
+}
+
+/**
+ * Invoice\Service::generateInvoicesForExpiringOrders. Non-mergeable
+ * orders generate + issue inline (one try/catch each); mergeable
+ * orders bucket by client|currency|expires-date|period, single
+ * buckets via generateForOrder, multi buckets via the merged path,
+ * generation failure falling back per-order (TS has no
+ * EntityManager to close, so the fallback mirrors PHP's
+ * non-EM-closed path). Issuance runs OUTSIDE generation: an issue
+ * failure never re-generates.
+ */
+export async function runBatchGenerate(): Promise<boolean> {
+  const orders = await getSoonExpiringActiveOrders();
+  const buckets = new Map<string, OrderRowFull[]>();
+  for (const order of orders) {
+    let mergeable = false;
+    try {
+      mergeable = (await shouldMergeRenewalsForOrder(order)) && !(await hasActiveSubscriptionForOrder(order));
+    } catch (e) {
+      cronLog("invoice_batch_generate", `Merge evaluation failed for order #${order.id}: ${e instanceof Error ? e.message : String(e)}`);
+      mergeable = false;
+    }
+    if (!mergeable) {
+      try {
+        const invoiceId = await generateForOrder(order);
+        const client = await findClientById(order.client_id);
+        if (!client) throw new FbError("Client not found");
+        await issueInvoice(invoiceId, client, { useCredits: true, fullJournal: true });
+      } catch (e) {
+        cronLog("invoice_batch_generate", `Failed to generate invoice for order #${order.id}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+      continue;
+    }
+    const key = `${order.client_id}|${order.currency}|${(order.expires_at ?? "").slice(0, 10)}|${order.period ?? ""}`;
+    const bucket = buckets.get(key) ?? [];
+    bucket.push(order);
+    buckets.set(key, bucket);
+  }
+  for (const bucket of buckets.values()) {
+    let invoiceIds: number[] = [];
+    try {
+      invoiceIds =
+        bucket.length === 1
+          ? [await generateForOrder(bucket[0])]
+          : [await generateMergedInvoiceForOrders(bucket)];
+    } catch (e) {
+      cronLog("invoice_batch_generate", `Merged generation failed: ${e instanceof Error ? e.message : String(e)}`);
+      if (bucket.length > 1) {
+        for (const order of bucket) {
+          try {
+            invoiceIds.push(await generateForOrder(order));
+          } catch (e2) {
+            cronLog("invoice_batch_generate", `Fallback generation failed for order #${order.id}: ${e2 instanceof Error ? e2.message : String(e2)}`);
+          }
+        }
+      }
+    }
+    for (const invoiceId of invoiceIds) {
+      try {
+        const row = await findInvoiceById(invoiceId);
+        const client = row ? await findClientById(row.client_id) : undefined;
+        if (!row || !client) throw new FbError("Client not found");
+        await issueInvoice(invoiceId, client, { useCredits: true, fullJournal: true });
+      } catch (e) {
+        cronLog("invoice_batch_generate", `Failed to issue invoice #${invoiceId}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+  }
+  return true;
+}
+
+// --- due-event reminders ------------------------------------------------------
+
+/** Invoice\Service::parseInvoiceReminderIntervals: split on
+ * /[,\s]+/, numeric only, int-cast, >0, unique, sorted. */
+function parseReminderIntervals(value: string | null | undefined): number[] {
+  const days: number[] = [];
+  for (const part of String(value ?? "").split(/[,\s]+/)) {
+    if (part === "" || !phpIsNumeric(part)) continue;
+    const day = Math.trunc(Number(part));
+    if (day > 0) days.push(day);
+  }
+  return [...new Set(days)].sort((a, b) => a - b);
+}
+
+/** Invoice\Service::isReminderSendTimeReached: read failure, empty,
+ * bad format, or out-of-range hour/minute all mean "reached" (legacy
+ * behavior); otherwise true once the zone-local time reaches HH:MM. */
+async function isReminderSendTimeReached(): Promise<boolean> {
+  let configured: string | null;
+  try {
+    configured = await getSetting("invoice_reminder_send_time");
+  } catch {
+    return true;
+  }
+  const text = (configured ?? "").trim();
+  if (text === "") return true;
+  const m = /^(\d{1,2}):(\d{2})$/.exec(text);
+  if (!m) return true;
+  const hour = parseInt(m[1], 10);
+  const minute = parseInt(m[2], 10);
+  if (hour > 23 || minute > 59) return true;
+  const zone = resolveZone();
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: zone, hour: "numeric", minute: "numeric", hourCycle: "h23",
+  }).formatToParts(now);
+  const h = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
+  const min = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
+  return h * 60 + min >= hour * 60 + minute;
+}
+
+/**
+ * Invoice\Service::sendInvoiceReminder (the BEFORE-due path only):
+ * paid → no-op; else stamp reminded_at, queue the payment-reminder
+ * email, write the REMINDER journal event. Pinned gaps: NO PDF
+ * attachment (the R5e template_send attachment gap) and NO
+ * hash-lifetime extension (TS has no extendInvoiceHashLifetime).
+ */
+export async function sendInvoiceReminder(inv: InvoiceRowFull): Promise<boolean> {
+  if (inv.status === "paid") return true;
+  await updateInvoiceFields(inv.id, { reminded_at: nowTimestamp() });
+  await queueInvoiceEmail("mod_invoice_payment_reminder", inv.id);
+  const snapshot = await buildJournalSnapshot(inv.id);
+  await insertInvoiceEvent(inv.id, "reminder", snapshot, { clientId: inv.client_id });
+  return true;
+}
+
+/**
+ * Invoice\Service::onEventAfterInvoiceIsDue (the AFTER-due path) —
+ * deliberately NOT sendInvoiceReminder: PHP sends a DIFFERENT
+ * template here (mod_invoice_due_after, with days_passed) and writes
+ * NO journal event, and does not re-stamp reminded_at (the claim
+ * already did). A missing client throws, like PHP's 'Invoice
+ * client data is unavailable', so the handler releases the claim.
+ * Pinned gap: NO PDF attachment (same R5e gap as the before path).
+ */
+export async function sendOverdueInvoiceEmail(inv: InvoiceRowFull, daysPassed: number): Promise<boolean> {
+  const client = await findClientById(inv.client_id);
+  if (!client) throw new FbError("Invoice client data is unavailable.");
+  await queueInvoiceEmail("mod_invoice_due_after", inv.id, { days_passed: daysPassed });
+  return true;
+}
+
+async function handleBeforeInvoiceIsDue(invoiceId: number, daysLeft: number, intervals: number[]): Promise<void> {
+  let claimed = false;
+  try {
+    if (!(await isReminderSendTimeReached())) return;
+    if (daysLeft < 1 || !intervals.includes(daysLeft)) return;
+    const zone = resolveZone();
+    const nowStr = formatZoneDateTime(zone, Date.now());
+    const todayStart = zoneTodayString(0);
+    const res = await getDbWrite()
+      .prepare(
+        `UPDATE invoice SET reminded_at = ?, updated_at = ? WHERE id = ? AND status = 'unpaid'
+         AND issued = 1 AND due_at > ? AND (reminded_at IS NULL OR reminded_at < ?)`,
+      )
+      .run(nowStr, nowStr, invoiceId, nowStr, todayStart);
+    claimed = res.changes > 0;
+    if (!claimed) return;
+    const inv = await findInvoiceById(invoiceId);
+    if (inv) await sendInvoiceReminder(inv);
+  } catch (e) {
+    if (claimed) {
+      await getDbWrite().prepare("UPDATE invoice SET reminded_at = NULL WHERE id = ?").run(invoiceId);
+    }
+    cronLog("invoice_batch_invoke_due_event", `Failed to send invoice reminder email ${invoiceId}: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
+async function handleAfterInvoiceIsDue(invoiceId: number, daysPassed: number, intervals: number[]): Promise<void> {
+  let claimed = false;
+  try {
+    if (!(await isReminderSendTimeReached())) return;
+    if (daysPassed < 1 || !intervals.includes(daysPassed)) return;
+    const zone = resolveZone();
+    const nowStr = formatZoneDateTime(zone, Date.now());
+    const todayStart = zoneTodayString(0);
+    const tomorrowStart = zoneTodayString(1);
+    const res = await getDbWrite()
+      .prepare(
+        `UPDATE invoice SET reminded_at = ?, updated_at = ? WHERE id = ? AND status = 'unpaid'
+         AND issued = 1 AND due_at < ? AND (reminded_at IS NULL OR reminded_at < ?)`,
+      )
+      .run(nowStr, nowStr, invoiceId, tomorrowStart, todayStart);
+    claimed = res.changes > 0;
+    if (!claimed) return;
+    const inv = await findInvoiceById(invoiceId);
+    if (inv) await sendOverdueInvoiceEmail(inv, daysPassed);
+  } catch (e) {
+    if (claimed) {
+      await getDbWrite().prepare("UPDATE invoice SET reminded_at = NULL WHERE id = ?").run(invoiceId);
+    }
+    cronLog("invoice_batch_invoke_due_event", `Failed to send overdue invoice email ${invoiceId}: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
+/**
+ * Invoice\Service::fireDueReminderEvents: before list = unpaid +
+ * issued + due_at > now (days_left = calendar-date diff); after list
+ * = unpaid + issued + due_at < tomorrow-start (days_passed = ABS
+ * calendar-date diff). No other listeners exist for these events —
+ * the built-in handlers above run inline (TS has no event bus).
+ */
+export async function fireDueReminderEvents(): Promise<void> {
+  const beforeRaw = await getSetting("invoice_reminder_before_due_days");
+  const afterRaw = await getSetting("invoice_reminder_after_due_days");
+  const beforeIntervals = parseReminderIntervals(beforeRaw ?? "");
+  const afterIntervals = parseReminderIntervals(afterRaw ?? "5");
+  const zone = resolveZone();
+  const nowStr = formatZoneDateTime(zone, Date.now());
+  const tomorrowStart = zoneTodayString(1);
+  const diffExpr = "CAST(julianday(date(due_at)) - julianday(date(?)) AS INTEGER)";
+  const beforeRows = (await getDb()
+    .prepare(
+      `SELECT id, ${diffExpr} AS days_left FROM invoice
+       WHERE status = 'unpaid' AND issued = 1 AND due_at > ? ORDER BY id`,
+    )
+    .all(nowStr, nowStr)) as unknown as { id: number; days_left: number }[];
+  for (const r of beforeRows) await handleBeforeInvoiceIsDue(r.id, r.days_left, beforeIntervals);
+  const afterRows = (await getDb()
+    .prepare(
+      `SELECT id, ABS(${diffExpr}) AS days_passed FROM invoice
+       WHERE status = 'unpaid' AND issued = 1 AND due_at < ? ORDER BY id`,
+    )
+    .all(nowStr, tomorrowStart)) as unknown as { id: number; days_passed: number }[];
+  for (const r of afterRows) await handleAfterInvoiceIsDue(r.id, r.days_passed, afterIntervals);
+}
+
+/**
+ * Invoice\Service::doBatchInvokeDueEvent: once_per_day (default true)
+ * gate on invoice_overdue_invoked — within 86400s → false, no fire,
+ * no update; exactly 86400s ago → gate open. Else fire + stamp + true.
+ */
+export async function runBatchInvokeDueEvent(opts: { oncePerDay?: boolean } = {}): Promise<boolean> {
+  const once = opts.oncePerDay ?? true;
+  const last = await getSetting("invoice_overdue_invoked");
+  if (once && last) {
+    // PHP compares second-precision timestamps (time() vs
+    // strtotime): age < 86400s → gate closed; exactly 86400s → open.
+    const lastMs = parseZoneDateTime(resolveZone(), last);
+    if (lastMs !== null && Math.floor(Date.now() / 1000) - Math.floor(lastMs / 1000) < 86400) return false;
+  }
+  await fireDueReminderEvents();
+  await setSettingValue("invoice_overdue_invoked", nowTimestamp());
+  return true;
+}
+
+/**
+ * Invoice\Service::doBatchRemindersSend — REPLACES the old TS job
+ * (which queued for every overdue issued unpaid invoice + stamped
+ * reminded_at, with no gate, no intervals, no claiming). Dispatch
+ * the Before event (no listeners → no-op), run the once-per-day
+ * due-event batch; when it returns false (gate already set today),
+ * fire the pending reminders WITHOUT updating the gate. Always true
+ * in practice (the pending path returns true); the runner ignores
+ * return values anyway — only throws mark a task failed.
+ */
+export async function doBatchRemindersSend(): Promise<boolean> {
+  let result = await runBatchInvokeDueEvent({ oncePerDay: true });
+  if (!result) {
+    await fireDueReminderEvents();
+    result = true;
+  }
+  return result;
+}
+
+// --- journal heal + expired-unpaid removal (After listeners) ------------------
+
+/**
+ * UpdatePatcher::healInvoiceJournal via Invoice\Service::
+ * healMissingJournalEntries: ONE page of 500, keyset id > last,
+ * invoices with NO invoice_event row. Per row an atomic claim
+ * (UPDATE ... WHERE NOT EXISTS event), then a BACKFILL snapshot —
+ * NOT a recordJournalEvent snapshot: subtotal/tax/total null,
+ * buyer/seller from the invoice row's own fields (buyer_address is
+ * the row's SINGLE field), serie_nr with the invoice_number_padding
+ * setting (default 5), type 'created' if unissued else paid/
+ * canceled/refunded/issued by status, event created_at = the
+ * invoice's created_at (not now).
+ */
+export async function healInvoiceJournal(): Promise<void> {
+  const paddingRaw = await getSetting("invoice_number_padding");
+  const padding = paddingRaw !== null && phpIsNumeric(paddingRaw) && phpInt(paddingRaw) > 0 ? phpInt(paddingRaw) : 5;
+  const rows = (await getDb()
+    .prepare(
+      `SELECT i.id, i.nr, i.serie, i.status, i.issued, i.client_id,
+         i.buyer_first_name, i.buyer_last_name, i.buyer_company, i.buyer_company_vat,
+         i.buyer_company_number, i.buyer_address, i.buyer_city, i.buyer_state,
+         i.buyer_country, i.buyer_phone, i.buyer_email, i.buyer_zip,
+         i.seller_company, i.seller_company_vat, i.seller_company_number,
+         i.seller_address, i.seller_phone, i.seller_email,
+         i.paid_at, i.due_at, i.created_at
+       FROM invoice i LEFT JOIN invoice_event e ON e.invoice_id = i.id
+       WHERE e.id IS NULL AND i.id > ? ORDER BY i.id LIMIT 500`,
+    )
+    .all(0)) as unknown as Record<string, unknown>[];
+  for (const row of rows) {
+    const id = Number(row["id"]);
+    const claim = await getDbWrite()
+      .prepare("UPDATE invoice SET updated_at = updated_at WHERE id = ? AND NOT EXISTS (SELECT 1 FROM invoice_event WHERE invoice_id = ?)")
+      .run(id, id);
+    if (claim.changes === 0) continue;
+    const nr = phpIsNumeric(row["nr"]) ? Math.trunc(Number(row["nr"])) : id;
+    const snapshot = {
+      serie_nr: `${row["serie"] ?? ""}${String(nr).padStart(padding, "0")}`,
+      status: row["status"] ?? null,
+      issued: !!row["issued"],
+      subtotal: null,
+      tax: null,
+      total: null,
+      buyer: {
+        first_name: row["buyer_first_name"] ?? null,
+        last_name: row["buyer_last_name"] ?? null,
+        company: row["buyer_company"] ?? null,
+        company_vat: row["buyer_company_vat"] ?? null,
+        company_number: row["buyer_company_number"] ?? null,
+        address: row["buyer_address"] ?? null,
+        city: row["buyer_city"] ?? null,
+        state: row["buyer_state"] ?? null,
+        country: row["buyer_country"] ?? null,
+        phone: row["buyer_phone"] ?? null,
+        email: row["buyer_email"] ?? null,
+        zip: row["buyer_zip"] ?? null,
+      },
+      seller: {
+        company: row["seller_company"] ?? null,
+        company_vat: row["seller_company_vat"] ?? null,
+        company_number: row["seller_company_number"] ?? null,
+        address: row["seller_address"] ?? null,
+        phone: row["seller_phone"] ?? null,
+        email: row["seller_email"] ?? null,
+      },
+      paid_at: row["paid_at"] ?? null,
+      due_at: row["due_at"] ?? null,
+      created_at: row["created_at"] ?? null,
+    };
+    let type = "created";
+    if (row["issued"]) {
+      type =
+        row["status"] === "paid" ? "paid"
+        : row["status"] === "canceled" ? "canceled"
+        : row["status"] === "refunded" ? "refunded"
+        : "issued";
+    }
+    await insertInvoiceEvent(id, type, snapshot, {
+      clientId: typeof row["client_id"] === "number" ? row["client_id"] : null,
+      createdAt: typeof row["created_at"] === "string" ? row["created_at"] : null,
+    });
+  }
+}
+
+function isInvoiceCancellableRow(inv: InvoiceRowFull): boolean {
+  return (
+    !!inv.issued &&
+    inv.status === "unpaid" &&
+    inv.credit_note_for_invoice_id === null &&
+    inv.debit_note_for_invoice_id === null &&
+    inv.replaced_by_invoice_id === null
+  );
+}
+
+/**
+ * Invoice\Service::removeExpiredUnpaidInvoices (After listener):
+ * remove_after_days unset/falsy → no-op. Else invoices unpaid with a
+ * due date more than `days` calendar days old (SQLite
+ * CAST(julianday(date('now')) - julianday(date(due_at))) > days):
+ * cancellable → cancelInvoice with the exact reason (voided note +
+ * reason note, canceled journal event with reason extra, transaction
+ * detach; cancel email only when invoice_send_cancel_email is '1');
+ * unissued + unpaid + all note links null → rmInvoice (order unlink
+ * unpaid_invoice_id=NULL, transaction DETACH not delete, items
+ * delete, journal delete for drafts, invoice delete). Issued notes
+ * are left alone. Per-invoice try/catch.
+ */
+export async function removeExpiredUnpaidInvoices(): Promise<void> {
+  const raw = await getSetting("remove_after_days");
+  if (raw === null || raw === undefined || raw === "" || raw === "0") return;
+  const days = phpInt(raw);
+  const rows = (await getDb()
+    .prepare(
+      `SELECT * FROM invoice WHERE status = 'unpaid' AND due_at IS NOT NULL
+       AND CAST(julianday(date('now')) - julianday(date(due_at)) AS INTEGER) > ? ORDER BY id`,
+    )
+    .all(days)) as unknown as InvoiceRowFull[];
+  for (const row of rows) {
+    try {
+      const fresh = await findInvoiceById(row.id);
+      if (!fresh) continue;
+      if (isInvoiceCancellableRow(fresh)) {
+        const reason = `Expired unpaid — automatically voided after ${days} days.`;
+        await updateInvoiceFields(fresh.id, {
+          status: "canceled",
+          notes: appendNote(fresh.notes, "Invoice canceled (voided) without replacement."),
+        });
+        const afterFirst = await findInvoiceById(fresh.id);
+        await updateInvoiceFields(fresh.id, { notes: appendNote(afterFirst?.notes ?? null, reason) });
+        await getDbWrite().prepare('UPDATE "transaction" SET invoice_id = NULL WHERE invoice_id = ?').run(fresh.id);
+        const snapshot = (await buildJournalSnapshot(fresh.id)) as Record<string, unknown>;
+        snapshot["reason"] = reason;
+        await insertInvoiceEvent(fresh.id, "canceled", snapshot, { clientId: fresh.client_id });
+        if ((await getSetting("invoice_send_cancel_email")) === "1") {
+          await queueInvoiceEmail("mod_invoice_canceled", fresh.id);
+        }
+      } else if (
+        !fresh.issued && fresh.status === "unpaid" &&
+        fresh.credit_note_for_invoice_id === null && fresh.debit_note_for_invoice_id === null &&
+        fresh.replaces_invoice_id === null && fresh.replaced_by_invoice_id === null
+      ) {
+        await getDbWrite().prepare("UPDATE client_order SET unpaid_invoice_id = NULL WHERE unpaid_invoice_id = ?").run(fresh.id);
+        await getDbWrite().prepare('UPDATE "transaction" SET invoice_id = NULL WHERE invoice_id = ?').run(fresh.id);
+        await getDbWrite().prepare("DELETE FROM invoice_item WHERE invoice_id = ?").run(fresh.id);
+        await getDbWrite().prepare("DELETE FROM invoice_event WHERE invoice_id = ?").run(fresh.id);
+        await getDbWrite().prepare("DELETE FROM invoice WHERE id = ?").run(fresh.id);
+      }
+    } catch (e) {
+      cronLog("cron_after_expired_unpaid", `Could not expire unpaid invoice #${row.id}: ${e instanceof Error ? e.message : String(e)}`);
+    }
   }
 }
 
@@ -1934,21 +2658,17 @@ register("admin", "invoice", "batch_activate_paid", async (ctx: CallContext) => 
 
 register("admin", "invoice", "batch_send_reminders", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  await runBatchSendReminders();
-  return true;
+  return await doBatchRemindersSend();
 });
 
-register("admin", "invoice", "batch_generate", (ctx: CallContext) => {
+register("admin", "invoice", "batch_generate", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  // Subscription-driven generation lives in the subscription billing
-  // engine (gateway-side); no DB-visible effect on the reference
-  // corpus. The endpoint contract is run-and-true.
-  return true;
+  return await runBatchGenerate();
 });
 
-register("admin", "invoice", "batch_invoke_due_event", (ctx: CallContext) => {
+register("admin", "invoice", "batch_invoke_due_event", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  return true;
+  return await runBatchInvokeDueEvent();
 });
 
 // ---------------------------------------------------------------------------

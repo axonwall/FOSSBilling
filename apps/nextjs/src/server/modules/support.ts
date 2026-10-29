@@ -351,14 +351,25 @@ register("admin", "support", "ticket_create", async (ctx) => {
   return tid;
 });
 
-register("admin", "support", "batch_ticket_auto_close", async (ctx) => {
-  requireAdmin(ctx);
+/**
+ * Support\Api\Admin::batch_ticket_auto_close (unchanged in R5f):
+ * on_hold tickets with updated_at + close_after hours < now close.
+ * PINNED now-TZ note: TS compares against SQLite datetime('now')
+ * (UTC) while PHP compares against process-TZ wall now; with config
+ * UTC they agree (standing write-side TZ gap, not R5f scope).
+ */
+export async function runBatchTicketAutoClose(): Promise<boolean> {
   const expired = await getDb().prepare(
     `SELECT st.* FROM support_ticket st LEFT JOIN support_helpdesk sh ON sh.id = st.support_helpdesk_id
      WHERE st.status = 'on_hold' AND datetime(st.updated_at, '+' || sh.close_after || ' hours') < datetime('now') ORDER BY st.id ASC`
   ).all() as unknown as TicketRow[];
   for (const t of expired) await touchTicket(t.id, "closed");
   return true;
+}
+
+register("admin", "support", "batch_ticket_auto_close", async (ctx) => {
+  requireAdmin(ctx);
+  return await runBatchTicketAutoClose();
 });
 
 register("admin", "support", "ticket_get_statuses", async (ctx) => {

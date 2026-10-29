@@ -156,14 +156,18 @@ export async function invoiceEmailContext(invoiceId: number): Promise<Record<str
   };
 }
 
-export async function queueInvoiceEmail(actionCode: string, invoiceId: number): Promise<number | null> {
+export async function queueInvoiceEmail(
+  actionCode: string,
+  invoiceId: number,
+  extraVars: Record<string, unknown> = {},
+): Promise<number | null> {
   // Never throws: an email-context failure must not break the money
   // flow that triggered it (PHP dispatches these via listeners).
   try {
     const ctx = await invoiceEmailContext(invoiceId);
     if (!ctx) return null;
     const client = ctx.c as Record<string, unknown>;
-    return await queueTemplatedEmail(actionCode, String(client.email), ctx, {
+    return await queueTemplatedEmail(actionCode, String(client.email), { ...ctx, ...extraVars }, {
       toName: `${client.first_name ?? ""} ${client.last_name ?? ""}`.trim() || null,
       clientId: Number(client.id),
     });

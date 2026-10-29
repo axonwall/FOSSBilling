@@ -206,6 +206,22 @@ export function formatZoneDateTime(tz: string, ms: number): string {
  * separator) -> that wall time in the zone. Returns null for
  * anything else (caller falls back to Date.parse / epoch 0).
  */
+/** Current wall-clock time in the resolved zone, "Y-m-d H:i:s" — the
+ * TS equivalent of PHP's process-TZ `date('Y-m-d H:i:s')` for cron
+ * comparisons. Identical to nowTimestamp() while the zone is UTC. */
+export function zoneNowString(): string {
+  return formatZoneDateTime(resolveZone(), Date.now());
+}
+
+/** Zone-calendar midnight `offsetDays` days from today, "Y-m-d H:i:s"
+ * — the TS equivalent of PHP's `(new DateTimeImmutable('today'))
+ * ->modify('+N days')` / `'-N days'`. Calendar stepping, not +24h,
+ * so DST transitions land on the right wall date. */
+export function zoneTodayString(offsetDays = 0): string {
+  const zone = resolveZone();
+  return formatZoneDateTime(zone, addZoneDays(zone, zoneMidnightMs(zone, Date.now()), offsetDays));
+}
+
 export function parseZoneDateTime(tz: string, value: string): number | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(value.trim());
   if (!m) return null;

@@ -1380,7 +1380,7 @@ export async function insertInvoice(row: {
   serie: string | null;
   nr: string | null;
   hash: string;
-  hash_expires_at: string;
+  hash_expires_at: string | null;
   currency: string;
   currency_rate: number | null;
   credit: number;
@@ -1470,12 +1470,23 @@ export async function invoiceNrExists(serie: string | null, nr: string): Promise
   return (row?.n ?? 0) > 0;
 }
 
-export async function insertInvoiceEvent(invoiceId: number, type: string, snapshot: unknown): Promise<void> {
+export async function insertInvoiceEvent(
+  invoiceId: number,
+  type: string,
+  snapshot: unknown,
+  opts: { clientId?: number | null; createdAt?: string | null } = {},
+): Promise<void> {
+  // R5f: the new cron events (generate CREATED/ISSUED, reminder,
+  // expired-unpaid canceled, journal backfill) carry PHP's real
+  // client_id and, for the backfill, the invoice's own created_at.
+  // Pre-existing callers pass no opts and keep the old shape
+  // (client_id NULL, created_at now) — their snapshot shapes and
+  // the NULL-client_id gap are deliberately NOT rewritten here.
   await getDbWrite()
     .prepare(
-      "INSERT INTO invoice_event (invoice_id, type, admin_id, client_id, snapshot, created_at) VALUES (?, ?, NULL, NULL, ?, ?)",
+      "INSERT INTO invoice_event (invoice_id, type, admin_id, client_id, snapshot, created_at) VALUES (?, ?, NULL, ?, ?, ?)",
     )
-    .run(invoiceId, type, JSON.stringify(snapshot), nowTimestamp());
+    .run(invoiceId, type, opts.clientId ?? null, JSON.stringify(snapshot), opts.createdAt ?? nowTimestamp());
 }
 
 export async function listInvoiceItems(invoiceId: number): Promise<{
