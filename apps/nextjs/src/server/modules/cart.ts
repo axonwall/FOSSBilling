@@ -1495,17 +1495,17 @@ async function invoiceCurrencyCode(invoiceId: number): Promise<string> {
 /**
  * Invoice\Service::markAsPaidByAdmin, staff-checkout shape: the shared
  * markInvoicePaid core plus the pieces it does not cover — the
- * currency_rate frozen at payment (PHP prepare leaves it NULL), the
  * unpaid_invoice_id clearing (ServiceInvoiceItem::markAsPaid), and the
  * reserved-redemption commit (committed_at = the invoice paid_at).
  * The Custom path additionally creates/settles the transaction row.
+ * R5b: the old rate pre-set is deleted — markInvoicePaid now reads
+ * the live rate and throws when it is missing, as PHP does.
  */
 async function staffMarkInvoicePaid(
   invoiceId: number,
   gateway: { id: number; gateway: string; name: string | null },
   transactionId: string | null,
   ctx: CallContext,
-  rate: number,
 ): Promise<void> {
   let txnId: number | null = null;
   if (gateway.gateway === "Custom" && transactionId !== null) {
@@ -1531,7 +1531,6 @@ async function staffMarkInvoicePaid(
       txnId = Number(info);
     }
   }
-  await getDbWrite().prepare("UPDATE invoice SET currency_rate = ? WHERE id = ?").run(rate, invoiceId);
   await markInvoicePaid(invoiceId);
   await getDbWrite()
     .prepare("UPDATE client_order SET unpaid_invoice_id = NULL, updated_at = ? WHERE unpaid_invoice_id = ?")
@@ -1764,15 +1763,11 @@ register("admin", "cart", "staff_basket_checkout", async (ctx: CallContext) => {
   let invoiceHash: string | null = null;
   let invoiceUnpaid = false;
   if (total > 0) {
+    // R5b: prepareInvoice now leaves currency_rate, base_income and
+    // base_refund NULL as PHP does, so the R1g local NULLing patch
+    // that used to sit here is deleted; payment populates them via
+    // markInvoicePaid (live rate + countIncome).
     invoiceId = await prepareInvoice(client, invoiceItems, gatewayIdParam);
-    // PHP prepareInvoice leaves currency_rate, base_income and
-    // base_refund NULL; the TS helper freezes currency_rate and zeroes
-    // the other two at creation. Null them back so unpaid invoices
-    // match, and re-freeze base_income/rate at payment time (see
-    // staffMarkInvoicePaid). base_refund stays NULL through payment.
-    await getDbWrite().prepare(
-      "UPDATE invoice SET currency_rate = NULL, base_income = NULL, base_refund = NULL WHERE id = ?",
-    ).run(invoiceId);
     const balance = await clientBalanceSum(client.id);
     const useCredits = round2(balance) >= round2(total);
     await issueInvoice(invoiceId, client, { useCredits });
@@ -1853,7 +1848,7 @@ register("admin", "cart", "staff_basket_checkout", async (ctx: CallContext) => {
   // mark happens — so it stays present even on a marked-paid checkout.
   if (markPaid && invoiceId !== null && invoiceUnpaid && markGateway) {
     const txnId = ctx.params["transactionId"] !== undefined ? String(ctx.params["transactionId"]).trim() : null;
-    await staffMarkInvoicePaid(invoiceId, markGateway, markGateway.gateway === "Custom" ? txnId : null, ctx, rate);
+    await staffMarkInvoicePaid(invoiceId, markGateway, markGateway.gateway === "Custom" ? txnId : null, ctx);
   }
   return result;
 });

@@ -1382,7 +1382,7 @@ export async function insertInvoice(row: {
   hash: string;
   hash_expires_at: string;
   currency: string;
-  currency_rate: number;
+  currency_rate: number | null;
   credit: number;
   status: string;
   taxname: string;
@@ -1392,8 +1392,11 @@ export async function insertInvoice(row: {
   notes: string | null;
 }): Promise<number> {
   const now = nowTimestamp();
+  // R5b: PHP leaves currency_rate, base_income and base_refund NULL at
+  // creation; they are first written by payment (rate + countIncome).
+  // The old literals (0, 0) encoded the R1 divergence.
   const info = await getDbWrite().insertAndGetId(`INSERT INTO invoice (client_id, serie, nr, hash, currency, currency_rate, credit, base_income, base_refund, refund, notes, text_1, text_2, status, credit_note_for_invoice_id, debit_note_for_invoice_id, replaces_invoice_id, replaced_by_invoice_id, seller_company, seller_company_vat, seller_company_number, seller_address, seller_phone, seller_email, buyer_first_name, buyer_last_name, buyer_company, buyer_company_vat, buyer_company_number, buyer_address, buyer_city, buyer_state, buyer_country, buyer_zip, buyer_phone, buyer_email, issued, taxname, taxrate, due_at, reminded_at, paid_at, hash_expires_at, created_at, updated_at, gateway_id)
-       VALUES (?, ?, ?, ?, ?, ?, NULL, 0, 0, NULL, ?, NULL, NULL, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, ?, ?, ?, NULL, NULL, ?, ?, ?, ?)`, row.client_id, row.serie, row.nr, row.hash, row.currency, row.currency_rate, row.notes, row.status, row.taxname, row.taxrate, row.due_at, row.hash_expires_at, now, now, row.gateway_id);
+       VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL, ?, NULL, NULL, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, ?, ?, ?, NULL, NULL, ?, ?, ?, ?)`, row.client_id, row.serie, row.nr, row.hash, row.currency, row.currency_rate, row.notes, row.status, row.taxname, row.taxrate, row.due_at, row.hash_expires_at, now, now, row.gateway_id);
   return Number(info);
 }
 
@@ -1539,11 +1542,11 @@ export interface InvoiceRowFull {
   nr: string | null;
   hash: string;
   currency: string;
-  currency_rate: number;
-  credit: number;
-  base_income: number;
-  base_refund: number;
-  refund: number;
+  currency_rate: number | null;
+  credit: number | null;
+  base_income: number | null;
+  base_refund: number | null;
+  refund: number | null;
   notes: string | null;
   text_1: string | null;
   text_2: string | null;
@@ -2185,14 +2188,16 @@ export async function listInvoiceEvents(invoiceId: number): Promise<InvoiceEvent
 
 
 /** Full-control invoice insert for credit/debit notes (batch 4):
- * snapshots and link fields are copied from the original invoice. */
+ * snapshots and link fields are copied from the original invoice.
+ * R5b: notes carry no rate and no refund on PHP; a debit note's
+ * base_income is written by countIncome AFTER its items exist. */
 export async function insertInvoiceNote(row: {
   client_id: number;
   serie: string;
   nr: string | null;
   hash: string;
   currency: string;
-  currency_rate: number;
+  currency_rate: number | null;
   status: string;
   credit_note_for_invoice_id: number | null;
   debit_note_for_invoice_id: number | null;
@@ -2223,11 +2228,11 @@ export async function insertInvoiceNote(row: {
   notes: string | null;
   gateway_id: number | null;
   hash_expires_at?: string | null;
-  base_income?: number;
+  base_income?: number | string | null;
 }): Promise<number> {
   const now = nowTimestamp();
   const info = await getDbWrite().insertAndGetId(`INSERT INTO invoice (client_id, serie, nr, hash, currency, currency_rate, credit, base_income, base_refund, refund, notes, text_1, text_2, status, credit_note_for_invoice_id, debit_note_for_invoice_id, replaces_invoice_id, replaced_by_invoice_id, seller_company, seller_company_vat, seller_company_number, seller_address, seller_phone, seller_email, buyer_first_name, buyer_last_name, buyer_company, buyer_company_vat, buyer_company_number, buyer_address, buyer_city, buyer_state, buyer_country, buyer_zip, buyer_phone, buyer_email, issued, taxname, taxrate, due_at, reminded_at, paid_at, hash_expires_at, created_at, updated_at, gateway_id)
-       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, 0, NULL, ?, NULL, NULL, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`, row.client_id, row.serie, row.nr, row.hash, row.currency, row.currency_rate, row.base_income ?? 0, row.notes, row.status, row.credit_note_for_invoice_id, row.debit_note_for_invoice_id, row.replaces_invoice_id, row.seller_company, row.seller_company_vat, row.seller_company_number, row.seller_address, row.seller_phone, row.seller_email, row.buyer_first_name, row.buyer_last_name, row.buyer_company, row.buyer_company_vat, row.buyer_company_number, row.buyer_address, row.buyer_city, row.buyer_state, row.buyer_country, row.buyer_zip, row.buyer_phone, row.buyer_email, row.issued, row.taxname, row.taxrate, row.due_at, row.paid_at, row.hash_expires_at ?? null, now, now, row.gateway_id);
+       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, NULL, NULL, ?, NULL, NULL, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`, row.client_id, row.serie, row.nr, row.hash, row.currency, row.currency_rate, row.base_income ?? null, row.notes, row.status, row.credit_note_for_invoice_id, row.debit_note_for_invoice_id, row.replaces_invoice_id, row.seller_company, row.seller_company_vat, row.seller_company_number, row.seller_address, row.seller_phone, row.seller_email, row.buyer_first_name, row.buyer_last_name, row.buyer_company, row.buyer_company_vat, row.buyer_company_number, row.buyer_address, row.buyer_city, row.buyer_state, row.buyer_country, row.buyer_zip, row.buyer_phone, row.buyer_email, row.issued, row.taxname, row.taxrate, row.due_at, row.paid_at, row.hash_expires_at ?? null, now, now, row.gateway_id);
   return Number(info);
 }
 

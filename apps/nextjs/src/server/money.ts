@@ -17,10 +17,12 @@ import {
   setSettingValue,
   updateInvoiceRow,
   findCurrencyByCode,
+  findDefaultCurrency,
   findInvoiceRow,
   getDbWrite,
   type ClientRow,
 } from "./db";
+import { FbError } from "./dispatch";
 import { getCompany } from "./modules/system";
 import { queueInvoiceEmail } from "./emailer";
 
@@ -106,10 +108,112 @@ export async function nextInvoiceNumber(serie: string | null): Promise<string> {
 }
 
 /**
+ * PHP float rendering (precision-14 %G, same algorithm as the R5a
+ * config writer): PHP casts floats to strings with 14 significant
+ * digits before Doctrine binds them, so a value like 60/0.9 is stored
+ * as "66.666666666667", not as the raw JS double 66.66666666666667.
+ * Binding this string keeps SQLite REALs (and Postgres numerics)
+ * byte-identical to PHP's. Used for every base-currency write below.
+ */
+export function phpFloat(n: number): string {
+  if (Object.is(n, -0)) return "-0.0";
+  if (n === 0) return "0.0";
+  const s = n.toPrecision(14);
+  const [m, e] = s.split("e");
+  let mant = m.replace(/(\.\d*?)0+$/, "$1");
+  if (mant.endsWith(".")) mant = mant.slice(0, -1);
+  if (!mant.includes(".")) mant += ".0";
+  if (e !== undefined) {
+    const exp = parseInt(e, 10);
+    return `${mant}E${exp >= 0 ? "+" : "-"}${Math.abs(exp)}`;
+  }
+  return mant;
+}
+
+/**
+ * Currency\Service::toBaseCurrency — convert an amount in the given
+ * currency to the default currency: the amount itself when it already
+ * is the default, else amount x (1 / conversion_rate). The rate is
+ * read LIVE at call time (PHP reads it at payment/refund/debit, never
+ * from a frozen invoice rate). Throws exactly as PHP does when the
+ * rate row is missing or zero.
+ */
+export async function toBaseCurrency(code: string, amount: number): Promise<string> {
+  const def = await findDefaultCurrency();
+  if (def && def.code === code) return phpFloat(amount);
+  const row = await findCurrencyByCode(code);
+  if (!row) throw new FbError("Currency not found.");
+  const rate = Number(row.conversion_rate);
+  if (!(rate > 0)) throw new FbError("Currency conversion rate cannot be zero.");
+  return phpFloat(amount / rate);
+}
+
+/**
+ * Pre-write FX precondition check for every countIncome call site.
+ * PHP wraps payment (markAsPaid:1050), refund (1861) and debit (2516)
+ * in wrapInTransaction, so a countIncome throw there rolls EVERYTHING
+ * back: the observable outcome is "error + nothing changed". TS has
+ * no transaction across these handlers, so each call site validates
+ * BEFORE its first write, throwing exactly the messages PHP's
+ * toBaseCurrency path throws (getBaseCurrencyRate: null row/rate →
+ * "Currency not found.", zero rate → "Currency conversion rate
+ * cannot be zero.", missing default row → "Default currency not
+ * found."). For the invoice's own currency the payment path's live
+ * rate lookup (above) already throws "not configured" first, so this
+ * helper's null branch is a backstop there and the live check on the
+ * refund/debit paths (which have no rate lookup of their own).
+ * Default-currency invoices short-circuit exactly as PHP does: only
+ * the default-row check applies, never a rate check.
+ */
+export async function assertCountIncomeWritable(code: string): Promise<void> {
+  const def = await findDefaultCurrency();
+  if (!def) throw new FbError("Default currency not found.");
+  if (def.code === code) return;
+  const row = await findCurrencyByCode(code);
+  if (!row || row.conversion_rate === null || row.conversion_rate === undefined) {
+    throw new FbError("Currency not found.");
+  }
+  if (!(Number(row.conversion_rate) > 0)) {
+    throw new FbError("Currency conversion rate cannot be zero.");
+  }
+}
+
+/**
+ * Invoice\Service::countIncome — the ONLY writer of base_income /
+ * base_refund (payment, refund, debit-note creation all funnel here).
+ * base_income = toBaseCurrency(SUM(price x quantity) over items —
+ * NO tax: PHP's getTotal excludes tax, unlike invoiceTotals' total).
+ * base_refund = toBaseCurrency(running refund) when refund is non-null,
+ * else NULL (never 0: a paid-but-unrefunded invoice has NULL refund
+ * and NULL base_refund on PHP).
+ */
+export async function countIncome(invoiceId: number): Promise<void> {
+  const row = await findInvoiceRow(invoiceId);
+  if (!row) return;
+  const items = await listInvoiceItems(invoiceId);
+  let subtotal = 0;
+  for (const it of items) subtotal += (it.price ?? 0) * (it.quantity ?? 1);
+  const refundRaw = row["refund"];
+  const baseIncome = await toBaseCurrency(String(row["currency"] ?? "USD"), subtotal);
+  const baseRefund =
+    refundRaw === null || refundRaw === undefined
+      ? null
+      : await toBaseCurrency(String(row["currency"] ?? "USD"), Number(refundRaw));
+  await getDbWrite()
+    .prepare("UPDATE invoice SET base_income = ?, base_refund = ? WHERE id = ?")
+    .run(baseIncome, baseRefund, invoiceId);
+}
+
+/**
  * Invoice\Service::prepareInvoice — creates the DRAFT (status unpaid,
  * issued = 0, nr claimed later at issuance), freezing currency, tax
  * rate/name, serie and hash. Items start pending_payment and move
  * to pending_setup when the invoice is paid.
+ * R5b: PHP leaves currency_rate, base_income and base_refund NULL at
+ * creation (no setter is called for them); they are first written by
+ * payment (rate + countIncome), refund (countIncome) or debit-note
+ * creation (countIncome). The old code froze the rate and zeroed the
+ * other two here; staff checkout used to patch them back to NULL.
  */
 export async function prepareInvoice(
   client: ClientRow,
@@ -127,7 +231,6 @@ export async function prepareInvoice(
   const hashExpires = new Date(Date.now() + hashDays * 86400_000)
     .toISOString().slice(0, 19).replace("T", " ");
   const currency = client.currency ?? "USD";
-  const currencyRate = (await findCurrencyByCode(currency))?.conversion_rate ?? 1;
   const id = await insertInvoice({
     client_id: client.id,
     serie,
@@ -136,7 +239,7 @@ export async function prepareInvoice(
     hash: randomBytes(15 + Math.floor(Math.random() * 16)).toString("hex"),
     hash_expires_at: hashExpires,
     currency,
-    currency_rate: currencyRate,
+    currency_rate: null,
     credit: 0,
     status: "unpaid",
     taxname: tax.name,
@@ -242,21 +345,46 @@ export async function tryPayWithCredits(invoiceId: number): Promise<boolean> {
 }
 
 export async function markInvoicePaid(invoiceId: number): Promise<void> {
-  // PHP records base_income (total converted at the invoice's frozen
-  // rate) when an invoice is paid, and moves items from
+  // PHP markAsPaidInTransaction: the rate is read LIVE at payment
+  // (getRateByCode throws when the currency has no rate row — the
+  // invoice's creation-time rate is always NULL now, so there is no
+  // frozen rate to read), the invoice is marked issued + paid, and
+  // countIncome writes base_income / base_refund. Items move from
   // pending_payment to pending_setup (awaiting execution). The
   // charged amounts stay untouched on the admin/Custom path — they
   // are written when item tasks actually execute.
+  // R5b also sets issued = 1 here, as PHP does (setIssued(true)):
+  // TS-paid invoices previously kept issued = 0, which excluded them
+  // from the stats income queries (issued = 1 filter).
   const row = await findInvoiceRow(invoiceId);
-  const rate = Number(row?.["currency_rate"] ?? 1) || 1;
-  const { total } = invoiceTotals(await listInvoiceItems(invoiceId), await currentTaxrate(invoiceId));
-  await updateInvoiceRow(invoiceId, { status: "paid", paid_at: nowTimestamp() });
-  const w = getDbWrite();
-  await w.prepare("UPDATE invoice SET base_income = ? WHERE id = ?")
-    .run(round2(total * rate), invoiceId);
-  await w.prepare(
-    "UPDATE invoice_item SET status = 'pending_setup', updated_at = ? WHERE invoice_id = ? AND status = 'pending_payment'",
-  ).run(nowTimestamp(), invoiceId);
+  const currency = String(row?.["currency"] ?? "USD");
+  const rateRow = await findCurrencyByCode(currency);
+  // PHP getRateByCode returns null when the row is missing OR its
+  // conversion_rate is NULL, and markAsPaidInTransaction throws
+  // "not configured" BEFORE any write in that case. A bare row-exists
+  // check would let a NULL rate through to a partial write (paid
+  // status + rate 0.0, then countIncome throws) — so validate the
+  // VALUE here, pre-write. A zero rate is NOT this case: PHP passes
+  // the lookup with 0.0 and throws later from getBaseCurrencyRate
+  // (countIncome), after the paid flush — TS mirrors that shape.
+  if (!rateRow || rateRow.conversion_rate === null || rateRow.conversion_rate === undefined) {
+    throw new FbError(`Currency rate for code '${currency}' is not configured.`);
+  }
+  // PHP's wrapInTransaction rolls the payment back on any countIncome
+  // throw, so validate countIncome's preconditions BEFORE the first
+  // write (a zero rate would otherwise leave a paid invoice behind).
+  await assertCountIncomeWritable(currency);
+  const rate = Number(rateRow.conversion_rate);
+  await updateInvoiceRow(invoiceId, { status: "paid", issued: 1, paid_at: nowTimestamp() });
+  await getDbWrite()
+    .prepare("UPDATE invoice SET currency_rate = ? WHERE id = ?")
+    .run(phpFloat(rate), invoiceId);
+  await countIncome(invoiceId);
+  await getDbWrite()
+    .prepare(
+      "UPDATE invoice_item SET status = 'pending_setup', updated_at = ? WHERE invoice_id = ? AND status = 'pending_payment'",
+    )
+    .run(nowTimestamp(), invoiceId);
   await insertInvoiceEvent(invoiceId, "paid", { status: "paid" });
   // PHP queues the 'Payment Received' email via the paid event.
   await queueInvoiceEmail("mod_invoice_paid", invoiceId);

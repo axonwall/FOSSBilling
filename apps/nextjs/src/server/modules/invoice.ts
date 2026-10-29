@@ -74,13 +74,6 @@ function randomHex(bytes: number): string {
   return randomBytes(bytes).toString("hex");
 }
 
-async function getCurrencyRate(code: string): Promise<number> {
-  const row = await getDb()
-    .prepare("SELECT conversion_rate FROM currency WHERE code = ?")
-    .get(code) as { conversion_rate: number } | undefined;
-  return row?.conversion_rate ?? 1;
-}
-
 async function isDepositInvoice(invoiceId: number): Promise<boolean> {
   const row = await getDb()
     .prepare("SELECT COUNT(*) AS c FROM invoice_item WHERE invoice_id = ? AND type = 'deposit'")
@@ -89,6 +82,8 @@ async function isDepositInvoice(invoiceId: number): Promise<boolean> {
 }
 import { clientSubscriptionArray } from "./client";
 import {
+  assertCountIncomeWritable,
+  countIncome,
   invoiceTotals,
   isClientTaxable,
   issueInvoice,
@@ -814,7 +809,8 @@ register("client", "invoice", "funds_invoice", async (ctx: CallContext) => {
     hash,
     hash_expires_at: await hashExpiry(),
     currency: client.currency,
-    currency_rate: await getCurrencyRate(client.currency),
+    // R5b: PHP generateFundsInvoice sets no rate — NULL until payment.
+    currency_rate: null,
     credit: 0,
     status: "unpaid",
     taxname: "",
@@ -1548,7 +1544,11 @@ function noteRowFrom(
     nr: null,
     hash: randomHex(24),
     currency: inv.currency ?? "USD",
-    currency_rate: Number(inv.currency_rate ?? 1),
+    // R5b: PHP sets no rate on notes (neither refund credit notes nor
+    // debit notes); the old copy of the original's rate was the R1
+    // divergence. A debit note's base_income comes from countIncome
+    // after its items exist; a credit note gets neither base column.
+    currency_rate: null,
     status: "unpaid",
     credit_note_for_invoice_id: null,
     debit_note_for_invoice_id: null,
@@ -1606,6 +1606,12 @@ export async function refundInvoiceCore(inv: InvoiceRowFull, onlyIds: Set<number
   if (remaining <= 0) {
     throw new FbError("Only paid invoices can be refunded");
   }
+  // R5b review fix: PHP wraps refund in wrapInTransaction, so a
+  // countIncome throw rolls the note back too. Validate BEFORE the
+  // first write (note creation + nr claim) so the observable outcome
+  // matches: error + nothing changed. Placed after the remaining
+  // check so PHP's validation-error precedence is preserved.
+  await assertCountIncomeWritable(String(inv.currency ?? "USD"));
   const lines = (await listInvoiceItems(inv.id)).filter((l) => !onlyIds || onlyIds.has(l.id));
   const refundAmount = round2(
     lines.reduce((s, l) => s + Math.abs(round2(l.price * l.quantity)), 0) *
@@ -1654,14 +1660,16 @@ export async function refundInvoiceCore(inv: InvoiceRowFull, onlyIds: Set<number
     status: newRefundTotal >= totals.total ? "refunded" : inv.status,
     notes: appendNote(inv.notes, `Refund invoice #${noteId} generated.`),
   });
-  // refund/base_refund are DECIMAL columns — bind as strings like PHP.
+  // refund is a DECIMAL column — bind as a string like PHP.
   await getDbWrite()
-    .prepare("UPDATE invoice SET refund = ?, base_refund = ? WHERE id = ?")
-    .run(
-      String(newRefundTotal),
-      String(round2((inv.base_refund ?? 0) + amount * Number(inv.currency_rate ?? 1))),
-      inv.id,
-    );
+    .prepare("UPDATE invoice SET refund = ? WHERE id = ?")
+    .run(String(newRefundTotal), inv.id);
+  // R5b: PHP recomputes base_refund via countIncome from the RUNNING
+  // refund (toBaseCurrency(refund)), it does not increment the old
+  // base_refund by amount x frozen rate. countIncome also rewrites
+  // base_income identically (same items, same rate), so the single
+  // call mirrors both PHP writes.
+  await countIncome(inv.id);
   await insertInvoiceEvent(inv.id, "refunded", { status: "refunded" });
   await queueInvoiceEmail("mod_invoice_refunded", noteId);
   return noteId;
@@ -1712,6 +1720,11 @@ register("admin", "invoice", "debit", async (ctx: CallContext) => {
   }
   const client = await findClientById(inv.client_id);
   if (!client) throw new FbError("Client not found");
+  // R5b review fix: PHP wraps debit in wrapInTransaction, so a
+  // countIncome throw rolls the note back too. Validate BEFORE the
+  // first write (nr claim + note creation) so the observable outcome
+  // matches: error + nothing changed.
+  await assertCountIncomeWritable(String(inv.currency ?? "USD"));
   const serie = "DN-";
   const nr = String(await nextNrForSerie(serie));
   const noteId = await insertInvoiceNote(
@@ -1722,12 +1735,10 @@ register("admin", "invoice", "debit", async (ctx: CallContext) => {
       debit_note_for_invoice_id: inv.id,
       due_at: new Date(Date.now() + (parseInt(await getSetting("invoice_due_days") ?? "5", 10) || 5) * 86400_000)
         .toISOString().slice(0, 19).replace("T", " "),
-      base_income: round2(
-        (Array.isArray(items) ? items : []).reduce(
-          (s, x) => s + Number((x as { price?: unknown }).price ?? 0) * Number((x as { quantity?: unknown }).quantity ?? 1),
-          0,
-        ) * Number(inv.currency_rate ?? 1),
-      ),
+      // R5b: PHP creates the note with NULL base_income, then runs
+      // countIncome AFTER inserting items — the old inline
+      // sum x frozen rate was wrong on both the rate direction and
+      // the (taxed) item values. See the countIncome call below.
       notes: auditLine(`Debit for #${inv.id} invoice.`),
       hash_expires_at: await hashExpiry(),
     }),
@@ -1751,6 +1762,10 @@ register("admin", "invoice", "debit", async (ctx: CallContext) => {
       taxed: it["taxed"] ? 1 : 0,
     });
   }
+  // PHP debitInvoice: countIncome(note) after items exist — note
+  // base_income = toBaseCurrency(no-tax item sum), currency_rate
+  // stays NULL, base_refund stays NULL.
+  await countIncome(noteId);
   await queueInvoiceEmail("mod_invoice_debited", noteId);
   return noteId;
 });
