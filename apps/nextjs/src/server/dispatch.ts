@@ -59,6 +59,28 @@ export function findHandler(role: string, module: string, method: string): Handl
   return registry.get(`${role}/${module}/${method}`);
 }
 
+/**
+ * Magic-method handlers (Phase 5 R4d): PHP Api classes may define
+ * __call, which the dispatcher invokes for any method the class does
+ * not declare (Dispatcher checks hasMethod('__call') before throwing
+ * 740). Only admin/servicecustom registers one today. A magic handler
+ * receives the called method name alongside the call context; the
+ * route falls back to it when no exact handler exists. It is kept in
+ * a separate map so a literal method named "__call" never collides
+ * with the fallback itself (see the route's "__call" exclusion).
+ */
+export type MagicHandler = (ctx: CallContext, method: string) => unknown | Response | Promise<unknown | Response>;
+
+const magicRegistry = new Map<string, MagicHandler>();
+
+export function registerMagic(role: string, module: string, handler: MagicHandler) {
+  magicRegistry.set(`${role}/${module}`, handler);
+}
+
+export function findMagicHandler(role: string, module: string): MagicHandler | undefined {
+  return magicRegistry.get(`${role}/${module}`);
+}
+
 /** Modules whose TS implementation is active (env FB_TS_MODULES, comma list). */
 export function tsModulesEnabled(): Set<string> {
   return new Set(

@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { enforceCsrf, envelope, errorEnvelope, findHandler, tsModulesEnabled } from "@/server/dispatch";
+import { enforceCsrf, envelope, errorEnvelope, findHandler, findMagicHandler, tsModulesEnabled } from "@/server/dispatch";
 import { enforceDispatcherGates } from "@/server/guards";
 import { REMOVED_SYSTEM_ADMIN } from "@/server/modules/system";
 import { REMOVED_EXTENSION_ADMIN, REMOVED_EXTENSION_GUEST } from "@/server/modules/extension";
@@ -81,7 +81,21 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
   // parsed with formData() (req.text() would consume the stream first).
   if (path.length === 3) {
     const [role, module, method] = path.map((s) => s.toLowerCase());
-    const handler = tsModulesEnabled().has(module) ? findHandler(role, module, method) : undefined;
+    let handler = tsModulesEnabled().has(module) ? findHandler(role, module, method) : undefined;
+    let gateMethod = method;
+    // R4d magic fallback: PHP routes unknown admin/servicecustom
+    // methods through Api\Admin::__call. The TS seam mirrors that —
+    // EXCEPT the literal method name "__call" itself, which PHP
+    // treats as a real method and crashes on with 9998
+    // (ArgumentCountError: __call called with 1 arg, 2 expected).
+    // That pathological call keeps proxying to PHP, exactly.
+    if (!handler && role === "admin" && module === "servicecustom" && method !== "__call") {
+      const magic = tsModulesEnabled().has(module) ? findMagicHandler(role, module) : undefined;
+      if (magic) {
+        handler = (callCtx) => magic(callCtx, method);
+        gateMethod = "__call";
+      }
+    }
     if (handler) {
       try {
         const params: Record<string, string> = {};
@@ -151,7 +165,7 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
           (role === "admin" && module === "theme" && REMOVED_THEME_ADMIN.includes(method)) ||
           (role === "guest" && module === "extension" && REMOVED_EXTENSION_GUEST.includes(method));
         if (!isRemoved) {
-          await enforceDispatcherGates(callCtx, role, module, method);
+          await enforceDispatcherGates(callCtx, role, module, gateMethod);
         }
         const result = await handler(callCtx);
         // Binary/text endpoints return a full Response: pass it through

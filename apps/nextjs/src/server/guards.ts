@@ -272,6 +272,10 @@ export const ADMIN_GUARDS: Record<string, [string, string | null][]> = {
   "admin/serviceapikey/reset": [["serviceapikey", "manage"]],
   "admin/serviceapikey/update": [["serviceapikey", "manage"]],
   "admin/servicecustom/update": [["servicecustom", "manage"]],
+  // R4d: the magic __call handler is gated on the same key PHP's
+  // __call body checks (servicecustom/manage); the route enforces
+  // this entry when it falls back to the magic handler.
+  "admin/servicecustom/__call": [["servicecustom", "manage"]],
   "admin/servicedomain/batch_sync_expiration_dates": [["servicedomain", "manage_domains"]],
   "admin/servicedomain/disable_privacy_protection": [["servicedomain", "manage_domains"]],
   "admin/servicedomain/enable_privacy_protection": [["servicedomain", "manage_domains"]],

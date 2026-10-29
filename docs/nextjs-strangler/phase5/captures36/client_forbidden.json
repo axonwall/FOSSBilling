@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": 403,
+    "message": "Custom plugin method cancel is forbidden"
+  },
+  "result": null
+}

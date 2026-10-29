@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": 9999,
+    "message": "Method is required"
+  },
+  "result": null
+}

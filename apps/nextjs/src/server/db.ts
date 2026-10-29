@@ -58,7 +58,9 @@ class SqliteStatement implements DbStatement {
   }
 }
 
-class DbSqlite implements Db {
+/** Exported for operator scripts (e.g. the R4d salt re-key tool) that
+ * construct a driver directly instead of using the getDb singletons. */
+export class DbSqlite implements Db {
   constructor(private conn: DatabaseSync) {}
   prepare(sql: string): DbStatement {
     return new SqliteStatement(this.conn.prepare(sql));
