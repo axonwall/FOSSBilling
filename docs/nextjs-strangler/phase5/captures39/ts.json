@@ -1,0 +1,153 @@
+{
+  "strict_set_missing": {
+    "envelope": {
+      "error": null,
+      "result": true
+    },
+    "queue": {
+      "content": "Hello.",
+      "recipient": "x@example.com",
+      "subject": "Strict set"
+    }
+  },
+  "t11_client": {
+    "envelope": {
+      "error": null,
+      "result": true
+    },
+    "queue": {
+      "content": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t\t<h1>Ticket Replied</h1>\n\n    <p>Hello, Phase Zero.</p>\n\n    <p>A new reply was posted to ticket <strong>Client issue</strong></p>\n\n    <p>Ticket info</p>\n    <ul>\n        <li><strong>Ticket ID:</strong> #102</li>\n        <li><strong>Department:</strong> [object Object]</li>\n        <li><strong>Status:</strong> on_hold</li>\n    </ul>\n\n    \n    <p>Please do not reply to this email directly. Use the link provided above.</p>\n\n    \n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+      "recipient": "client@example.com",
+      "subject": "[Company Name] Client issue"
+    }
+  },
+  "t11_guest": {
+    "envelope": {
+      "error": null,
+      "result": true
+    },
+    "queue": {
+      "content": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t\t<h1>Ticket Replied</h1>\n\n    <p>Hello, Guest User.</p>\n\n    <p>A new reply was posted to ticket <strong>Guest help needed</strong></p>\n\n    <p>Ticket info</p>\n    <ul>\n        <li><strong>Ticket ID:</strong> #101</li>\n        <li><strong>Department:</strong> [object Object]</li>\n        <li><strong>Status:</strong> open</li>\n    </ul>\n\n    \n    <p>Please do not reply to this email directly. Use the link provided above.</p>\n\n    \n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+      "recipient": "guest@example.com",
+      "subject": "[Company Name] Guest help needed"
+    }
+  },
+  "t12_absent": {
+    "envelope": {
+      "error": null,
+      "result": true
+    },
+    "queue": {
+      "content": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>New Order Placed</h1>\n\t<p>Hello Staff Name,</p>\n\t<p>Client <strong> </strong> placed a new order for <strong></strong> on </p>\n\n    <p><a href='http://127.0.0.1:8080/admin/order/manage/' target=\"_blank\">Manage order.</a>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+      "recipient": "staff@example.com",
+      "subject": "[Company Name] New Order Placed"
+    }
+  },
+  "t12_present": {
+    "envelope": {
+      "error": null,
+      "result": true
+    },
+    "queue": {
+      "content": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>New Order Placed</h1>\n\t<p>Hello Staff Name,</p>\n\t<p>Client <strong>Phase Zero</strong> placed a new order for <strong>Widget Order</strong> on Oct 01, 2026</p>\n\n    <p><a href='http://127.0.0.1:8080/admin/order/manage/5' target=\"_blank\">Manage order.</a>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+      "recipient": "staff@example.com",
+      "subject": "[Company Name] New Order Placed"
+    }
+  },
+  "t26_client": {
+    "envelope": {
+      "error": null,
+      "result": true
+    },
+    "queue": {
+      "content": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t\t<h1>Ticket Opened</h1>\n\n    <p>Hi Phase Zero,</p>\n\n    <p>[object Object]</p>\n\n    <p>Ticket info</p>\n    <ul>\n        <li><strong>Ticket ID:</strong> #102</li>\n        <li><strong>Department:</strong> [object Object]</li>\n        <li><strong>Status:</strong> open</li>\n    </ul>\n\n    \n    <p>Please do not reply to this email directly. Use the link provided above.</p>\n\n    \n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+      "recipient": "client@example.com",
+      "subject": "[Company Name] Client issue"
+    }
+  },
+  "t26_guest": {
+    "envelope": {
+      "error": null,
+      "result": true
+    },
+    "queue": {
+      "content": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t\t<h1>Ticket Opened</h1>\n\n    <p>Hi Guest User,</p>\n\n    <p>[object Object]</p>\n\n    <p>Ticket info</p>\n    <ul>\n        <li><strong>Ticket ID:</strong> #101</li>\n        <li><strong>Department:</strong> [object Object]</li>\n        <li><strong>Status:</strong> open</li>\n    </ul>\n\n    \n    <p>Please do not reply to this email directly. Use the link provided above.</p>\n\n    \n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+      "recipient": "guest@example.com",
+      "subject": "[Company Name] Guest help needed"
+    }
+  },
+  "t2_absent": {
+    "envelope": {
+      "error": null,
+      "result": true
+    },
+    "queue": {
+      "content": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>Order Is Now Active</h1>\n\t<p>Hello Phase Zero,</p>\n\t<p>Your <strong></strong> is now activated.</p>\n\n    <p>You may <a href=\"http://127.0.0.1:8080/login?email=phase0.client%40example.com\" target=\"_blank\">login</a> or <a href=\"http://127.0.0.1:8080/client/profile\" target=\"_blank\">edit your profile.</a>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+      "recipient": "client@example.com",
+      "subject": "[Company Name]  Activated"
+    }
+  },
+  "t2_present": {
+    "envelope": {
+      "error": null,
+      "result": true
+    },
+    "queue": {
+      "content": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>Order Is Now Active</h1>\n\t<p>Hello Phase Zero,</p>\n\t<p>Your <strong>Widget Order</strong> is now activated.</p>\n\n    <p>You may <a href=\"http://127.0.0.1:8080/login?email=phase0.client%40example.com\" target=\"_blank\">login</a> or <a href=\"http://127.0.0.1:8080/client/profile\" target=\"_blank\">edit your profile.</a>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+      "recipient": "client@example.com",
+      "subject": "[Company Name] Widget Order Activated"
+    }
+  },
+  "t6_client": {
+    "envelope": {
+      "error": null,
+      "result": true
+    },
+    "queue": {
+      "content": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t\t<h1>Ticket Opened</h1>\n\n    \n    <p>Thank you for contacting our support team. A support ticket has now been opened for your request.</p>\n    <p>You will be notified by email when your ticket receives a response. The details of your ticket are shown below.</p>\n\n    <p>Ticket info</p>\n    <ul>\n        <li><strong>Ticket ID:</strong> #102</li>\n        <li><strong>Department:</strong> [object Object]</li>\n        <li><strong>Status:</strong> open</li>\n    </ul>\n\n    \n    <p>Please do not reply to this email directly. Use the link provided above.</p>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+      "recipient": "client@example.com",
+      "subject": "[Company Name] Client issue"
+    }
+  },
+  "t6_guest": {
+    "envelope": {
+      "error": null,
+      "result": true
+    },
+    "queue": {
+      "content": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t\t<h1>Ticket Opened</h1>\n\n    \n    <p>Thank you for contacting our support team. A support ticket has now been opened for your request.</p>\n    <p>You will be notified by email when your ticket receives a response. The details of your ticket are shown below.</p>\n\n    <p>Ticket info</p>\n    <ul>\n        <li><strong>Ticket ID:</strong> #101</li>\n        <li><strong>Department:</strong> [object Object]</li>\n        <li><strong>Status:</strong> open</li>\n    </ul>\n\n    \n    <p>Please do not reply to this email directly. Use the link provided above.</p>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+      "recipient": "guest@example.com",
+      "subject": "[Company Name] Guest help needed"
+    }
+  },
+  "tclose_client": {
+    "envelope": {
+      "error": null,
+      "result": true
+    },
+    "queue": {
+      "content": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t\t<h1>Ticket Closed</h1>\n\n    <p>Hello, Phase Zero.</p>\n\n    <p>This a notification message to inform you that ticket <strong>Client issue</strong> is now closed.</p>\n\n    <p>Ticket info</p>\n    <ul>\n        <li><strong>Ticket ID:</strong> #102</li>\n        <li><strong>Department:</strong> [object Object]</li>\n        <li><strong>Status:</strong> open</li>\n    </ul>\n\n    \n    <p>Please do not reply to this email directly. Use the link provided above.</p>\n\n    \n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+      "recipient": "client@example.com",
+      "subject": "[Company Name] Client issue"
+    }
+  },
+  "tclose_guest": {
+    "envelope": {
+      "error": null,
+      "result": true
+    },
+    "queue": {
+      "content": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t\t<h1>Ticket Closed</h1>\n\n    <p>Hello, Guest User.</p>\n\n    <p>This a notification message to inform you that ticket <strong>Guest help needed</strong> is now closed.</p>\n\n    <p>Ticket info</p>\n    <ul>\n        <li><strong>Ticket ID:</strong> #101</li>\n        <li><strong>Department:</strong> [object Object]</li>\n        <li><strong>Status:</strong> open</li>\n    </ul>\n\n    \n    <p>Please do not reply to this email directly. Use the link provided above.</p>\n\n    \n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+      "recipient": "guest@example.com",
+      "subject": "[Company Name] Guest help needed"
+    }
+  },
+  "validate_all": {
+    "error": null,
+    "result": {
+      "errors": [],
+      "invalid": 0,
+      "valid": 26
+    }
+  }
+}

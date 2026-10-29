@@ -1,10 +1,12 @@
 // Minimal Twig-subset renderer — just enough for FOSSBilling's
 // email templates: {{ expr }} with dotted paths, string literals
 // with #{...} interpolation, filter chains (default, format_date,
-// format_currency, daysleft, length, url, upper, lower, trim), and
-// {% if %}/{% for %} blocks. Anything outside the subset renders
-// as an empty string rather than throwing, mirroring how a missing
-// variable behaves in the templates' default-guarded style.
+// format_currency, daysleft, length, url, upper, lower, trim, title),
+// {% if %}/{% else %}/{% for %} blocks, and {% set name = expr %}
+// (single-target only; set-blocks and multi-assign are skipped, as
+// before). Anything outside the subset renders as an empty string
+// rather than throwing, mirroring how a missing variable behaves in
+// the templates' default-guarded style.
 
 type Ctx = Record<string, unknown>;
 
@@ -38,10 +40,15 @@ function phpDateFormat(format: string, d: Date): string {
 }
 
 export function formatDateValue(v: unknown): string {
-  if (v === null || v === undefined || v === "") return "";
+  // PHP's format_date is twig/intl-extra: en_US medium format
+  // ("Oct 1, 2026" — unpadded day), and an empty/null value means
+  // "now" (Twig's date converter), not "". Both proven by capture39
+  // (t12_present/t12_absent); the old "M d, Y" + "" rendering was a
+  // pre-existing divergence on every format_date use, not just R5c.
+  if (v === null || v === undefined || v === "") return phpDateFormat("M j, Y", new Date());
   const d = new Date(String(v).replace(" ", "T"));
   if (Number.isNaN(d.getTime())) return String(v);
-  return phpDateFormat("M d, Y", d);
+  return phpDateFormat("M j, Y", d);
 }
 
 export function formatCurrencyValue(v: unknown, code: string, formats: Record<string, string>): string {
@@ -110,10 +117,30 @@ function evalTerm(term: string, ctx: Ctx): unknown {
   return lookup(ctx, term);
 }
 
-function parseFilter(s: string): FilterCall {
-  const m = s.trim().match(/^(\w+)\s*(?:\((.*)\))?$/s);
-  if (!m) return { name: s.trim(), args: [] };
-  return { name: m[1], args: m[2] ? splitTopLevel(m[2], ",").map((a) => a.trim()) : [] };
+function parseFilter(s: string): FilterCall & { postfix: string } {
+  // A filter part may carry a trailing attribute/index path applied
+  // AFTER the filter: ticket.helpdesk|default({}).name,
+  // ticket.messages|default([])[0].content. Without this, the whole
+  // part failed the old regex and fell through as an unknown filter,
+  // rendering "[object Object]" for the Department/messages lines.
+  // (Greedy args backtrack to the last ")" that leaves a valid
+  // postfix; args containing ")" inside string literals are the one
+  // known mis-split shape — not present in-tree.)
+  const m = s.trim().match(/^(\w+)\s*(?:\((.*)\))?((?:\.[A-Za-z_]\w*|\[\d+\])*)$/s);
+  if (!m) return { name: s.trim(), args: [], postfix: "" };
+  return { name: m[1], args: m[2] ? splitTopLevel(m[2], ",").map((a) => a.trim()) : [], postfix: m[3] ?? "" };
+}
+
+function applyPostfix(value: unknown, postfix: string): unknown {
+  if (!postfix) return value;
+  let cur = value;
+  const re = /\.([A-Za-z_]\w*)|\[(\d+)\]/g;
+  let pm: RegExpExecArray | null;
+  while ((pm = re.exec(postfix)) !== null) {
+    if (cur === null || cur === undefined || typeof cur !== "object") return undefined;
+    cur = (cur as Record<string, unknown>)[pm[1] ?? pm[2]];
+  }
+  return cur;
 }
 
 // Named-argument lists like url(area: 'client', query: {...})
@@ -126,12 +153,69 @@ function parseNamedArgs(args: string[]): Record<string, string> {
   return out;
 }
 
+// Split an expression at the FIRST top-level comparison operator
+// (depth-0, outside quotes). Filter chains bind tighter than
+// comparisons in Twig, so `a|default('') == 'guest'` splits into
+// left "a|default('')" and right "'guest'".
+function splitTopLevelComparison(expr: string): { left: string; op: string; right: string } | null {
+  let depth = 0, quote: string | null = null;
+  for (let i = 0; i < expr.length; i++) {
+    const ch = expr[i];
+    if (quote) { if (ch === quote) quote = null; continue; }
+    if (ch === "'" || ch === '"') { quote = ch; continue; }
+    if (ch === "(" || ch === "{" || ch === "[") { depth++; continue; }
+    if (ch === ")" || ch === "}" || ch === "]") { depth--; continue; }
+    if (depth !== 0) continue;
+    const two = expr.slice(i, i + 2);
+    if (two === ">=" || two === "<=" || two === "==" || two === "!=") {
+      return { left: expr.slice(0, i).trim(), op: two, right: expr.slice(i + 2).trim() };
+    }
+    if (ch === ">" || ch === "<") {
+      return { left: expr.slice(0, i).trim(), op: ch, right: expr.slice(i + 1).trim() };
+    }
+  }
+  return null;
+}
+
 export function evalExpr(expr: string, ctx: Ctx & { __baseUrl?: string; __currencyFormats?: Record<string, string> }): unknown {
+  // R5c: a set RHS may be a full comparison expression
+  // (ticket.author.role|default('') == 'guest'). The old filter-chain
+  // code treated "== 'guest'" as part of a filter name, fell through
+  // to passthrough, and returned the role STRING — truthy for every
+  // role, so guest renders passed by accident and client renders
+  // took the guest branch. Comparisons use evalCondition's semantics
+  // (string equality for ==/!=, numeric for ordering).
+  const cmp = splitTopLevelComparison(expr);
+  if (cmp) {
+    const l = evalFilterChain(cmp.left, ctx);
+    const r = evalFilterChain(cmp.right, ctx);
+    switch (cmp.op) {
+      case "==": return String(l ?? "") === String(r ?? "");
+      case "!=": return String(l ?? "") !== String(r ?? "");
+      case ">": return (typeof l === "number" ? l : parseFloat(String(l))) > (typeof r === "number" ? r : parseFloat(String(r)));
+      case "<": return (typeof l === "number" ? l : parseFloat(String(l))) < (typeof r === "number" ? r : parseFloat(String(r)));
+      case ">=": return (typeof l === "number" ? l : parseFloat(String(l))) >= (typeof r === "number" ? r : parseFloat(String(r)));
+      case "<=": return (typeof l === "number" ? l : parseFloat(String(l))) <= (typeof r === "number" ? r : parseFloat(String(r)));
+    }
+  }
+  return evalFilterChain(expr, ctx);
+}
+
+function evalFilterChain(expr: string, ctx: Ctx & { __baseUrl?: string; __currencyFormats?: Record<string, string> }): unknown {
   const parts = splitTopLevel(expr, "|");
   let value = evalTerm(parts[0], ctx);
   for (const rawFilter of parts.slice(1)) {
     const f = parseFilter(rawFilter);
     switch (f.name) {
+      case "title": {
+        // Twig title = MB_CASE_TITLE: uppercase a lowercase letter
+        // following the start or a non-letter ("open" -> "Open",
+        // "on_hold" -> "On_Hold", "in progress" -> "In Progress",
+        // proven against PHP's mb_convert_case in the R5c survey).
+        const s = String(value ?? "");
+        value = s.replace(/(^|[^A-Za-z])([a-z])/g, (_m, p, l) => p + l.toUpperCase());
+        break;
+      }
       case "default":
         value = value === undefined || value === null || value === "" ? evalTerm(f.args[0] ?? "''", ctx) : value;
         break;
@@ -156,7 +240,7 @@ export function evalExpr(expr: string, ctx: Ctx & { __baseUrl?: string; __curren
       case "url": {
         const named = parseNamedArgs(f.args);
         const base = (ctx.__baseUrl ?? "http://127.0.0.1:8080/").replace(/\/?$/, "/");
-        let path = String(value ?? "").replace(/^\//, "");
+        let path = String(value ?? "");
         let qs = "";
         if (named.query) {
           const q = evalTerm(named.query, ctx) as Record<string, unknown>;
@@ -166,16 +250,22 @@ export function evalExpr(expr: string, ctx: Ctx & { __baseUrl?: string; __curren
         // PHP FOSSBillingExtension::url: area 'admin' routes through
         // adminLink(), which prefixes the admin area prefix; any other
         // area (or none) uses the bare link. The reference install's
-        // prefix is '/admin'.
+        // prefix is '/admin'. PHP Url::link() trims BOTH ends of the
+        // path (trim($uri, '/')) — the old leading-only strip left a
+        // trailing slash on empty interpolations ("order/manage/"),
+        // proven by capture39 t12_absent.
+        path = path.replace(/^\/+|\/+$/g, "");
         if (named.area && String(evalTerm(named.area, ctx) ?? "") === "admin") {
           path = `admin/${path}`;
         }
+        path = path.replace(/^\/+|\/+$/g, "");
         value = base + path + qs;
         break;
       }
       default:
         break; // unknown filters pass the value through
     }
+    value = applyPostfix(value, f.postfix);
   }
   return value;
 }
@@ -185,6 +275,11 @@ function truthy(v: unknown): boolean {
 }
 
 function evalCondition(cond: string, ctx: Ctx): boolean {
+  // Twig "not" negation (in-tree: {% if not is_guest_ticket %} in
+  // the staff_reply/staff_open/close templates). The old code fed
+  // "not X" to lookup as a single path and always got falsy.
+  const notM = cond.trim().match(/^not\s+(.+)$/s);
+  if (notM) return !evalCondition(notM[1], ctx);
   const cmp = cond.match(/^(.*?)\s*(>=|<=|==|!=|>|<)\s*(.+)$/s);
   if (cmp) {
     const l = evalExpr(cmp[1], ctx);
@@ -206,8 +301,14 @@ function evalCondition(cond: string, ctx: Ctx): boolean {
 type Node =
   | { kind: "text"; text: string }
   | { kind: "echo"; expr: string }
-  | { kind: "if"; cond: string; body: Node[] }
-  | { kind: "for"; varName: string; expr: string; body: Node[] };
+  | { kind: "if"; cond: string; body: Node[]; elseBody: Node[] }
+  | { kind: "for"; varName: string; expr: string; body: Node[] }
+  // R5c: {% set name = expr %} — single-target only. Set-blocks
+  // ({% set x %}...{% endset %}) and multi-assign
+  // ({% set a, b = ... %}) do NOT parse as set nodes: they fall
+  // through to the unknown-tag skip, exactly as before (no in-tree
+  // use in email templates; see findings-r5c).
+  | { kind: "set"; name: string; expr: string };
 
 function parse(template: string): Node[] {
   const tokens = template.split(/(\{\{.*?\}\}|\{%.*?%\}|\{#.*?#\})/s).filter((t) => t !== "");
@@ -239,9 +340,24 @@ function parse(template: string): Node[] {
         if (stops.includes(head)) return nodes;
         if (head === "if") {
           consumeTag();
-          const body = parseUntil(["endif"]);
+          const body = parseUntil(["endif", "else"]);
+          let elseBody: Node[] = [];
+          if (pos < tokens.length && tokens[pos].startsWith("{%")
+            && tokens[pos].slice(2, -2).trim().split(/\s+/)[0] === "else") {
+            consumeTag(); // consume else
+            elseBody = parseUntil(["endif"]);
+          }
           consumeTag(); // consume endif
-          nodes.push({ kind: "if", cond: inner.slice(2).trim(), body });
+          nodes.push({ kind: "if", cond: inner.slice(2).trim(), body, elseBody });
+          continue;
+        }
+        if (head === "set") {
+          // Single-target only: {% set name = expr %}. Anything
+          // else (set-block, multi-assign) is not a set node and
+          // keeps the old unknown-tag skip behavior.
+          const m = inner.match(/^set\s+(\w+)\s*=\s*(.+)$/s);
+          consumeTag();
+          if (m) nodes.push({ kind: "set", name: m[1], expr: m[2].trim() });
           continue;
         }
         if (head === "for") {
@@ -275,8 +391,15 @@ function renderNodes(nodes: Node[], ctx: Ctx): string {
     else if (n.kind === "echo") {
       const v = evalExpr(n.expr, ctx as never);
       out += v === undefined || v === null ? "" : String(v);
+    } else if (n.kind === "set") {
+      // R5c: evaluate in template order, mutating the passed ctx.
+      // If-bodies share the object, so a set inside an if escapes
+      // (Twig block scope); for-bodies get spread copies, so a set
+      // inside a for is contained (Twig for-scoping).
+      ctx[n.name] = evalExpr(n.expr, ctx as never);
     } else if (n.kind === "if") {
       if (evalCondition(n.cond, ctx as never)) out += renderNodes(n.body, ctx);
+      else out += renderNodes(n.elseBody, ctx);
     } else if (n.kind === "for") {
       const items = evalExpr(n.expr, ctx as never);
       if (Array.isArray(items)) {
@@ -338,9 +461,13 @@ export function renderTemplateStrict(template: string, ctx: Ctx): string {
   if (blocks.length > 0) {
     throw new Error(`Email template syntax error: Unexpected end of template in "__string_template__" at line 1.`);
   }
-  // Strict variable check over every echo and condition expression.
-  // Loop variables and {% set %} names count as defined (the subset
-  // renderer does not evaluate set, so their shapes are not checked).
+  // Strict variable check over every echo, condition, and set-RHS
+  // expression. Loop variables and {% set %} names count as defined.
+  // R5c: the set RHS itself is now checked too — a set referencing
+  // a missing var is a strict error (PHP: Variable "nosuchvar"
+  // does not exist), where the old renderer silently sent the
+  // template. In-tree RHS expressions are default-guarded, so the
+  // existing default exemption keeps them passing.
   const defined = new Set(Object.keys(ctx));
   for (const re of [/\{%\s*for\s+(\w+)\s+in/g, /\{%\s*set\s+(\w+)/g]) {
     let sm: RegExpExecArray | null;
@@ -349,9 +476,9 @@ export function renderTemplateStrict(template: string, ctx: Ctx): string {
   const KEYWORDS = new Set(["true", "false", "null", "not", "and", "or", "in", "is",
     "defined", "empty", "odd", "even", "divisible", "iterable", "mapping", "sequence",
     "same", "starts", "ends", "matches"]);
-  const exprRe = /\{\{(.*?)\}\}|\{%\s*if\s+(.*?)\s*%\}|\{%\s*for\s+\w+\s+in\s+(.*?)\s*%\}/gs;
+  const exprRe = /\{\{(.*?)\}\}|\{%\s*if\s+(.*?)\s*%\}|\{%\s*for\s+\w+\s+in\s+(.*?)\s*%\}|\{%\s*set\s+\w+\s*=\s*(.*?)\s*%\}/gs;
   while ((m = exprRe.exec(template)) !== null) {
-    const expr = (m[1] ?? m[2] ?? m[3] ?? "").trim();
+    const expr = (m[1] ?? m[2] ?? m[3] ?? m[4] ?? "").trim();
     if (!expr) continue;
     if (/\|\s*default\b/.test(expr)) continue; // default() guards undefined
     const base = expr.split("|")[0].replace(/'[^']*'|"[^"]*"/g, "");
