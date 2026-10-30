@@ -24,6 +24,7 @@ import { isClientTaxable } from "../money";
 import { parseSessionContent, phpSerialize, replaceSessionSegment } from "../php-serialize";
 import { queueTemplatedEmail } from "../emailer";
 import { exportCsvResponse, requestedCsvHeaders } from "../csv";
+import { checkBlockedIp, checkCaptcha, checkSignupAntispam } from "./antispam";
 import countriesJson from "../data/countries.json";
 import {
   assertPasswordStrong,
@@ -543,14 +544,16 @@ register("admin", "client", "update", async (ctx) => {
   const w = getDbWrite();
   const updates: Record<string, unknown> = {};
   const previousStatus = row.status;
+  // R5h: the confirm-email delete is a WRITE, so it must not fire on
+  // a call the blocked-IP check will reject (PHP persists nothing
+  // before dispatch). It is deferred until after the blocked check.
+  let emailChanged = false;
   if (ctx.params["email"] !== undefined && ctx.params["email"] !== null) {
     const email = validateEmail(ctx.params["email"]).toLowerCase();
     const other = await findClientByEmail(email);
     if (other && other.id !== row.id) throw new FbError("This email address is already registered.");
     updates["email"] = email;
-    if (email !== row.email) {
-      await w.prepare("DELETE FROM extension_meta WHERE extension = 'mod_client' AND meta_key = 'confirm_email' AND client_id = ?").run(row.id);
-    }
+    emailChanged = email !== row.email;
   }
   if (ctx.params["billing_email"] !== undefined) {
     updates["billing_email"] = ctx.params["billing_email"] === "" ? null : validateEmail(ctx.params["billing_email"]).toLowerCase();
@@ -567,6 +570,14 @@ register("admin", "client", "update", async (ctx) => {
       if (hasOrder) throw new FbError("Currency cannot be changed. Client already has orders.");
       updates["currency"] = currency;
     }
+  }
+  // R5h: PHP Admin::update() dispatches BeforeAdminClientUpdateEvent
+  // (blocked-IP only) after the email/billing/birthday/currency
+  // validations and before the phone/country/lang/timezone ones, so a
+  // blocked IP beats an invalid country but not an invalid email.
+  await checkBlockedIp(ctx);
+  if (emailChanged) {
+    await w.prepare("DELETE FROM extension_meta WHERE extension = 'mod_client' AND meta_key = 'confirm_email' AND client_id = ?").run(row.id);
   }
   const phoneCc = ctx.params["phone_cc"] ?? (row.phone_cc !== null ? String(row.phone_cc) : undefined);
   if (phoneCc !== undefined && phoneCc !== "") updates["phone_cc"] = String(validatePhoneCc(phoneCc));
@@ -927,6 +938,12 @@ register("guest", "client", "create", async (ctx) => {
   if (password !== confirm) throw new FbError("Passwords do not match.");
   assertPasswordStrong(password);
   const clean = validateEmail(email).toLowerCase();
+  // R5h: PHP Guest::create() verifies captcha AFTER email validation
+  // and BEFORE the email-quota probe / existing-account path, so a
+  // captcha failure fires even for existing emails; the event checks
+  // (blocked/SFS/temp/honeypot) run only inside guestCreateClient,
+  // i.e. only for genuinely new signups (see below).
+  await checkCaptcha(ctx);
   const existing = await findClientByEmail(clean);
   const attemptExistingLogin = async () => {
     // Enumeration-safe: same true as a genuine signup, plus a login
@@ -957,6 +974,11 @@ register("guest", "client", "create", async (ctx) => {
     await attemptExistingLogin();
     return true;
   }
+  // R5h event checks (PHP BeforeClientSignUpEvent order: blocked-IP
+  // -> SFS -> temp-email -> honeypot). Placed after the existing /
+  // rate-limited early returns, mirroring guestCreateClient: an
+  // existing-email signup never reaches the event and returns true.
+  await checkSignupAntispam(ctx, clean);
   const fields: Record<string, string | undefined> = {};
   for (const f of GUEST_CREATE_FIELDS) fields[f] = ctx.params[f];
   fields["status"] = "active";
@@ -971,6 +993,10 @@ register("guest", "client", "login", async (ctx) => {
   const email = required(ctx, "email", "Email required");
   const password = required(ctx, "password", "Password required");
   const clean = validateEmail(email).toLowerCase();
+  // R5h: PHP Guest::login() dispatches BeforeClientLoginEvent
+  // (blocked-IP only) after email validation, before authorize — so
+  // a blocked IP beats even a wrong password.
+  await checkBlockedIp(ctx);
   const row = await findClientByEmail(clean);
   if (!row || row.status !== "active" || !bcrypt.compareSync(password, await clientPass(row.id))) {
     throw new FbError("Please check your login details.", 401);
@@ -984,6 +1010,11 @@ register("guest", "client", "reset_password", async (ctx) => {
   // R5g silent-limit (PHP Guest::reset_password): a limited ip or
   // email quota returns true, NOT 429, to avoid account enumeration.
   if ((await consume("client_password_reset_ip", ctx.ip, { requestIp: ctx.ip })).limited) return true;
+  // R5h survey extra: PHP Guest::reset_password() calls
+  // checkCaptchaIfEnabled between the ip probe and the email probe
+  // (captcha only, no blocked-IP — there is no antispam listener
+  // for password resets).
+  await checkCaptcha(ctx);
   if ((await consume("client_password_reset_email", clean, { requestIp: ctx.ip })).limited) return true;
   const row = await findClientByEmail(clean);
   // Enumeration-safe: unknown or ineligible accounts still return true.

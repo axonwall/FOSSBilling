@@ -35,6 +35,7 @@ import { queueTemplatedEmail } from "../emailer";
 import { getOrCreateTemplateId } from "../emailDefaults";
 import { parseSessionContent } from "../php-serialize";
 import { loginAsAdmin } from "../session";
+import { checkBlockedIp, checkCaptcha } from "./antispam";
 import { paginate } from "../util";
 
 /**
@@ -567,6 +568,10 @@ register("guest", "staff", "login", async (ctx: CallContext) => {
   if (!isValidEmail(email)) throw new FbError("Email address is invalid");
   // IP allowlist: skipped — the reference install has no mod_staff
   // config row, so PHP skips the check too (documented).
+  // R5h: PHP Staff/Service.php login() dispatches BeforeAdminLoginEvent
+  // (blocked-IP only) before authorize — a blocked IP beats even a
+  // wrong password, and beats the admin-allowlist-adjacent flow here.
+  await checkBlockedIp(ctx);
   const auth = await findAdminAuthByEmail(email);
   if (!auth || auth.status !== "active" || auth.system_name === "cron") {
     // PHP runs a dummy verify for timing; the envelope is identical
@@ -590,9 +595,12 @@ register("guest", "staff", "passwordreset", async (ctx: CallContext) => {
   if (!email) throw new FbError("Email required");
   if (!isValidEmail(email)) throw new FbError("Email address is invalid");
   // R5g silent-limit (PHP Staff Guest::reset_password): a limited ip
-  // or email quota returns true, NOT 429, to avoid enumeration. The
-  // antispam captcha is unset (checkCaptcha no-op) — still skipped.
+  // or email quota returns true, NOT 429, to avoid enumeration.
   if ((await consume("staff_password_reset_ip", ctx.ip, { requestIp: ctx.ip })).limited) return true;
+  // R5h survey extra: PHP Staff/Api/Guest.php passwordreset() calls
+  // checkCaptchaIfEnabled between the ip probe and the email probe
+  // (captcha only, no blocked-IP).
+  await checkCaptcha(ctx);
   if ((await consume("staff_password_reset_email", email, { requestIp: ctx.ip })).limited) return true;
   const admin = await findAdminByEmail(email);
   if (!admin || admin.status !== "active" || admin.system_name === "cron") return true;

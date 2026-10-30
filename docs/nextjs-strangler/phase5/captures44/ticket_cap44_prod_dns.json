@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Rate limit exceeded. Please try again later.",
+    "code": 429
+  }
+}

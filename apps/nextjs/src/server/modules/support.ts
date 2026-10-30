@@ -9,6 +9,7 @@
 import { randomBytes } from "node:crypto";
 import { FbError, register, requireAdmin, requireClient, type CallContext } from "../dispatch";
 import { getDb, getDbWrite, nowTimestamp, findClientById } from "../db";
+import { checkGuestTicketAntispam } from "./antispam";
 import { clientAdminArray } from "./client";
 
 export interface TicketRow {
@@ -760,6 +761,13 @@ register("guest", "support", "ticket_create", async (ctx) => {
   if (!ctx.params["name"]) throw new FbError("Please enter your name");
   if (!ctx.params["email"] || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ctx.params["email"])) throw new FbError("Email address is invalid");
   if (!ctx.params["subject"]) throw new FbError("Ticket subject required");
+  // R5h: PHP ticketCreateForGuest() validates the ticket, then
+  // dispatches BeforeGuestTicketCreateEvent (guest role only:
+  // blocked-IP -> captcha -> SFS -> temp-email, NO honeypot) BEFORE
+  // the helpdesk lookup — so a blocked IP beats an invalid helpdesk.
+  // This handler IS the guest-role handler; client/admin ticket
+  // creates are separate handlers and are not gated, as in PHP.
+  await checkGuestTicketAntispam(ctx, ctx.params["email"]);
   const hd = ctx.params["support_helpdesk_id"]
     ? await findHelpdesk(parseInt(ctx.params["support_helpdesk_id"], 10))
     : await getDb().prepare("SELECT * FROM support_helpdesk ORDER BY id ASC LIMIT 1").get() as HelpdeskRow | undefined;

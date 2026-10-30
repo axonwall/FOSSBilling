@@ -1,0 +1,226 @@
+[
+  {
+    "name": "prod_admin_session_reuse",
+    "http": 200,
+    "error": null,
+    "code": null,
+    "result": "{'block_ips': False, 'blocked_ips': '', 'captcha_enabled': False, 'captcha_provider': 'recaptcha_v2', 'captcha_recaptcha"
+  },
+  {
+    "name": "prod_recaptcha_defaults",
+    "http": 200,
+    "error": null,
+    "code": null,
+    "result": "{'publickey': None, 'enabled': False, 'version': None, 'captcha_provider': 'recaptcha_v2', 'recaptcha_v3_threshold': 0.5"
+  },
+  {
+    "name": "prod_client_login_blocked",
+    "http": 403,
+    "error": "Your IP address (127.0.0.1) is blocked. Please contact our support to lift your block.",
+    "code": 403,
+    "result": "None"
+  },
+  {
+    "name": "prod_admin_login_blocked",
+    "http": 403,
+    "error": "Your IP address (127.0.0.1) is blocked. Please contact our support to lift your block.",
+    "code": 403,
+    "result": "None"
+  },
+  {
+    "name": "prod_client_profile_blocked",
+    "http": 403,
+    "error": "Your IP address (127.0.0.1) is blocked. Please contact our support to lift your block.",
+    "code": 403,
+    "result": "None"
+  },
+  {
+    "name": "prod_admin_client_update_blocked",
+    "http": 403,
+    "error": "Your IP address (127.0.0.1) is blocked. Please contact our support to lift your block.",
+    "code": 403,
+    "result": "None"
+  },
+  {
+    "name": "prod_admin_profile_blocked_ok",
+    "http": 200,
+    "error": null,
+    "code": null,
+    "result": "True"
+  },
+  {
+    "name": "signup_cap44blocked",
+    "http": 403,
+    "error": "Your IP address (127.0.0.1) is blocked. Please contact our support to lift your block.",
+    "code": 403,
+    "result": "None"
+  },
+  {
+    "name": "signup_blocked_missing_first",
+    "http": 200,
+    "error": "First name required",
+    "code": 9999,
+    "result": "None"
+  },
+  {
+    "name": "dev_client_profile_blocked",
+    "http": 403,
+    "error": "Your IP address (127.0.0.1) is blocked. Please contact our support to lift your block.",
+    "code": 403,
+    "result": "None"
+  },
+  {
+    "name": "dev_admin_client_update_blocked",
+    "http": 403,
+    "error": "Your IP address (127.0.0.1) is blocked. Please contact our support to lift your block.",
+    "code": 403,
+    "result": "None"
+  },
+  {
+    "name": "ticket_cap44_blocked",
+    "http": 403,
+    "error": "Your IP address (127.0.0.1) is blocked. Please contact our support to lift your block.",
+    "code": 403,
+    "result": "None"
+  },
+  {
+    "name": "dev_admin_profile_blocked_ok",
+    "http": 200,
+    "error": null,
+    "code": null,
+    "result": "True"
+  },
+  {
+    "name": "dev_admin_client_create_blocked_ok",
+    "http": 200,
+    "error": null,
+    "code": null,
+    "result": "24"
+  },
+  {
+    "name": "signup_honeypot_filled",
+    "http": 200,
+    "error": "Registration failed.",
+    "code": 9999,
+    "result": "None"
+  },
+  {
+    "name": "signup_cap44honey0",
+    "http": 200,
+    "error": null,
+    "code": null,
+    "result": "True"
+  },
+  {
+    "name": "signup_cap44honeyabsent",
+    "http": 200,
+    "error": null,
+    "code": null,
+    "result": "True"
+  },
+  {
+    "name": "ticket_cap44_honeypot_ticket",
+    "http": 200,
+    "error": null,
+    "code": null,
+    "result": "49f582046cd10a9b0383ce9a2cf51e6d2e93"
+  },
+  {
+    "name": "signup_cap44honeyabsent",
+    "http": 200,
+    "error": null,
+    "code": null,
+    "result": "True"
+  },
+  {
+    "name": "signup_cap44capnokey",
+    "http": 200,
+    "error": "To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>here</a>",
+    "code": 9999,
+    "result": "None"
+  },
+  {
+    "name": "signup_cap44capnotoken",
+    "http": 200,
+    "error": "You have to complete the CAPTCHA to continue",
+    "code": 9999,
+    "result": "None"
+  },
+  {
+    "name": "signup_cap44capverifytls",
+    "http": 200,
+    "error": "An unexpected error occurred. Please try again later.",
+    "code": 9999,
+    "result": "None"
+  },
+  {
+    "name": "signup_cap44turnnosecret",
+    "http": 200,
+    "error": "Cloudflare Turnstile secret key is not configured.",
+    "code": 9999,
+    "result": "None"
+  },
+  {
+    "name": "signup_cap44turnnotoken",
+    "http": 200,
+    "error": "Please complete the CAPTCHA verification.",
+    "code": 9999,
+    "result": "None"
+  },
+  {
+    "name": "signup_cap44hcapnosecret",
+    "http": 200,
+    "error": "hCaptcha secret key is not configured.",
+    "code": 9999,
+    "result": "None"
+  },
+  {
+    "name": "client_resetpw_captcha_nokey",
+    "http": 200,
+    "error": "hCaptcha secret key is not configured.",
+    "code": 9999,
+    "result": "None"
+  },
+  {
+    "name": "staff_resetpw_captcha_nokey",
+    "http": 200,
+    "error": "hCaptcha secret key is not configured.",
+    "code": 9999,
+    "result": "None"
+  },
+  {
+    "name": "signup_cap44sfs",
+    "http": 200,
+    "error": "An unexpected error occurred. Please try again later.",
+    "code": 9999,
+    "result": "None"
+  },
+  {
+    "name": "signup_cap44order",
+    "http": 200,
+    "error": "An unexpected error occurred. Please try again later.",
+    "code": 9999,
+    "result": "None"
+  },
+  {
+    "name": "ticket_cap44_order_ticket",
+    "http": 403,
+    "error": "Your IP address (127.0.0.1) is blocked. Please contact our support to lift your block.",
+    "code": 403,
+    "result": "None"
+  },
+  {
+    "name": "signup_cap44tempanchor",
+    "http": 200,
+    "error": "An unexpected error occurred. Please try again later.",
+    "code": 9999,
+    "result": "None"
+  },
+  {
+    "name": "signup_cap44captchadisabled",
+    "http": 200,
+    "error": null,
+    "code": null,
+    "result": "True"
+  }
+]

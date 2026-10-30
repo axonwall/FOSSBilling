@@ -27,6 +27,7 @@
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { FbError, register, requireAdmin, requireClient } from "../dispatch";
+import { checkBlockedIp } from "./antispam";
 import { consumeOrThrow } from "../ratelimit";
 import {
   findAdminById, findClientByEmail, findClientById, getDb, getDbWrite,
@@ -187,6 +188,15 @@ register("client", "profile", "update", async (ctx) => {
   requireClient(ctx);
   const client = await findClientById(ctx.session!.client!.id);
   if (!client) throw new FbError("Client not found");
+  // R5h: PHP Profile/Api/Client.php update() sanitizes the email (if
+  // present), then Profile/Service.php updateClientProfile dispatches
+  // BeforeClientProfileUpdateEvent (blocked-IP only) BEFORE the
+  // duplicate-email and disable-change-email checks — so the email is
+  // validated first, then the block fires, then the rest. The ADMIN
+  // profile update handler above is deliberately NOT gated: its event
+  // (BeforeAdminProfileUpdateEvent) has no antispam listener.
+  if (ctx.params["email"] !== undefined) validateEmail(ctx.params["email"]);
+  await checkBlockedIp(ctx);
   const db = getDbWrite();
   if (ctx.params["email"] !== undefined) {
     const email = validateEmail(ctx.params["email"]);

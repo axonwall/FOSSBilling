@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "Please complete the CAPTCHA verification.",
+    "code": 9999
+  }
+}
