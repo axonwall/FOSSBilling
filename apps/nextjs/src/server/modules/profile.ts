@@ -11,8 +11,9 @@
 //   itself (admin: "New password is required" / "Passwords do
 //   not match"; client: "New password required" / "Passwords do
 //   not match.") — both forms are reproduced, not unified.
-// - PHP's profile password-change rate limiter is NOT mirrored
-//   (TS has no limiter yet; see Phase 5 plan R5).
+// - PHP's profile password-change rate limiter IS mirrored (R5g):
+//   ip + account consumes after the entity fetch, before the
+//   current-password verify, exactly as in PHP's Api bodies.
 // - Cron settings live in PHP's encrypted extension config;
 //   the TS side stores them in the settings table instead,
 //   which is also what the TS guest cron trigger reads —
@@ -26,6 +27,7 @@
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { FbError, register, requireAdmin, requireClient } from "../dispatch";
+import { consumeOrThrow } from "../ratelimit";
 import {
   findAdminById, findClientByEmail, findClientById, getDb, getDbWrite,
   nowTimestamp, setSettingValue, updateAdminRow,
@@ -137,6 +139,8 @@ register("admin", "profile", "change_password", async (ctx) => {
   if (ctx.params["new_password"] !== ctx.params["confirm_password"]) throw new FbError("Passwords do not match");
   const admin = await findAdminById(ctx.session!.admin!.id);
   if (!admin) throw new FbError("Admin not found");
+  await consumeOrThrow("profile_password_change_ip", ctx.ip, { requestIp: ctx.ip });
+  await consumeOrThrow("profile_password_change_account", `admin:${admin.id}`, { requestIp: ctx.ip });
   const hash = await adminPassHash(admin.id);
   if (!hash || !bcrypt.compareSync(ctx.params["current_password"], hash)) throw new FbError("Current password incorrect");
   await invalidateSessions("admin", admin.id);
@@ -241,6 +245,8 @@ register("client", "profile", "change_password", async (ctx) => {
   if (ctx.params["new_password"] !== ctx.params["confirm_password"]) throw new FbError("Passwords do not match.");
   const client = await findClientById(ctx.session!.client!.id);
   if (!client) throw new FbError("Client not found");
+  await consumeOrThrow("profile_password_change_ip", ctx.ip, { requestIp: ctx.ip });
+  await consumeOrThrow("profile_password_change_account", `client:${client.id}`, { requestIp: ctx.ip });
   const hash = await clientPassHash(client.id);
   if (!hash || !bcrypt.compareSync(ctx.params["current_password"], hash)) throw new FbError("Current password incorrect");
   await invalidateSessions("client", client.id);

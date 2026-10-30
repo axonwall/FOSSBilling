@@ -851,8 +851,8 @@ register("guest", "invoice", "get", async (ctx: CallContext) => {
   if (!inv) throw new FbError("Invoice was not found");
   // checkInvoiceAuth(READ): admins and the owning client pass; anyone
   // else needs the invoice_accessible_from_hash setting, and an
-  // expired hash link is refused first. (PHP also rate-limits this
-  // endpoint per IP/hash; the limiter is not mirrored.)
+  // expired hash link is refused first. (Per-endpoint rate limits for
+  // this endpoint live in the seam's R5g table, not here.)
   const isAdmin = !!ctx.session?.admin;
   const isOwner = ctx.session?.client?.id === inv.client_id;
   if (!isAdmin && !isOwner) {
@@ -872,9 +872,8 @@ register("guest", "invoice", "get", async (ctx: CallContext) => {
 /** Invoice Service::checkInvoiceAuth, shared by guest get/payment/pdf:
  * admins and the owning client pass; anyone else needs the
  * invoice_accessible_from_hash setting, and an expired hash link is
- * refused first. (PHP also rate-limits these endpoints per IP/hash;
- * the reference install has limiters disabled, so TS having none is
- * consistent.) */
+ * refused first. (Per-endpoint rate limits for these endpoints live
+ * in the seam's R5g table, not here.) */
 async function checkGuestInvoiceAuth(inv: InvoiceRowFull, ctx: CallContext): Promise<void> {
   const isAdmin = !!ctx.session?.admin;
   const isOwner = ctx.session?.client?.id === inv.client_id;

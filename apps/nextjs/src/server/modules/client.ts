@@ -19,6 +19,7 @@ import {
   type ClientRow,
 } from "../db";
 import { FbError, register, requireAdmin, requireClient, type CallContext } from "../dispatch";
+import { consume, consumeOrThrow } from "../ratelimit";
 import { isClientTaxable } from "../money";
 import { parseSessionContent, phpSerialize, replaceSessionSegment } from "../php-serialize";
 import { queueTemplatedEmail } from "../emailer";
@@ -204,8 +205,9 @@ export async function clientSubscriptionArray(row: ClientRow) {
 //   the PHP fetch fails at the TLS layer, so capture19 disables the
 //   check via PHP's own config API and restores the default after.
 // - PHP's rate limiters are dev-disabled on the reference install
-//   (enforce_in_development=false), so TS skipping them matches the
-//   reference environment; the plan's R5 limiter is still open.
+//   (enforce_in_development=false); the TS limiter (R5g,
+//   server/ratelimit.ts) mirrors that bypass on dev-default servers
+//   and enforces under FB_RATE_LIMIT_ENFORCE=1.
 // - Client config (required fields, custom fields, email-confirm
 //   requirement, signup toggles) lives in PHP's encrypted extension
 //   config, unreadable by TS: TS returns the no-config defaults
@@ -896,6 +898,9 @@ register("client", "client", "resend_email_verification", async (ctx) => {
   requireClient(ctx);
   const row = await clientOrThrow(ctx.session!.client!.id);
   if (row.email_approved) return true;
+  // R5g: PHP consumes AFTER the already-approved early return.
+  await consumeOrThrow("client_email_verification_resend_ip", ctx.ip, { requestIp: ctx.ip });
+  await consumeOrThrow("client_email_verification_resend_account", `client:${row.id}`, { requestIp: ctx.ip });
   const w = getDbWrite();
   await w.prepare("DELETE FROM extension_meta WHERE extension = 'mod_client' AND meta_key = 'confirm_email' AND client_id = ?").run(row.id);
   const hash = generateToken(50).toLowerCase();
@@ -923,18 +928,33 @@ register("guest", "client", "create", async (ctx) => {
   assertPasswordStrong(password);
   const clean = validateEmail(email).toLowerCase();
   const existing = await findClientByEmail(clean);
-  if (existing) {
+  const attemptExistingLogin = async () => {
     // Enumeration-safe: same true as a genuine signup, plus a login
     // attempt with the supplied password (auto-login default on).
     // PHP discards login()'s return value — the API result is true,
     // with the session established server-side.
-    if (existing.status === "active") {
+    if (existing?.status === "active") {
       try {
         if (bcrypt.compareSync(password, await clientPass(existing.id))) await loginClientSession(ctx, existing);
       } catch {
         // fall through to plain true
       }
     }
+  };
+  // R5g signup-email quota (PHP Guest::create): probe without consuming;
+  // a limited probe takes the existing-account path WITHOUT consuming
+  // again; otherwise the quota is consumed on both the existing and
+  // the genuine-signup paths (malformed submissions cannot exhaust
+  // another address's quota — the probe precedes creation here, as
+  // PHP's probe precedes guestCreateClient).
+  const emailProbe = await consume("client_signup_email", clean, { requestIp: ctx.ip }, 0);
+  if (emailProbe.limited) {
+    await attemptExistingLogin();
+    return true;
+  }
+  if (existing) {
+    await consume("client_signup_email", clean, { requestIp: ctx.ip });
+    await attemptExistingLogin();
     return true;
   }
   const fields: Record<string, string | undefined> = {};
@@ -942,6 +962,7 @@ register("guest", "client", "create", async (ctx) => {
   fields["status"] = "active";
   const id = await createClientRow(fields, ctx.ip);
   const row = await clientOrThrow(id);
+  await consume("client_signup_email", clean, { requestIp: ctx.ip });
   await loginClientSession(ctx, row);
   return true;
 });
@@ -959,7 +980,12 @@ register("guest", "client", "login", async (ctx) => {
 
 register("guest", "client", "reset_password", async (ctx) => {
   const email = required(ctx, "email", "Email required");
-  const row = await findClientByEmail(validateEmail(email).toLowerCase());
+  const clean = validateEmail(email).toLowerCase();
+  // R5g silent-limit (PHP Guest::reset_password): a limited ip or
+  // email quota returns true, NOT 429, to avoid account enumeration.
+  if ((await consume("client_password_reset_ip", ctx.ip, { requestIp: ctx.ip })).limited) return true;
+  if ((await consume("client_password_reset_email", clean, { requestIp: ctx.ip })).limited) return true;
+  const row = await findClientByEmail(clean);
   // Enumeration-safe: unknown or ineligible accounts still return true.
   if (row && row.status === "active") {
     const hash = createHash("sha256").update(randomBytes(32)).digest("hex");

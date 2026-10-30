@@ -1,0 +1,10 @@
+{
+  "reset_ip": {
+    "result": {
+      "ip": "127.0.0.1",
+      "policy": "api_guest",
+      "removed": 1
+    },
+    "error": null
+  }
+}

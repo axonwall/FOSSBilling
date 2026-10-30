@@ -1,0 +1,104 @@
+{
+  "calls": [
+    {
+      "n": 1,
+      "status": 401,
+      "retry_after": null,
+      "error": {
+        "message": "Please check your login details.",
+        "code": 401
+      }
+    },
+    {
+      "n": 2,
+      "status": 401,
+      "retry_after": null,
+      "error": {
+        "message": "Please check your login details.",
+        "code": 401
+      }
+    },
+    {
+      "n": 3,
+      "status": 401,
+      "retry_after": null,
+      "error": {
+        "message": "Please check your login details.",
+        "code": 401
+      }
+    },
+    {
+      "n": 4,
+      "status": 401,
+      "retry_after": null,
+      "error": {
+        "message": "Please check your login details.",
+        "code": 401
+      }
+    },
+    {
+      "n": 5,
+      "status": 401,
+      "retry_after": null,
+      "error": {
+        "message": "Please check your login details.",
+        "code": 401
+      }
+    },
+    {
+      "n": 6,
+      "status": 401,
+      "retry_after": null,
+      "error": {
+        "message": "Please check your login details.",
+        "code": 401
+      }
+    },
+    {
+      "n": 7,
+      "status": 401,
+      "retry_after": null,
+      "error": {
+        "message": "Please check your login details.",
+        "code": 401
+      }
+    },
+    {
+      "n": 8,
+      "status": 401,
+      "retry_after": null,
+      "error": {
+        "message": "Please check your login details.",
+        "code": 401
+      }
+    },
+    {
+      "n": 9,
+      "status": 401,
+      "retry_after": null,
+      "error": {
+        "message": "Please check your login details.",
+        "code": 401
+      }
+    },
+    {
+      "n": 10,
+      "status": 401,
+      "retry_after": null,
+      "error": {
+        "message": "Please check your login details.",
+        "code": 401
+      }
+    },
+    {
+      "n": 11,
+      "status": 429,
+      "retry_after": "3593",
+      "error": {
+        "message": "Rate limit exceeded. Please try again later.",
+        "code": 429
+      }
+    }
+  ],
+  "note": "section B reset_all cleared the admin login's consume, so these are consumes 1..11"
+}

@@ -1,0 +1,22 @@
+{
+  "oracle_prod": {
+    "result": {
+      "enabled": true
+    },
+    "error": null
+  },
+  "dev_php": {
+    "result": {
+      "enabled": false
+    },
+    "error": null
+  },
+  "ts_dev_default_unauth": {
+    "result": null,
+    "error": {
+      "message": "Authentication Failed",
+      "code": 201
+    }
+  },
+  "note": "TS status without a session is the 201 envelope, not enabled:false; the dev-default enabled:false shape is proven by parity40's admin session call instead (see findings)."
+}

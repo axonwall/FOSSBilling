@@ -1,0 +1,20 @@
+{
+  "status": 429,
+  "headers": {
+    "Host": "127.0.0.1:8081",
+    "Connection": "close",
+    "X-Powered-By": "PHP/8.3.28",
+    "Cache-Control": "max-age=0, private, must-revalidate",
+    "Expires": "Mon, 26 Jul 1997 05:00:00 GMT",
+    "Retry-After": "3593",
+    "Date": "Thu, 29 Oct 2026 22:18:37 GMT",
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "result": null,
+    "error": {
+      "message": "Rate limit exceeded. Please try again later.",
+      "code": 429
+    }
+  }
+}

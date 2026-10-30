@@ -30,6 +30,7 @@ import {
   type AdminGroupRow,
 } from "../db";
 import { FbError, register, requireAdmin, type CallContext } from "../dispatch";
+import { consume } from "../ratelimit";
 import { queueTemplatedEmail } from "../emailer";
 import { getOrCreateTemplateId } from "../emailDefaults";
 import { parseSessionContent } from "../php-serialize";
@@ -588,8 +589,11 @@ register("guest", "staff", "passwordreset", async (ctx: CallContext) => {
   const email = ctx.params["email"];
   if (!email) throw new FbError("Email required");
   if (!isValidEmail(email)) throw new FbError("Email address is invalid");
-  // Rate limiters are disabled on the reference install and the
-  // antispam captcha is unset (checkCaptcha no-op) — both skipped.
+  // R5g silent-limit (PHP Staff Guest::reset_password): a limited ip
+  // or email quota returns true, NOT 429, to avoid enumeration. The
+  // antispam captcha is unset (checkCaptcha no-op) — still skipped.
+  if ((await consume("staff_password_reset_ip", ctx.ip, { requestIp: ctx.ip })).limited) return true;
+  if ((await consume("staff_password_reset_email", email, { requestIp: ctx.ip })).limited) return true;
   const admin = await findAdminByEmail(email);
   if (!admin || admin.status !== "active" || admin.system_name === "cron") return true;
   const hash = createHash("sha256").update(randomBytes(32)).digest("hex");

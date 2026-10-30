@@ -1,0 +1,47 @@
+{
+  "all": {
+    "result": [
+      {
+        "policy": "api_guest",
+        "ip": "127.0.0.1",
+        "last_seen": "2026-10-29T22:18:28+00:00",
+        "limit": 100,
+        "remaining": 0,
+        "limited": true,
+        "retry_after": "2026-10-29T22:19:28+00:00",
+        "retry_after_seconds": 60
+      }
+    ],
+    "error": null
+  },
+  "search_api_guest": {
+    "result": [
+      {
+        "policy": "api_guest",
+        "ip": "127.0.0.1",
+        "last_seen": "2026-10-29T22:18:28+00:00",
+        "limit": 100,
+        "remaining": 0,
+        "limited": true,
+        "retry_after": "2026-10-29T22:19:28+00:00",
+        "retry_after_seconds": 60
+      }
+    ],
+    "error": null
+  },
+  "ip_127": {
+    "result": [
+      {
+        "policy": "api_guest",
+        "ip": "127.0.0.1",
+        "last_seen": "2026-10-29T22:18:28+00:00",
+        "limit": 100,
+        "remaining": 0,
+        "limited": true,
+        "retry_after": "2026-10-29T22:19:29+00:00",
+        "retry_after_seconds": 60
+      }
+    ],
+    "error": null
+  }
+}

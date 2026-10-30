@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
-import { enforceCsrf, envelope, errorEnvelope, findHandler, findMagicHandler, tsModulesEnabled } from "@/server/dispatch";
+import { FbError, enforceCsrf, envelope, errorEnvelope, findHandler, findMagicHandler, tsModulesEnabled } from "@/server/dispatch";
+import { RateLimitError, enforcePerEndpointLimit, enforcePostAuthLimit, enforcePreAuthLimit } from "@/server/ratelimit";
 import { enforceDispatcherGates } from "@/server/guards";
 import { REMOVED_SYSTEM_ADMIN } from "@/server/modules/system";
 import { REMOVED_EXTENSION_ADMIN, REMOVED_EXTENSION_GUEST } from "@/server/modules/extension";
@@ -151,21 +152,38 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
           hasSessionCookie: !!cookieHeader?.includes("fossbilling_session="),
           setCookies: [] as string[],
         };
-        enforceCsrf(callCtx, params["CSRFToken"] ?? req.headers.get("x-csrf-token") ?? undefined);
-        // R2a dispatcher gates (Api\Dispatcher order: identity 201,
-        // activation 715, admin module access 725, method guards 403):
-        // after CSRF, before the handler. Removed system endpoints are
-        // exempt by R1 design, removed extension endpoints by R4a
-        // design, and removed theme endpoints by R4c design — they
+        // R5g rate limiting, mirroring Client.php _apiCall order:
+        // pre-auth IP check BEFORE CSRF (PHP checks the limiter before
+        // session/token auth), then CSRF, then the identity half of the
+        // gates (a role without a session 201s — PHP never reaches the
+        // post-auth check unauthenticated), then the post-auth check,
+        // then the full dispatcher gates, then per-endpoint consumes.
+        // EXCEPTION (R5g regression fix, parity32/30): removed endpoints
         // throw the removal error before any auth check, for every
-        // caller.
+        // caller, by R1/R4a/R4c design — so isRemoved is computed FIRST
+        // and the identity 201, post-auth, gates, and per-endpoint
+        // steps are all skipped for removed endpoints. Hoisting the 201
+        // above the removal check made logged-out removed calls 201
+        // instead of returning the 9999 removal error. Pre-auth + CSRF
+        // still run (pre-R5g behavior; and PHP itself consumes pre-auth
+        // before its session-auth 201).
+        const methodKey = `${module}_${method}`;
         const isRemoved =
           (role === "admin" && module === "system" && REMOVED_SYSTEM_ADMIN.includes(method)) ||
           (role === "admin" && module === "extension" && REMOVED_EXTENSION_ADMIN.includes(method)) ||
           (role === "admin" && module === "theme" && REMOVED_THEME_ADMIN.includes(method)) ||
           (role === "guest" && module === "extension" && REMOVED_EXTENSION_GUEST.includes(method));
+        await enforcePreAuthLimit(role, methodKey, callCtx);
+        enforceCsrf(callCtx, params["CSRFToken"] ?? req.headers.get("x-csrf-token") ?? undefined);
         if (!isRemoved) {
+          if (role === "admin" && !callCtx.session?.admin) throw new FbError("Authentication Failed", 201);
+          if (role === "client" && !callCtx.session?.client) throw new FbError("Authentication Failed", 201);
+          await enforcePostAuthLimit(role, methodKey, callCtx);
+          // R2a dispatcher gates (Api\Dispatcher order: identity 201,
+          // activation 715, admin module access 725, method guards 403):
+          // after CSRF, before the handler.
           await enforceDispatcherGates(callCtx, role, module, gateMethod);
+          await enforcePerEndpointLimit(role, module, method, callCtx);
         }
         const result = await handler(callCtx);
         // Binary/text endpoints return a full Response: pass it through
@@ -199,6 +217,17 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
       } catch (e) {
         if (e instanceof Error && e.message.includes("FB_DATABASE_PATH")) {
           console.error("[ts-modules] DB not configured, falling back to PHP:", e.message);
+        } else if (e instanceof RateLimitError) {
+          // R5g: PHP renders a REAL HTTP 429 + Retry-After header (in
+          // whole seconds) + the envelope body (ApiResponseFactory).
+          // This is the seam's one non-200 error shape; every other
+          // FbError keeps the HTTP-200 envelope convention.
+          // (No handler cookies can exist here: limiter throws precede
+          // the handler, so setCookies is always empty on this path.)
+          return Response.json(
+            { result: null, error: { message: e.message, code: 429 } },
+            { status: 429, headers: { "retry-after": String(e.retryAfterSeconds) } },
+          );
         } else {
           return errorEnvelope(e);
         }

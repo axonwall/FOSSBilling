@@ -1,0 +1,9 @@
+{
+  "status": 200,
+  "retry_after": null,
+  "error": {
+    "message": "The link has expired or you have already reset your password.",
+    "code": 9999
+  },
+  "elapsed_since_t0": 62.31209945678711
+}

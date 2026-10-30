@@ -1,13 +1,16 @@
 import { isIP } from "node:net";
 import { FbError, register, requireAdmin, requireParam } from "../dispatch";
+import { isLimiterEnabled, listIpCounters, resetAll, resetIp } from "../ratelimit";
 
 /**
  * Security module — partial TS port of Security/Api/Admin.php.
  * Ported: list_checks (static check metadata) and the rate_limit_*
- * family. The TS seam runs no rate limiter, so the limiter endpoints
- * report the seam's own state: disabled, no counters, nothing to
- * remove — which is also exactly what PHP returns on the reference
- * install (APP_ENV=dev disables the limiter there).
+ * family. R5g: the limiter endpoints are REAL now (they read the
+ * DB-backed counters in server/ratelimit.ts); before R5g they were
+ * disabled-state reporters, which also matched PHP on the reference
+ * install (APP_ENV=dev disables the limiter there). On a dev-default
+ * TS server the limiter is still bypassed, so status reports
+ * enabled: false and the list is empty — same as PHP on dev.
  *
  * NOT ported (left on the PHP proxy by design): ip_lookup needs a
  * MaxMind MMDB reader — public IPs return real country/ASN records
@@ -54,24 +57,31 @@ register("admin", "security", "list_checks", (ctx) => {
 
 register("admin", "security", "rate_limit_status", (ctx) => {
   requireAdmin(ctx);
-  return { enabled: false };
+  return { enabled: isLimiterEnabled() };
 });
 
-register("admin", "security", "rate_limit_get_list", (ctx) => {
+register("admin", "security", "rate_limit_get_list", async (ctx) => {
   requireAdmin(ctx);
   const ip = ctx.params["ip"];
   if (ip !== undefined) validateIp(ip);
-  return [];
+  const counters = await listIpCounters(ip ?? null);
+  const search = ctx.params["search"];
+  if (search === undefined || search === "") return counters;
+  const needle = search.toLowerCase();
+  return counters.filter(
+    (c) => c.ip.toLowerCase().includes(needle) || c.policy.toLowerCase().includes(needle),
+  );
 });
 
-register("admin", "security", "rate_limit_reset_ip", (ctx) => {
+register("admin", "security", "rate_limit_reset_ip", async (ctx) => {
   requireAdmin(ctx);
   const ip = requireParam(ctx.params, "ip", "You must specify an IP address to reset.");
   validateIp(ip);
-  return { ip, policy: ctx.params["policy"] ?? null, removed: 0 };
+  const removed = await resetIp(ip, ctx.params["policy"] ?? null);
+  return { ip, policy: ctx.params["policy"] ?? null, removed };
 });
 
-register("admin", "security", "rate_limit_reset_all", (ctx) => {
+register("admin", "security", "rate_limit_reset_all", async (ctx) => {
   requireAdmin(ctx);
-  return { cleared: true };
+  return { cleared: await resetAll() };
 });

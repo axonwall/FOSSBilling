@@ -1,0 +1,194 @@
+{
+  "t0": 1793312236.58087,
+  "calls": [
+    {
+      "n": 1,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 2,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 3,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 4,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 5,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 6,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 7,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 8,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 9,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 10,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 11,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 12,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 13,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 14,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 15,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 16,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 17,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 18,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 19,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 20,
+      "status": 200,
+      "retry_after": null,
+      "error": {
+        "message": "The link has expired or you have already reset your password.",
+        "code": 9999
+      }
+    },
+    {
+      "n": 21,
+      "status": 429,
+      "retry_after": "56",
+      "error": {
+        "message": "Rate limit exceeded. Please try again later.",
+        "code": 429
+      }
+    }
+  ]
+}
