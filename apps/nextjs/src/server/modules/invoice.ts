@@ -99,6 +99,7 @@ import {
 } from "../money";
 import { formatZoneDateTime, parseZoneDateTime, resolveZone, zoneTodayString } from "../tz";
 import { queueInvoiceEmail } from "../emailer";
+import { publicOrigin } from "../public-url";
 import { invoicePdfByHash } from "../pdf";
 import {
   getPaymentHtml,
@@ -1396,7 +1397,7 @@ async function gatewayRowToApiArray(row: GatewayRow): Promise<Record<string, unk
     // PHP falls back to ALL currency codes, not just the default.
     currencies = ((await getDb().prepare("SELECT code FROM currency ORDER BY id").all()) as { code: string }[]).map((r) => r.code);
   }
-  const www = `${(process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080").replace(/\/$/, "")}/`;
+  const www = `${publicOrigin()}/`;
   let config: Record<string, unknown> | unknown[] = [];
   try {
     const parsed = row.config ? (JSON.parse(row.config) as Record<string, unknown>) : {};

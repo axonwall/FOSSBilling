@@ -10,9 +10,9 @@ export function csrfFromCookie(): string | undefined {
 }
 
 /**
- * Ensure the browser holds the fossbilling_csrf cookie. It is set only by
- * PHP web pages (never API responses), so the proxy's __prime route relays
- * the PHP login page's cookies to this origin on first use.
+ * Ensure the browser holds the fossbilling_csrf cookie. It is set by
+ * login and by the seam's TS-native __prime route (which issues the
+ * session's token, or a fresh token with no session) on first use.
  */
 export async function ensureCsrf(): Promise<void> {
   if (csrfFromCookie()) return;
@@ -20,7 +20,7 @@ export async function ensureCsrf(): Promise<void> {
 }
 
 /**
- * POST a JSON body to the TS seam through the same-origin /api/fb proxy.
+ * POST a JSON body to the TS seam through the same-origin /api/fb route.
  * Unlike fbPost (urlencoded, which stringifies every value), a JSON body
  * reaches the seam as rawParams with real types — numbers, booleans,
  * nested objects and arrays survive intact. That is the only correct
@@ -51,7 +51,7 @@ export async function fbPostJson<T = unknown>(
 }
 
 /**
- * POST to the PHP dispatcher through the same-origin /api/fb proxy.
+ * POST to the TS seam through the same-origin /api/fb route.
  * Returns the unwrapped result or throws with the API error message.
  */
 export async function fbPost<T = unknown>(

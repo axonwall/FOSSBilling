@@ -40,8 +40,7 @@ export default async function ClientHome() {
         </section>
       ) : (
         <p className="mt-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm">
-          PHP API unreachable{apiError ? `: ${apiError}` : ""}. Start FOSSBilling and set
-          FOSSBILLING_URL.
+          API unreachable{apiError ? `: ${apiError}` : ""}. Start the Next.js server.
         </p>
       )}
 

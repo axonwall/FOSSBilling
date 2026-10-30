@@ -20,6 +20,7 @@ import {
 } from "../emailer";
 import { renderTemplate, renderTemplateStrict } from "../twig";
 import { clientAdminArray } from "./client";
+import { publicOrigin } from "../public-url";
 
 interface HistoryRow {
   id: number; client_id: number | null; sender: string; recipients: string;
@@ -719,7 +720,7 @@ async function emailRenderCtx(vars: Record<string, unknown>): Promise<Record<str
     },
     default_currency: "USD",
     FOSSBillingVersion: "0.8.9",
-    __baseUrl: (process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080") + "/",
+    __baseUrl: publicOrigin() + "/",
   };
 }
 

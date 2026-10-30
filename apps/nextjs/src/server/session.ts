@@ -80,8 +80,20 @@ export async function readSession(cookieHeader: string | null): Promise<SessionI
  */
 export async function loginAsAdmin(ctx: CallContext, admin: Identity): Promise<SessionInfo> {
   const old = ctx.session;
-  const attrs: Record<string, string | number | Record<string, string | number | null>> = {};
-  if (old?.csrfToken) attrs["csrf_token"] = old.csrfToken;
+  // R6a: the session MUST carry a csrf_token AND the response MUST set
+  // the fossbilling_csrf cookie — mirroring loginClientSession. Before
+  // this fix, a fresh staff login (no prior session) stored no token
+  // and set no csrf cookie, so every subsequent authenticated call
+  // from that session failed enforceCsrf with 403. The defect was
+  // masked for years because every suite and browser flow logged in
+  // via PHP, whose sessions always carry csrf_token; with the PHP
+  // proxy deleted, the TS staff login must yield a working session
+  // on its own (the runner + browser prime->login proofs in
+  // parity44 §2 exercise exactly this).
+  const token = old?.csrfToken ?? randomBytes(16).toString("hex");
+  const attrs: Record<string, string | number | Record<string, string | number | null>> = {
+    csrf_token: token,
+  };
   attrs["admin"] = { id: admin.id, email: admin.email ?? null, name: admin.name ?? null };
   const id = randomBytes(16).toString("hex");
   const empty = phpSerialize({});
@@ -89,16 +101,27 @@ export async function loginAsAdmin(ctx: CallContext, admin: Identity): Promise<S
   await insertSession(id, content, Math.floor(Date.now() / 1000) + 86400);
   // Deliberately no deleteSessionRow(old.id): PHP leaves the old row.
   ctx.setCookies.push(`fossbilling_session=${id}; Path=/; HttpOnly; SameSite=Lax`);
-  ctx.session = { id, csrfToken: old?.csrfToken, admin: { id: admin.id, email: admin.email, name: admin.name } };
+  ctx.setCookies.push(`fossbilling_csrf=${token}; Path=/`);
+  ctx.session = { id, csrfToken: token, admin: { id: admin.id, email: admin.email, name: admin.name } };
   return ctx.session;
 }
 export async function ensureSession(ctx: CallContext): Promise<SessionInfo> {
   if (ctx.session) return ctx.session;
+  // R6a: a minted session MUST carry a csrf_token and the response
+  // MUST set the matching fossbilling_csrf cookie — same invariant as
+  // both login paths. Before this fix, guest-cart flows (which mint
+  // their session here) got a token-less session, so every subsequent
+  // call on that jar failed enforceCsrf with 403. Pre-R6a the old
+  // __prime relayed a PHP /login session (which always carries
+  // csrf_token), masking the hole; the TS-native prime is csrf-only
+  // by design, so the minting path itself must issue the token.
+  const token = randomBytes(16).toString("hex");
   const id = randomBytes(16).toString("hex");
   const empty = phpSerialize({});
-  const content = `_sf2_attributes|${empty}_symfony_flashes|${empty}_sf2_meta|${empty}`;
+  const content = `_sf2_attributes|${phpSerialize({ csrf_token: token })}_symfony_flashes|${empty}_sf2_meta|${empty}`;
   await insertSession(id, content, Math.floor(Date.now() / 1000) + 86400);
   ctx.setCookies.push(`fossbilling_session=${id}; Path=/; HttpOnly; SameSite=Lax`);
-  ctx.session = { id };
+  ctx.setCookies.push(`fossbilling_csrf=${token}; Path=/`);
+  ctx.session = { id, csrfToken: token };
   return ctx.session;
 }

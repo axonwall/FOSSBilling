@@ -6,17 +6,34 @@
  *   POST|GET /api/<role>/<module>/<method>     role: guest | client | admin
  *   Envelope: { result: <mixed>, error: { message, code } | null }
  *
- * Auth models:
- *   - Browser flows use the PHP session cookie (forwarded by the /api/fb
- *     proxy route handler) plus the CSRFToken cookie/header pair.
- *   - Server-to-server admin calls may use HTTP Basic auth with
- *     "email:api_token" (the admin API token), which the PHP API maps to a
- *     synthetic session. Keep those calls server-side only.
+ * Transport (R6a, decision D6-7): IN-PROCESS dispatch. fbCall runs the
+ * same seam pipeline as the HTTP route (server/seam-call.ts:
+ * limiter, CSRF, gates, handler) directly, with no HTTP round-trip
+ * and no PHP. The pages that use this client are all server
+ * components, so importing server code is safe; there are no
+ * client-component callers of fbCall (browser code uses
+ * lib/browser.ts fbPost/fbPostJson through /api/fb instead).
  *
- * This client is the single seam of the strangler: as Scope B phases move a
- * module from PHP to TypeScript, only the base URL / transport for that
- * module changes here.
+ * Auth models:
+ *   - Server-component pages forward the request's session cookie
+ *     (lib/session.ts sessionOpts) plus the CSRFToken cookie value;
+ *     the seam enforces the pair exactly as the HTTP route does.
+ *   - adminBasicAuth (HTTP Basic "email:api_token", which the PHP API
+ *     mapped to a synthetic session) is NOT supported by the TS seam
+ *     — session-cookie auth only — and fbCall throws if it is passed.
+ *     No caller uses it today (verified by grep); it is kept in the
+ *     options type so a future caller fails loudly, not silently.
+ *
+ * Params: values are stringified (the old urlencoded wire shape);
+ * rawParams is empty, matching what the HTTP route passes handlers
+ * for urlencoded bodies. The method option (GET vs POST) is accepted
+ * and ignored — handlers never branch on the verb.
  */
+
+import { dispatchSeamCall } from "@/server/seam-call";
+import { readSession } from "@/server/session";
+import { FbError as DispatchFbError } from "@/server/dispatch";
+import { RateLimitError } from "@/server/ratelimit";
 
 export type FbRole = "guest" | "client" | "admin";
 
@@ -34,22 +51,22 @@ export class FbApiError extends Error {
   }
 }
 
-const phpBaseUrl = () =>
-  (process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080").replace(/\/$/, "");
-
 export interface CallOptions {
-  /** Admin API token auth (server-side only). */
+  /** NOT supported by the TS seam (session-cookie auth only) — throws if passed. */
   adminBasicAuth?: { email: string; apiToken: string };
   /** Raw Cookie header to forward (session flows). */
   cookieHeader?: string;
-  /** CSRF token from the CSRFToken cookie, sent as X-CSRF-Token. */
+  /** CSRF token from the CSRFToken cookie. */
   csrfToken?: string;
+  /** Accepted and ignored — handlers never branch on the verb. */
   method?: "GET" | "POST";
 }
 
 /**
- * Server-side call to the PHP dispatcher. Returns the unwrapped `result`.
- * Throws FbApiError on an error envelope or a non-2xx response.
+ * Server-side call to the TS seam, in-process. Returns the unwrapped
+ * `result`. Throws FbApiError on any seam error (including 740s,
+ * 715s, 403s, and the R5g 429, whose Retry-After is not surfaced
+ * here — pages never hit limited endpoints).
  */
 export async function fbCall<T = unknown>(
   role: FbRole,
@@ -58,36 +75,48 @@ export async function fbCall<T = unknown>(
   params: Record<string, unknown> = {},
   options: CallOptions = {},
 ): Promise<T> {
-  const verb = options.method ?? "POST";
-  const url = new URL(`/api/${role}/${module}/${method}`, `${phpBaseUrl()}/`);
-  const headers: Record<string, string> = { Accept: "application/json" };
   if (options.adminBasicAuth) {
-    const raw = `${options.adminBasicAuth.email}:${options.adminBasicAuth.apiToken}`;
-    headers.Authorization = `Basic ${Buffer.from(raw).toString("base64")}`;
+    throw new FbApiError({
+      message: "adminBasicAuth is not supported by the TS seam (session-cookie auth only)",
+      code: 9999,
+    });
   }
-  if (options.cookieHeader) headers.Cookie = options.cookieHeader;
-  if (options.csrfToken) headers["X-CSRF-Token"] = options.csrfToken;
-
-  let body: BodyInit | undefined;
-  if (verb === "GET") {
-    for (const [k, v] of Object.entries(params)) {
-      if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
-    }
-  } else {
-    headers["Content-Type"] = "application/x-www-form-urlencoded";
-    const form = new URLSearchParams();
-    for (const [k, v] of Object.entries(params)) {
-      if (v !== undefined && v !== null) form.set(k, String(v));
-    }
-    if (options.csrfToken) form.set("CSRFToken", options.csrfToken);
-    body = form;
+  const stringParams: Record<string, string> = {};
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null) stringParams[k] = String(v);
   }
-
-  const res = await fetch(url, { method: verb, headers, body, cache: "no-store" });
+  const session = await readSession(options.cookieHeader ?? null);
+  const callCtx = {
+    params: stringParams,
+    rawParams: {} as Record<string, unknown>,
+    requestUri: `/api/${role}/${module}/${method}`,
+    ip: "127.0.0.1",
+    session,
+    hasSessionCookie: !!options.cookieHeader?.includes("fossbilling_session="),
+    setCookies: [] as string[],
+  };
+  let res: Response;
+  try {
+    res = await dispatchSeamCall(callCtx, role, module, method, options.csrfToken);
+  } catch (e) {
+    if (e instanceof RateLimitError) {
+      throw new FbApiError({ message: e.message, code: 429 });
+    }
+    if (e instanceof DispatchFbError) {
+      throw new FbApiError({ message: e.message, code: e.code });
+    }
+    throw new FbApiError({ message: e instanceof Error ? e.message : String(e), code: 9999 });
+  }
+  // Handlers that return a full Response are binary/text endpoints;
+  // pages never call those. A JSON envelope unwraps normally.
+  const contentType = res.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    throw new FbApiError({ message: "fbCall cannot unwrap a non-JSON response", code: 9999 });
+  }
   const json = (await res.json().catch(() => null)) as
     | { result: T; error: FbError | null }
     | null;
-  if (!res.ok || !json || json.error) {
+  if (!json || json.error) {
     throw new FbApiError(
       json?.error ?? { message: `FOSSBilling API HTTP ${res.status}`, code: res.status },
     );

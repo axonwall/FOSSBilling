@@ -1,0 +1,635 @@
+{
+  "A_login_cookies": {
+    "status": 200,
+    "set_cookie": [
+      "fossbilling_session=77248dd5d1112960a886810c8d151629; path=/; HttpOnly; SameSite=Strict",
+      "fossbilling_csrf=194f85cee4f44a275901818991b69b70ee040eb3659fe373ff20da6b4f6fe5ab; path=/; samesite=strict"
+    ],
+    "body_snippet": "<!DOCTYPE html>\n<html lang=\"en-US\" data-bs-theme=\"light\">\n<head>\n    <meta charset=\"utf-8\">\n    <title>Login</title>\n    <meta name=\"color-scheme\" content=\"light dark\">\n\n    <meta name=\"description\" c"
+  },
+  "B0_guest_company_baseline": {
+    "http": 200,
+    "env": {
+      "result": {
+        "www": "http://127.0.0.1:8080/",
+        "name": "Company Name",
+        "email": "support@yourcompany.com",
+        "tel": "+123 456 12345",
+        "signature": "FOSSBilling.org - Client Management, Invoicing and Support Software",
+        "logo_url": "http://127.0.0.1:8080/public/branding/logo-light.svg",
+        "logo_url_dark": "http://127.0.0.1:8080/public/branding/logo-dark.svg",
+        "favicon_url": "http://127.0.0.1:8080/public/branding/favicon.svg",
+        "address_1": "Demo address line 1",
+        "address_2": "Demo address line 2",
+        "address_3": "Demo address line 3",
+        "account_number": null,
+        "bank_name": null,
+        "bic": null,
+        "display_bank_info": null,
+        "bank_info_pagebottom": null,
+        "number": null,
+        "note": "This is a placeholder for your About Us page. It will be available in /about-us.\nReplace this with information about your company, such as:\n- Your company history and mission\n- Services offered\n- Values and vision\n- Contact or support information\n- Any other details you want your clients to know about your business",
+        "privacy_policy": "This is a sample Privacy Policy. Please replace this with your company's actual privacy terms.\nInclude details such as:\n- How customer data is collected and used\n- Security measures\n- Third-party sharing policies\n- Customer rights",
+        "tos": "This is a sample Terms of Service. Please replace this with your own legal terms.\nInclude details such as:\n- Your company name and address\n- Conditions of service\n- Payment and refund policies\n- Service-level agreements (SLAs)",
+        "vat_number": null
+      },
+      "error": null
+    }
+  },
+  "B1_740_admin_unknown_method": {
+    "http": 404,
+    "env": {
+      "result": null,
+      "error": {
+        "message": "Admin API call zzz_nope does not exist in module invoice",
+        "code": 740
+      }
+    }
+  },
+  "B2_715_admin_unknown_module": {
+    "http": 200,
+    "env": {
+      "result": null,
+      "error": {
+        "message": "FOSSBilling module nosuchmod is not installed/activated",
+        "code": 715
+      }
+    }
+  },
+  "B3_715_admin_inactive_module": {
+    "http": 200,
+    "env": {
+      "result": null,
+      "error": {
+        "message": "FOSSBilling module embed is not installed/activated",
+        "code": 715
+      }
+    }
+  },
+  "B4_740_admin_bare_method": {
+    "http": 404,
+    "env": {
+      "result": null,
+      "error": {
+        "message": "Admin API call foo does not exist in module invoice",
+        "code": 740
+      }
+    }
+  },
+  "B5_php_still_implements_removed_system": {
+    "http": 200,
+    "env": {
+      "result": null,
+      "error": {
+        "message": "Failed to download the latest version information. Further details are available in the error log.",
+        "code": 9999
+      }
+    }
+  },
+  "B6_php_still_implements_removed_extension": {
+    "http": 200,
+    "env": {
+      "result": null,
+      "error": {
+        "message": "Extension ID was not passed",
+        "code": 9999
+      }
+    }
+  },
+  "B7_php_still_implements_removed_guest": {
+    "http": 200,
+    "env": {
+      "result": false,
+      "error": null
+    }
+  },
+  "B8_literal_call_admin_servicecustom": {
+    "http": 200,
+    "env": {
+      "result": null,
+      "error": {
+        "message": "Too few arguments to function Box\\Mod\\Servicecustom\\Api\\Admin::__call(), 1 passed in /home/hatch/scratch/fossbilling/runtime/src/library/FOSSBilling/Api/Dispatcher.php on line 102 and exactly 2 expected",
+        "code": 9998
+      }
+    }
+  },
+  "B9_magic_admin_servicecustom": {
+    "http": 200,
+    "env": {
+      "result": null,
+      "error": {
+        "message": "Order ID is required",
+        "code": 9999
+      }
+    }
+  },
+  "B10_740_guest_unknown_method": {
+    "http": 404,
+    "env": {
+      "result": null,
+      "error": {
+        "message": "Guest API call zzz_nope does not exist in module system",
+        "code": 740
+      }
+    }
+  },
+  "B11_740_client_unknown_method": {
+    "http": 404,
+    "env": {
+      "result": null,
+      "error": {
+        "message": "Client API call zzz_nope does not exist in module invoice",
+        "code": 740
+      }
+    }
+  },
+  "B12_client_calling_admin_role": {
+    "http": 401,
+    "env": {
+      "result": null,
+      "error": {
+        "message": "Authentication Failed",
+        "code": 201
+      }
+    }
+  },
+  "C1_two_segment": {
+    "http": 400,
+    "body": "{\"result\":null,\"error\":{\"message\":\"Unknown API call admin\\/invoice\",\"code\":879}}"
+  },
+  "C2_four_segment": {
+    "http": 400,
+    "body": "{\"result\":null,\"error\":{\"message\":\"Unknown API call admin\\/invoice\\/get_list\\/extra\",\"code\":879}}"
+  },
+  "C3_one_segment": {
+    "http": 400,
+    "body": "{\"result\":null,\"error\":{\"message\":\"Unknown API call unknown\",\"code\":879}}"
+  },
+  "D1_php_navigation": {
+    "http": 200,
+    "result": {
+      "client": {
+        "index": 200,
+        "label": "Clients",
+        "uri": "http://127.0.0.1:8080/admin/client",
+        "class": "address-book",
+        "active": false,
+        "subpages": [
+          {
+            "label": "Overview",
+            "uri": "http://127.0.0.1:8080/admin/client",
+            "index": 100,
+            "class": "",
+            "active": false
+          }
+        ]
+      },
+      "order": {
+        "index": 300,
+        "label": "Orders",
+        "uri": "http://127.0.0.1:8080/admin/order",
+        "class": "package",
+        "active": false,
+        "subpages": [
+          {
+            "index": 100,
+            "label": "Overview",
+            "uri": "http://127.0.0.1:8080/admin/order",
+            "class": "",
+            "active": false
+          }
+        ]
+      },
+      "invoice": {
+        "index": 400,
+        "label": "Invoices",
+        "uri": "http://127.0.0.1:8080/admin/invoice",
+        "class": "receipt",
+        "active": false,
+        "subpages": [
+          {
+            "label": "Overview",
+            "uri": "http://127.0.0.1:8080/admin/invoice",
+            "index": 100,
+            "class": "",
+            "active": false
+          },
+          {
+            "label": "Subscriptions",
+            "uri": "http://127.0.0.1:8080/admin/invoice/subscriptions",
+            "index": 300,
+            "class": "",
+            "active": false
+          },
+          {
+            "label": "Transactions",
+            "uri": "http://127.0.0.1:8080/admin/invoice/transactions",
+            "index": 400,
+            "class": "",
+            "active": false
+          },
+          {
+            "label": "Failed Items",
+            "uri": "http://127.0.0.1:8080/admin/invoice/failed-items",
+            "index": 500,
+            "class": "",
+            "active": false
+          }
+        ]
+      },
+      "products": {
+        "index": 401,
+        "label": "Products",
+        "uri": "http://127.0.0.1:8080/admin/products",
+        "class": "photo",
+        "active": false,
+        "subpages": [
+          {
+            "index": 110,
+            "label": "Products & Services",
+            "uri": "http://127.0.0.1:8080/admin/product",
+            "class": "",
+            "active": false
+          },
+          {
+            "index": 120,
+            "label": "Product Addons",
+            "uri": "http://127.0.0.1:8080/admin/product/addons",
+            "class": "",
+            "active": false
+          },
+          {
+            "index": 130,
+            "label": "Product Promotions",
+            "uri": "http://127.0.0.1:8080/admin/product/promos",
+            "class": "",
+            "active": false
+          }
+        ]
+      },
+      "support": {
+        "index": 500,
+        "label": "Support",
+        "class": "headset",
+        "active": false,
+        "uri": "http://127.0.0.1:8080/admin/support?status=open",
+        "subpages": [
+          {
+            "label": "Support Tickets",
+            "uri": "http://127.0.0.1:8080/admin/support?status=open",
+            "index": 100,
+            "class": "",
+            "active": false
+          },
+          {
+            "label": "Canned Responses",
+            "uri": "http://127.0.0.1:8080/admin/support/canned-responses",
+            "index": 400,
+            "class": "",
+            "active": false
+          },
+          {
+            "index": 500,
+            "label": "Knowledge Base",
+            "uri": "http://127.0.0.1:8080/admin/support/kb",
+            "class": "",
+            "active": false
+          },
+          {
+            "index": 900,
+            "label": "Announcements",
+            "uri": "http://127.0.0.1:8080/admin/news",
+            "class": "",
+            "active": false
+          }
+        ]
+      },
+      "system": {
+        "index": 600,
+        "label": "System",
+        "class": "settings",
+        "active": false,
+        "uri": "http://127.0.0.1:8080/admin/system",
+        "subpages": {
+          "4": {
+            "label": "Settings",
+            "index": 100,
+            "uri": "http://127.0.0.1:8080/admin/system",
+            "class": "",
+            "active": false
+          },
+          "5": {
+            "label": "Update FOSSBilling",
+            "index": 100,
+            "uri": "http://127.0.0.1:8080/admin/system/update",
+            "class": "",
+            "active": false
+          },
+          "3": {
+            "index": 140,
+            "label": "Hosting Plans and Servers",
+            "uri": "http://127.0.0.1:8080/admin/servicehosting",
+            "class": "",
+            "active": false
+          },
+          "2": {
+            "index": 150,
+            "label": "Domain Registration",
+            "uri": "http://127.0.0.1:8080/admin/servicedomain",
+            "class": "",
+            "active": false
+          },
+          "1": {
+            "label": "Payment Gateways",
+            "uri": "http://127.0.0.1:8080/admin/invoice/gateways",
+            "index": 160,
+            "class": "",
+            "active": false
+          },
+          "0": {
+            "label": "Tax Rules",
+            "uri": "http://127.0.0.1:8080/admin/invoice/tax",
+            "index": 180,
+            "class": "",
+            "active": false
+          }
+        }
+      },
+      "security": {
+        "index": 650,
+        "label": "Security",
+        "class": "lock",
+        "active": false,
+        "uri": "http://127.0.0.1:8080/admin/security",
+        "subpages": [
+          {
+            "label": "Security Dashboard",
+            "index": 100,
+            "uri": "http://127.0.0.1:8080/admin/security",
+            "class": "",
+            "active": false
+          },
+          {
+            "label": "IP Lookup",
+            "index": 200,
+            "uri": "http://127.0.0.1:8080/admin/security/iplookup",
+            "class": "",
+            "active": false
+          },
+          {
+            "label": "Rate Limits",
+            "index": 300,
+            "uri": "http://127.0.0.1:8080/admin/security/rate-limits",
+            "class": "",
+            "active": false
+          }
+        ]
+      },
+      "activity": {
+        "index": 700,
+        "label": "Activity",
+        "class": "chart-bar",
+        "active": false,
+        "uri": "http://127.0.0.1:8080/admin/activity",
+        "subpages": {
+          "0": {
+            "label": "System Activity",
+            "index": 100,
+            "uri": "http://127.0.0.1:8080/admin/activity",
+            "class": "",
+            "active": false
+          },
+          "2": {
+            "index": 200,
+            "label": "Email History",
+            "uri": "http://127.0.0.1:8080/admin/email/history",
+            "class": "",
+            "active": false
+          },
+          "3": {
+            "index": 400,
+            "label": "Staff Login History",
+            "uri": "http://127.0.0.1:8080/admin/staff/logins",
+            "class": "",
+            "active": false
+          },
+          "1": {
+            "index": 900,
+            "label": "Client Login History",
+            "uri": "http://127.0.0.1:8080/admin/client/logins",
+            "class": "",
+            "active": false
+          }
+        }
+      },
+      "extensions": {
+        "index": 1000,
+        "label": "Extensions",
+        "class": "iPlugin",
+        "active": false,
+        "uri": "http://127.0.0.1:8080/admin/extension",
+        "subpages": [
+          {
+            "label": "Overview",
+            "uri": "http://127.0.0.1:8080/admin/extension",
+            "index": 100,
+            "class": "",
+            "active": false
+          },
+          {
+            "label": "Languages",
+            "index": 200,
+            "uri": "http://127.0.0.1:8080/admin/extension/languages",
+            "class": "",
+            "active": false
+          },
+          {
+            "label": "Widgets",
+            "index": 500,
+            "uri": "http://127.0.0.1:8080/admin/widgets",
+            "class": "",
+            "active": false
+          },
+          {
+            "label": "Custom Pages",
+            "index": 2000,
+            "uri": "http://127.0.0.1:8080/admin/custompages",
+            "class": "",
+            "active": false
+          },
+          {
+            "index": 4000,
+            "label": "Mass Mailer",
+            "uri": "http://127.0.0.1:8080/admin/massmailer",
+            "class": "",
+            "active": false
+          }
+        ]
+      }
+    }
+  },
+  "D2_php_extension_list_sample": {
+    "http": 200,
+    "result_shape": "list",
+    "icon_urls": [
+      "http://127.0.0.1:8080//modules/Branding/icon.svg",
+      "http://127.0.0.1:8080//modules/Redirect/icon.svg",
+      "http://127.0.0.1:8080//modules/Custompages/icon.svg",
+      "http://127.0.0.1:8080//modules/Massmailer/icon.svg",
+      "http://127.0.0.1:8080//modules/Notification/icon.svg"
+    ]
+  },
+  "D3_php_company": {
+    "http": 200,
+    "env": {
+      "result": {
+        "www": "http://127.0.0.1:8080/",
+        "name": "Company Name",
+        "email": "support@yourcompany.com",
+        "tel": "+123 456 12345",
+        "signature": "FOSSBilling.org - Client Management, Invoicing and Support Software",
+        "logo_url": "http://127.0.0.1:8080/public/branding/logo-light.svg",
+        "logo_url_dark": "http://127.0.0.1:8080/public/branding/logo-dark.svg",
+        "favicon_url": "http://127.0.0.1:8080/public/branding/favicon.svg",
+        "address_1": "Demo address line 1",
+        "address_2": "Demo address line 2",
+        "address_3": "Demo address line 3",
+        "account_number": null,
+        "bank_name": null,
+        "bic": null,
+        "display_bank_info": null,
+        "bank_info_pagebottom": null,
+        "number": null,
+        "note": "This is a placeholder for your About Us page. It will be available in /about-us.\nReplace this with information about your company, such as:\n- Your company history and mission\n- Services offered\n- Values and vision\n- Contact or support information\n- Any other details you want your clients to know about your business",
+        "privacy_policy": "This is a sample Privacy Policy. Please replace this with your company's actual privacy terms.\nInclude details such as:\n- How customer data is collected and used\n- Security measures\n- Third-party sharing policies\n- Customer rights",
+        "tos": "This is a sample Terms of Service. Please replace this with your own legal terms.\nInclude details such as:\n- Your company name and address\n- Conditions of service\n- Payment and refund policies\n- Service-level agreements (SLAs)",
+        "vat_number": null
+      },
+      "error": null
+    }
+  },
+  "D4_php_gateway_get": {
+    "http": 200,
+    "env": {
+      "result": {
+        "id": 1,
+        "code": "Custom",
+        "title": "Custom",
+        "allow_single": true,
+        "allow_recurrent": true,
+        "accepted_currencies": [
+          "USD"
+        ],
+        "supports_one_time_payments": true,
+        "supports_subscriptions": true,
+        "config": [],
+        "secret_fields": [],
+        "form": {
+          "single": [
+            "textarea",
+            {
+              "label": "Enter Your Text for Single Payment Information"
+            }
+          ],
+          "recurrent": [
+            "textarea",
+            {
+              "label": "Enter Your Text for Subscription Information"
+            }
+          ]
+        },
+        "description": "Custom payment gateway allows you to give instructions how can your client pay invoice. All system, client, order and invoice details can be printed. HTML code is supported.",
+        "enabled": true,
+        "test_mode": false,
+        "callback": "http://127.0.0.1:8080/ipn.php?gateway_id=1",
+        "custom_logo_url": null,
+        "custom_logo_avif_url": null
+      },
+      "error": null
+    }
+  },
+  "E1_admin_clients": {
+    "http": 200,
+    "len": 9381,
+    "markers": [
+      "Clients"
+    ]
+  },
+  "E2_admin_dashboard": {
+    "http": 200,
+    "len": 8846,
+    "markers": []
+  },
+  "E3_admin_invoices": {
+    "http": 200,
+    "len": 9093,
+    "markers": [
+      "Invoices"
+    ]
+  },
+  "E4_client_dashboard": {
+    "http": 200,
+    "len": 9130,
+    "markers": [
+      "Dashboard",
+      "Invoices",
+      "Orders"
+    ]
+  },
+  "F1_ts_preR6a_740_admin": {
+    "http": 404,
+    "env": {
+      "result": null,
+      "error": {
+        "message": "Admin API call zzz_nope does not exist in module invoice",
+        "code": 740
+      }
+    }
+  },
+  "F2_ts_preR6a_unknown_module": {
+    "http": 200,
+    "env": {
+      "result": null,
+      "error": {
+        "message": "FOSSBilling module nosuchmod is not installed/activated",
+        "code": 715
+      }
+    }
+  },
+  "F3_ts_preR6a_removed": {
+    "http": 200,
+    "env": {
+      "result": null,
+      "error": {
+        "message": "Endpoint admin/system/update_available was removed in the Next.js port.",
+        "code": 9999
+      }
+    }
+  },
+  "F4_ts_preR6a_literal_call": {
+    "http": 200,
+    "env": {
+      "result": null,
+      "error": {
+        "message": "Too few arguments to function Box\\Mod\\Servicecustom\\Api\\Admin::__call(), 1 passed in /home/hatch/scratch/fossbilling/runtime/src/library/FOSSBilling/Api/Dispatcher.php on line 102 and exactly 2 expected",
+        "code": 9998
+      }
+    }
+  },
+  "Z_cleanup": {
+    "sessions_removed": [
+      "232c1624b97b4e55595a91c34682a97b",
+      "30cb3ca9c0c89e2ebb13ad6ef3588642",
+      "66d57bd20f283a44658f4e2d4c381de0",
+      "77248dd5d1112960a886810c8d151629",
+      "955cb65ec960e78c4acc6fc565934b66",
+      "b1e32963c5c05d74053198891f12bad6",
+      "b52064d98dfb97eb894353c0ec3c2b5b",
+      "c3227fb491574eb625d9b93477283044",
+      "d8602561887759bbae2e1dde4bd7302e"
+    ],
+    "carts_removed": [
+      308
+    ]
+  }
+}

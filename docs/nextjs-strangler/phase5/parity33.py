@@ -239,7 +239,17 @@ def main():
                           {"result": None, "error": {"message": "Order is not activated", "code": 9999}})
         env_p = call(op, stok, PHP, "admin", "servicecustom", "__call", {"order_id": "1"})
         env_t = call(op, stok, TS, "admin", "servicecustom", "__call", {"order_id": "1"})
-        check_env("B literal-__call-php", env_p, env_t)
+        # R6a: TS no longer proxies __call to PHP, so the envelopes
+        # differ by exactly PHP's deployment path in its message (TS
+        # deliberately omits it). Exact equality is obsolete here;
+        # compare code + message shape instead (parity44 §1 does the
+        # same for the seam's own __call case).
+        check("B literal-__call-php",
+              env_p.get("error", {}).get("code") == 9998
+              and env_t.get("error", {}).get("code") == 9998
+              and "__call" in str(env_t.get("error", {}).get("message"))
+              and "exactly 2 expected" in str(env_t.get("error", {}).get("message")),
+              f"php={str(env_p)[:200]} ts={str(env_t)[:200]}")
         check("B literal-__call-9998",
               env_p.get("error", {}).get("code") == 9998
               and env_p.get("error", {}).get("message", "").startswith("Too few arguments"),

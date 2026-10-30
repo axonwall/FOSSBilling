@@ -29,6 +29,7 @@ import { getDb, getDbWrite } from "../db";
 import { decryptV2, readExtensionConfig, writeExtensionConfig } from "../crypt";
 import { hasPermission, requirePermission } from "../permissions";
 import { CORE_MODULES } from "../guards";
+import { publicOrigin } from "../public-url";
 import {
   MANAGE_SETTINGS_MODULES,
   REGISTRY,
@@ -105,7 +106,7 @@ function manifestEntry(
   hasSettings: boolean,
   available: boolean,
 ): Record<string, unknown> {
-  const origin = (process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080").replace(/\/+$/, "");
+  const origin = publicOrigin();
   const entry: Record<string, unknown> = {
     id: m.id,
     type: "mod",
@@ -397,7 +398,7 @@ register("guest", "extension", "languages", () => {
 // attach to their location's group only when that group exists —
 // e.g. a staff member with only support access sees no activity
 // group, so staff/email/client activity subpages drop with it.
-// URIs are absolute against the PHP origin (FOSSBILLING_URL), as
+// URIs are absolute against the public origin (FB_PUBLIC_URL / config url), as
 // PHP's Url::adminLink builds them from the install base URI.
 // Serialization note: PHP json_encode emits a group's subpages as a
 // JSON object (not array) when the index-sorted keys are not 0..n-1
@@ -613,7 +614,7 @@ function phpUrlPath(uri: string | null | undefined): string | null {
  * not a second implementation.
  */
 export async function buildAdminNavigation(adminId: number, urlParam?: string | null) {
-  const base = (process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080").replace(/\/$/, "");
+  const base = publicOrigin();
   const adminLink = (path: string) => `${base}/admin/${path}`;
   const installed = (
     (await getDb()

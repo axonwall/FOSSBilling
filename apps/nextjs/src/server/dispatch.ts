@@ -52,7 +52,15 @@ export type Handler = (ctx: CallContext) => unknown | Response | Promise<unknown
 const registry = new Map<string, Handler>();
 
 export function register(role: string, module: string, method: string, handler: Handler) {
-  registry.set(`${role}/${module}/${method}`, handler);
+  // R6a: normalize to lowercase. PHP's method lookup is
+  // case-insensitive, and the seam route lowercases all three path
+  // segments before lookup — so a mixed-case registration (e.g.
+  // servicehosting/servicelicense `_getService`) was unreachable
+  // through the seam and silently served by the PHP proxy pre-R6a,
+  // then 740'd post-cutover (parity21's 7 new diffs). Normalizing
+  // here matches PHP semantics; no two handlers differ only by case
+  // (PHP couldn't distinguish them either).
+  registry.set(`${role.toLowerCase()}/${module.toLowerCase()}/${method.toLowerCase()}`, handler);
 }
 
 export function findHandler(role: string, module: string, method: string): Handler | undefined {

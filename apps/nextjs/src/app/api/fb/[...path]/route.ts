@@ -1,256 +1,160 @@
+import { randomBytes } from "node:crypto";
 import type { NextRequest } from "next/server";
-import { FbError, enforceCsrf, envelope, errorEnvelope, findHandler, findMagicHandler, tsModulesEnabled } from "@/server/dispatch";
-import { RateLimitError, enforcePerEndpointLimit, enforcePostAuthLimit, enforcePreAuthLimit } from "@/server/ratelimit";
-import { enforceDispatcherGates } from "@/server/guards";
-import { REMOVED_SYSTEM_ADMIN } from "@/server/modules/system";
-import { REMOVED_EXTENSION_ADMIN, REMOVED_EXTENSION_GUEST } from "@/server/modules/extension";
-import { REMOVED_THEME_ADMIN } from "@/server/modules/theme";
+import { errorEnvelope } from "@/server/dispatch";
+import { RateLimitError } from "@/server/ratelimit";
+import {
+  VALID_ROLES,
+  dispatchSeamCall,
+  unknownApiError,
+} from "@/server/seam-call";
 import { readSession } from "@/server/session";
-import "@/server/modules";
 
 /**
- * Same-origin proxy + strangler seam: browser -> Next
- * (/api/fb/<role>/<module>/<method>) -> PHP dispatcher, EXCEPT modules
- * ported to TypeScript (Phase 2+, env FB_TS_MODULES) which are served by
- * the TS implementations in src/server/modules against the same database.
+ * TS-only seam (R6a): browser -> Next (/api/fb/<role>/<module>/<method>)
+ * -> TS implementations in src/server/modules against the same
+ * database. The PHP proxy (fetchPhp) is DELETED: after R6a nothing
+ * serves from PHP through the seam.
  *
- * Keeps the PHP session cookie + CSRF pair working from the Next origin
- * during the strangler phase, so browser code never talks to PHP directly.
+ * Same-origin CSRF pair: the browser holds fossbilling_csrf (set by
+ * __prime below or by login) plus the session cookie; the seam
+ * enforces the pair exactly as before (see server/dispatch
+ * enforceCsrf: no session -> no check; session -> presented token
+ * must equal the session's csrfToken).
  *
- * FB_PARITY=1: TS-served calls also hit PHP and the parsed envelopes are
- * deep-compared; mismatches are logged as [parity] lines (TS response is
- * still the one returned).
+ * Error shapes (envelopes, always HTTP 200 except the R5g real-429):
+ *   740 unknown method, 715 module not installed/activated, 725
+ *   module access denied, 403 method guard / CSRF invalid, 201
+ *   authentication failed, 9999 removal + domain errors, 9998
+ *   literal admin/servicecustom/__call (mirrors PHP's
+ *   ArgumentCountError), 879 unknown API path (non-3-segment or
+ *   invalid role — mirrors PHP's router). PHP renders 740 as HTTP
+ *   404, 201 as 401, 879 as 400; the seam keeps HTTP 200 + code in
+ *   the envelope (seam-wide convention — compare envelopes, never
+ *   HTTP status, except the real 429).
+ *
+ * DB-not-configured (FB_DATABASE_PATH unset) previously fell through
+ * to the PHP proxy and silently served PHP data. It now returns the
+ * TS error envelope (9999) — a loud failure, not a silent fallback.
+ *
+ * FB_PARITY=1 is REMOVED with the proxy (its PHP comparison call
+ * died with PHP deletion; parity suites + R6b's harness supersede
+ * its logging value). The flag is gone, not a no-op.
  */
-
-const phpBaseUrl = () =>
-  (process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080").replace(/\/$/, "");
-
-function forwardCookies(res: Response, out: Headers) {
-  const all =
-    typeof res.headers.getSetCookie === "function"
-      ? res.headers.getSetCookie()
-      : [res.headers.get("set-cookie")].filter((v): v is string => !!v);
-  for (const c of all) out.append("set-cookie", c);
-}
-
-function sortKeys(v: unknown): unknown {
-  if (Array.isArray(v)) return v.map(sortKeys);
-  if (v && typeof v === "object") {
-    return Object.fromEntries(
-      Object.entries(v as Record<string, unknown>)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([k, x]) => [k, sortKeys(x)]),
-    );
-  }
-  return v;
-}
-
-async function fetchPhp(req: NextRequest, path: string[], bodyText: string | undefined): Promise<Response> {
-  const target = new URL(`/api/${path.join("/")}`, `${phpBaseUrl()}/`);
-  target.search = req.nextUrl.search;
-  const headers = new Headers();
-  for (const name of ["cookie", "x-csrf-token", "content-type", "accept"]) {
-    const v = req.headers.get(name);
-    if (v) headers.set(name, v);
-  }
-  return fetch(target, {
-    method: req.method,
-    headers,
-    body: bodyText,
-    cache: "no-store",
-  });
-}
 
 async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
   const { path } = await ctx.params;
 
-  // Cookie priming: the dispatcher's CSRF cookie (fossbilling_csrf) is set
-  // ONLY by PHP web pages, never by API responses (verified live, Phase 1).
-  // GET /api/fb/__prime relays the cookies of the PHP login page so the
-  // browser holds the CSRF cookie before its first form POST.
+  // Cookie priming, TS-native (R6a): issue a CSRF cookie without PHP.
+  // With a session, the cookie carries the SESSION's csrfToken, so
+  // subsequent POSTs pass enforceCsrf. Without a session, a fresh
+  // random token is issued (login carries it over or regenerates it
+  // — same as TS login's own token issuance). Unlike PHP's /login
+  // relay, this sets NO session cookie and creates no session row:
+  // priming is CSRF-only. The token format matches TS login's
+  // (16 random bytes, hex); PHP's /login issued 32-byte hex tokens.
   if (path.length === 1 && path[0] === "__prime") {
-    const res = await fetch(`${phpBaseUrl()}/login`, { cache: "no-store" });
+    const cookieHeader = req.headers.get("cookie");
+    const session = await readSession(cookieHeader);
+    const token = session?.csrfToken ?? randomBytes(16).toString("hex");
     const out = new Headers({ "content-type": "application/json" });
-    forwardCookies(res, out);
-    return new Response(JSON.stringify({ primed: res.ok }), { status: 200, headers: out });
+    // Flags mirror TS login's csrf cookie (Path=/, readable by
+    // browser JS for ensureCsrf/csrfFromCookie). PHP's /login set
+    // samesite=strict; TS login does not — prime matches login.
+    out.append("set-cookie", `fossbilling_csrf=${encodeURIComponent(token)}; Path=/`);
+    return new Response(JSON.stringify({ primed: true }), { status: 200, headers: out });
   }
 
-  // Strangler seam: serve from TypeScript when the module is ported and
-  // enabled. Any failure in the TS path (e.g. DB not configured) falls
-  // back to PHP — the seam must never take the API down. The handler is
-  // resolved BEFORE reading the body so multipart requests can be
-  // parsed with formData() (req.text() would consume the stream first).
-  if (path.length === 3) {
-    const [role, module, method] = path.map((s) => s.toLowerCase());
-    let handler = tsModulesEnabled().has(module) ? findHandler(role, module, method) : undefined;
-    let gateMethod = method;
-    // R4d magic fallback: PHP routes unknown admin/servicecustom
-    // methods through Api\Admin::__call. The TS seam mirrors that —
-    // EXCEPT the literal method name "__call" itself, which PHP
-    // treats as a real method and crashes on with 9998
-    // (ArgumentCountError: __call called with 1 arg, 2 expected).
-    // That pathological call keeps proxying to PHP, exactly.
-    if (!handler && role === "admin" && module === "servicecustom" && method !== "__call") {
-      const magic = tsModulesEnabled().has(module) ? findMagicHandler(role, module) : undefined;
-      if (magic) {
-        handler = (callCtx) => magic(callCtx, method);
-        gateMethod = "__call";
-      }
-    }
-    if (handler) {
-      try {
-        const params: Record<string, string> = {};
-        let rawParams: Record<string, unknown> = {};
-        let files: Record<string, { name: string; type: string; bytes: Buffer }> | undefined;
-        let bodyText: string | undefined;
-        for (const [k, v] of req.nextUrl.searchParams) params[k] = v;
-        const contentType = req.headers.get("content-type") ?? "";
-        if (req.method !== "GET" && req.method !== "HEAD" && contentType.includes("multipart/form-data")) {
-          // Multipart in (servicedownloadable upload/update): text fields
-          // land in params/rawParams, files in ctx.files.
-          const form = await req.formData();
-          files = {};
-          for (const [k, v] of form.entries()) {
-            if (typeof v === "string") {
-              params[k] = v;
-              rawParams[k] = v;
-            } else {
-              files[k] = {
-                name: v.name,
-                type: v.type,
-                bytes: Buffer.from(await v.arrayBuffer()),
-              };
-            }
-          }
-        } else {
-          bodyText = req.method === "GET" || req.method === "HEAD" ? undefined : await req.text();
-          if (bodyText) {
-            const ct = req.headers.get("content-type") ?? "";
-            if (ct.includes("json")) {
-              rawParams = JSON.parse(bodyText) as Record<string, unknown>;
-              for (const [k, v] of Object.entries(rawParams)) {
-                params[k] = typeof v === "object" ? JSON.stringify(v) : String(v);
-              }
-            } else {
-              for (const [k, v] of new URLSearchParams(bodyText)) params[k] = v;
-            }
-          }
-        }
-        const cookieHeader = req.headers.get("cookie");
-        const session = await readSession(cookieHeader);
-        const callCtx = {
-          params,
-          rawParams,
-          files,
-          requestUri: `/api/${role}/${module}/${method}${req.nextUrl.search}`,
-          ip:
-            ((req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "127.0.0.1").replace(
-              /^::ffff:/,
-              "",
-            ),
-          session,
-          hasSessionCookie: !!cookieHeader?.includes("fossbilling_session="),
-          setCookies: [] as string[],
-        };
-        // R5g rate limiting, mirroring Client.php _apiCall order:
-        // pre-auth IP check BEFORE CSRF (PHP checks the limiter before
-        // session/token auth), then CSRF, then the identity half of the
-        // gates (a role without a session 201s — PHP never reaches the
-        // post-auth check unauthenticated), then the post-auth check,
-        // then the full dispatcher gates, then per-endpoint consumes.
-        // EXCEPTION (R5g regression fix, parity32/30): removed endpoints
-        // throw the removal error before any auth check, for every
-        // caller, by R1/R4a/R4c design — so isRemoved is computed FIRST
-        // and the identity 201, post-auth, gates, and per-endpoint
-        // steps are all skipped for removed endpoints. Hoisting the 201
-        // above the removal check made logged-out removed calls 201
-        // instead of returning the 9999 removal error. Pre-auth + CSRF
-        // still run (pre-R5g behavior; and PHP itself consumes pre-auth
-        // before its session-auth 201).
-        const methodKey = `${module}_${method}`;
-        const isRemoved =
-          (role === "admin" && module === "system" && REMOVED_SYSTEM_ADMIN.includes(method)) ||
-          (role === "admin" && module === "extension" && REMOVED_EXTENSION_ADMIN.includes(method)) ||
-          (role === "admin" && module === "theme" && REMOVED_THEME_ADMIN.includes(method)) ||
-          (role === "guest" && module === "extension" && REMOVED_EXTENSION_GUEST.includes(method));
-        await enforcePreAuthLimit(role, methodKey, callCtx);
-        enforceCsrf(callCtx, params["CSRFToken"] ?? req.headers.get("x-csrf-token") ?? undefined);
-        if (!isRemoved) {
-          if (role === "admin" && !callCtx.session?.admin) throw new FbError("Authentication Failed", 201);
-          if (role === "client" && !callCtx.session?.client) throw new FbError("Authentication Failed", 201);
-          await enforcePostAuthLimit(role, methodKey, callCtx);
-          // R2a dispatcher gates (Api\Dispatcher order: identity 201,
-          // activation 715, admin module access 725, method guards 403):
-          // after CSRF, before the handler.
-          await enforceDispatcherGates(callCtx, role, module, gateMethod);
-          await enforcePerEndpointLimit(role, module, method, callCtx);
-        }
-        const result = await handler(callCtx);
-        // Binary/text endpoints return a full Response: pass it through
-        // verbatim (plus handler cookies), never wrapped in the envelope.
-        if (result instanceof Response) {
-          for (const c of callCtx.setCookies) result.headers.append("set-cookie", c);
-          return result;
-        }
-        const tsResponse = envelope(result);
-        for (const c of callCtx.setCookies) tsResponse.headers.append("set-cookie", c);
+  // TS dispatch: 3 segments with a valid role. Anything else is not
+  // an API call the router recognizes — PHP's router 879s it
+  // ("Unknown API call <path>"), and so does the seam now.
+  if (path.length !== 3) {
+    return errorEnvelope(unknownApiError(path));
+  }
+  const [role, module, method] = path.map((s) => s.toLowerCase());
+  if (!VALID_ROLES.has(role)) {
+    return errorEnvelope(unknownApiError(path));
+  }
 
-        // Multipart requests carry no replayable bodyText, so the PHP
-        // comparison is skipped for them (it would POST an empty body).
-        if (process.env.FB_PARITY === "1" && !files) {
-          try {
-            const phpRes = await fetchPhp(req, path, bodyText);
-            const phpJson = await phpRes.clone().json().catch(() => null);
-            const tsJson = { result, error: null };
-            if (JSON.stringify(sortKeys(phpJson)) !== JSON.stringify(sortKeys(tsJson))) {
-              console.error(
-                `[parity] MISMATCH ${role}/${module}/${method}\n  php: ${JSON.stringify(phpJson)}\n  ts:  ${JSON.stringify(tsJson)}`,
-              );
-            } else {
-              console.log(`[parity] ok ${role}/${module}/${method}`);
-            }
-          } catch (e) {
-            console.error(`[parity] check failed for ${role}/${module}/${method}:`, e);
-          }
-        }
-        return tsResponse;
-      } catch (e) {
-        if (e instanceof Error && e.message.includes("FB_DATABASE_PATH")) {
-          console.error("[ts-modules] DB not configured, falling back to PHP:", e.message);
-        } else if (e instanceof RateLimitError) {
-          // R5g: PHP renders a REAL HTTP 429 + Retry-After header (in
-          // whole seconds) + the envelope body (ApiResponseFactory).
-          // This is the seam's one non-200 error shape; every other
-          // FbError keeps the HTTP-200 envelope convention.
-          // (No handler cookies can exist here: limiter throws precede
-          // the handler, so setCookies is always empty on this path.)
-          return Response.json(
-            { result: null, error: { message: e.message, code: 429 } },
-            { status: 429, headers: { "retry-after": String(e.retryAfterSeconds) } },
-          );
+  // Handler resolution happens inside dispatchSeamCall (pure lookup,
+  // before the gates that need gateMethod for the servicecustom magic
+  // case). The body is parsed here so multipart requests can use
+  // formData() (req.text() would consume the stream first).
+  try {
+    const params: Record<string, string> = {};
+    let rawParams: Record<string, unknown> = {};
+    let files: Record<string, { name: string; type: string; bytes: Buffer }> | undefined;
+    let bodyText: string | undefined;
+    for (const [k, v] of req.nextUrl.searchParams) params[k] = v;
+    const contentType = req.headers.get("content-type") ?? "";
+    if (req.method !== "GET" && req.method !== "HEAD" && contentType.includes("multipart/form-data")) {
+      // Multipart in (servicedownloadable upload/update): text fields
+      // land in params/rawParams, files in ctx.files.
+      const form = await req.formData();
+      files = {};
+      for (const [k, v] of form.entries()) {
+        if (typeof v === "string") {
+          params[k] = v;
+          rawParams[k] = v;
         } else {
-          return errorEnvelope(e);
+          files[k] = {
+            name: v.name,
+            type: v.type,
+            bytes: Buffer.from(await v.arrayBuffer()),
+          };
+        }
+      }
+    } else {
+      bodyText = req.method === "GET" || req.method === "HEAD" ? undefined : await req.text();
+      if (bodyText) {
+        const ct = req.headers.get("content-type") ?? "";
+        if (ct.includes("json")) {
+          rawParams = JSON.parse(bodyText) as Record<string, unknown>;
+          for (const [k, v] of Object.entries(rawParams)) {
+            params[k] = typeof v === "object" ? JSON.stringify(v) : String(v);
+          }
+        } else {
+          for (const [k, v] of new URLSearchParams(bodyText)) params[k] = v;
         }
       }
     }
+    const cookieHeader = req.headers.get("cookie");
+    const session = await readSession(cookieHeader);
+    const callCtx = {
+      params,
+      rawParams,
+      files,
+      requestUri: `/api/${role}/${module}/${method}${req.nextUrl.search}`,
+      ip:
+        ((req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "127.0.0.1").replace(
+          /^::ffff:/,
+          "",
+        ),
+      session,
+      hasSessionCookie: !!cookieHeader?.includes("fossbilling_session="),
+      setCookies: [] as string[],
+    };
+    return await dispatchSeamCall(
+      callCtx,
+      role,
+      module,
+      method,
+      params["CSRFToken"] ?? req.headers.get("x-csrf-token") ?? undefined,
+    );
+  } catch (e) {
+    if (e instanceof RateLimitError) {
+      // R5g: PHP renders a REAL HTTP 429 + Retry-After header (in
+      // whole seconds) + the envelope body (ApiResponseFactory).
+      // This is the seam's one non-200 error shape; every other
+      // FbError keeps the HTTP-200 envelope convention.
+      // (No handler cookies can exist here: limiter throws precede
+      // the handler, so setCookies is always empty on this path.)
+      return Response.json(
+        { result: null, error: { message: e.message, code: 429 } },
+        { status: 429, headers: { "retry-after": String(e.retryAfterSeconds) } },
+      );
+    }
+    return errorEnvelope(e);
   }
-
-  const bodyText =
-    req.method === "GET" || req.method === "HEAD" ? undefined : await req.text();
-
-  const res = await fetchPhp(req, path, bodyText);
-
-  const out = new Headers({ "content-type": res.headers.get("content-type") ?? "application/json" });
-  // PHP sets Content-Disposition on file downloads; forward it so
-  // proxied send_file responses keep their attachment filename.
-  const disposition = res.headers.get("content-disposition");
-  if (disposition) out.set("content-disposition", disposition);
-  forwardCookies(res, out);
-  // Binary passthrough (invoice PDFs, CSV exports) must not go through
-  // res.text(), which mangles non-UTF-8 bytes; JSON is unchanged.
-  const ct = res.headers.get("content-type") ?? "";
-  const body = ct.includes("application/json") ? await res.text() : await res.arrayBuffer();
-  return new Response(body, { status: res.status, headers: out });
 }
 
 export { proxy as GET, proxy as POST };

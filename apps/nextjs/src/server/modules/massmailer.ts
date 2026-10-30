@@ -7,6 +7,7 @@
 import { FbError, register, requireAdmin, type CallContext } from "../dispatch";
 import { findClientById, getDb, getDbWrite, getSetting, nowTimestamp } from "../db";
 import { paginate } from "../util";
+import { publicOrigin } from "../public-url";
 import { readExtensionConfig } from "../crypt";
 import { renderTemplateStrict } from "../twig";
 import { clientAdminArray } from "./client";
@@ -188,7 +189,7 @@ async function getParsed(model: MessageRow, clientId: number): Promise<[string, 
     guest: { system_company: company, system_email: { signature: company.signature } },
     default_currency: "USD",
     FOSSBillingVersion: "0.8.9",
-    __baseUrl: (process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080") + "/",
+    __baseUrl: publicOrigin() + "/",
   };
   const subject = decodeEntities(renderTemplateStrict(model.subject ?? "", ctx));
   const content = renderTemplateStrict(model.content ?? "", ctx);

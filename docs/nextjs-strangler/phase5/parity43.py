@@ -104,7 +104,13 @@ def main():
         bad = [f"{k}={v} (want {EXPECTED[k]})" for k, v in EXPECTED.items()
                if before[k] != v]
         check("A1 reference invariants clean before", not bad, "; ".join(bad))
-        check("A2 cart sequence 305", before["cart_seq"] == 305, str(before["cart_seq"]))
+        # cart_seq is a high-water mark, not data: DELETE never rewinds
+        # sqlite_sequence, so cleaned login-created cart rows
+        # (capture47, parity44) legitimately advance it past the R5j
+        # pin of 305. The invariant is the count (283, in A1); the
+        # sequence must only never fall below its R5j floor.
+        check("A2 cart sequence >= 305 (high-water mark)",
+              before["cart_seq"] >= 305, str(before["cart_seq"]))
         check("A3 queue split 5 pending + 62 sending",
               before["queue_split"] == (("pending", 5), ("sending", 62)),
               str(before["queue_split"]))

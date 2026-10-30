@@ -38,6 +38,7 @@ import { readExtensionConfig } from "../crypt";
 import { companyContext, findEmailTemplate, queueEmail } from "../emailer";
 import { renderTemplateStrict } from "../twig";
 import { zoneTodayString } from "../tz";
+import { publicOrigin } from "../public-url";
 
 /**
  * Order module (Phase 3 batch 3) — TS port of
@@ -508,7 +509,7 @@ export async function runBatchSendSuspensionWarnings(): Promise<boolean> {
         c: clientBlock(client),
         guest: { system_company: company, system_email: { signature: company.signature } },
         default_currency: (await findDefaultCurrency())?.code ?? "USD",
-        __baseUrl: (process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080") + "/",
+        __baseUrl: publicOrigin() + "/",
         __currencyFormats: {},
       };
       // PHP's sendTemplate renders STRICT (SandboxedStringRenderer):

@@ -18,6 +18,7 @@ import {
 } from "../config-store";
 import { FbError, register, requireAdmin, requireParam, type CallContext } from "../dispatch";
 import { hasPermission } from "../permissions";
+import { publicOrigin } from "../public-url";
 import { parseSessionContent, replaceSessionSegment } from "../php-serialize";
 import countriesJson from "../data/countries.json";
 import phoneCodesJson from "../data/phone-codes.json";
@@ -53,7 +54,7 @@ const COMPANY_PARAMS = [
 ];
 
 function systemUrl(): string {
-  const base = (process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080").replace(/\/$/, "");
+  const base = publicOrigin();
   return `${base}/`;
 }
 

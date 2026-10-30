@@ -1,6 +1,7 @@
 import { readExtensionConfig } from "../crypt";
 import { getSetting, isModuleActive, upsertSetting } from "../db";
 import { FbError, register, requireAdmin } from "../dispatch";
+import { publicOrigin } from "../public-url";
 
 /**
  * Seo module — TS port of Seo/Api/Admin.php + Service.php, behind
@@ -18,8 +19,8 @@ async function requireSeoActive(): Promise<void> {
   }
 }
 
-function phpBase(): string {
-  return (process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080").replace(/\/$/, "");
+function publicBase(): string {
+  return publicOrigin();
 }
 
 register("admin", "seo", "info", async (ctx) => {
@@ -27,7 +28,7 @@ register("admin", "seo", "info", async (ctx) => {
   await requireSeoActive();
   const config = await readExtensionConfig("mod_seo");
   return {
-    sitemap_url: `${phpBase()}/sitemap.xml`,
+    sitemap_url: `${publicBase()}/sitemap.xml`,
     last_exec: await getSetting("mod_seo_last_sitemap_submit"),
     engines: {
       google: {
@@ -47,7 +48,7 @@ register("admin", "seo", "ping_all", async (ctx) => {
   // is skipped. Each enabled engine is pinged best-effort; failures
   // are swallowed exactly like PHP's per-engine try/catch.
   if (config["sitemap_google"] === "on") {
-    const url = `${phpBase()}/sitemap.xml`;
+    const url = `${publicBase()}/sitemap.xml`;
     const target = `https://www.google.com/ping?sitemap=${encodeURIComponent(url)}`;
     try {
       const ctl = new AbortController();

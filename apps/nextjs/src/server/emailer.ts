@@ -7,6 +7,7 @@
 import { findDefaultCurrency, getDb, getDbWrite, getSetting, listCurrencies, nowTimestamp } from "./db";
 import { templateVars } from "./emailDefaults";
 import { renderTemplate } from "./twig";
+import { publicOrigin } from "./public-url";
 
 interface TemplateRow {
   id: number; action_code: string; category: string | null; enabled: number;
@@ -80,7 +81,10 @@ export async function companyContext(): Promise<Record<string, unknown>> {
     name: await getSetting("company_name"),
     email: await getSetting("company_email"),
     signature: await getSetting("company_signature"),
-    www: process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080",
+    // PHP's company www is SYSTEM_URL verbatim (trailing slash on the
+    // reference, from the config url) — same slashed shape as the
+    // API's systemUrl(), not the bare origin.
+    www: publicOrigin() + "/",
   };
 }
 
@@ -106,7 +110,7 @@ export async function queueTemplatedEmail(
       ...ctx,
       guest: { system_company: company, system_email: { signature: company.signature } },
       default_currency: (await findDefaultCurrency())?.code ?? "USD",
-      __baseUrl: (process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080") + "/",
+      __baseUrl: publicOrigin() + "/",
       __currencyFormats: formats,
     };
     const subject = renderTemplate(t.subject, full);

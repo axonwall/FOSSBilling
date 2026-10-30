@@ -2,6 +2,7 @@ import { createHash, createHmac } from "node:crypto";
 import { getDb, getDbWrite, nowTimestamp } from "./db";
 import { FbError } from "./dispatch";
 import { renderTemplateStrict } from "./twig";
+import { publicOrigin } from "./public-url";
 import { STRIPE_ONE_TIME_FORM, STRIPE_SUBSCRIPTION_FORM } from "./stripe-forms";
 
 /**
@@ -188,7 +189,7 @@ export function moneyFormat(amount: number, currency: string | null): string {
 }
 
 function systemBase(): string {
-  return (process.env.FOSSBILLING_URL ?? "http://127.0.0.1:8080").replace(/\/$/, "");
+  return publicOrigin();
 }
 
 function toolsUrl(path: string): string {

@@ -195,10 +195,16 @@ def invariants():
     return out
 
 
+# cart_seq is NOT in BASE_INV: it is a high-water mark, not data
+# (DELETE never rewinds sqlite_sequence, so cleaned login-created
+# cart rows legitimately advance it past the R5j pin of 305). The
+# invariant is the count (283); the sequence must only never fall
+# below its R5j floor before the run, and must be restored to its
+# start value after it (the suite snapshots + restores it).
 BASE_INV = {"invoice": 323, "client_order": 11, "email_queue": 67, "service_custom": 17, "extension": 6,
             "extension_meta": 3, "setting": 38, "admin": 2, "currency": 1, "client": 3, "support_ticket": 2,
             "tld": 1, "activity_client_email": 0, "invoice_event": 776, "client_order_meta": 0,
-            "cart": 283, "cart_seq": 305, "config_hash": "6e3c529673c1"}
+            "cart": 283, "config_hash": "6e3c529673c1"}
 
 
 def err(env):
@@ -374,6 +380,8 @@ def main():
     inv_before = invariants()
     for k, v in BASE_INV.items():
         check(f"inv-before {k}", inv_before.get(k) == v, f"{inv_before.get(k)} != {v}")
+    check("inv-before cart_seq >= 305 (high-water mark)",
+          inv_before.get("cart_seq", 0) >= 305, f"{inv_before.get('cart_seq')}")
     check("counters empty before", counters() == [], str(counters()))
 
     # Sessions: PHP-dev logins reused as TS sessions (same session table).
@@ -806,6 +814,9 @@ def main():
         inv_after = invariants()
         for k, v in BASE_INV.items():
             check(f"inv-after {k}", inv_after.get(k) == v, f"{inv_after.get(k)} != {v}")
+        check("inv-after cart_seq restored to start value",
+              inv_after.get("cart_seq") == inv_before.get("cart_seq"),
+              f"{inv_after.get('cart_seq')} != {inv_before.get('cart_seq')}")
         check("counters empty after", counters() == [], str(counters()))
         for port, name in ((3001, "ts :3001"),):
             try:

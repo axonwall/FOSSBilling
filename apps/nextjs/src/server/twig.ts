@@ -7,6 +7,13 @@
 // before). Anything outside the subset renders as an empty string
 // rather than throwing, mirroring how a missing variable behaves in
 // the templates' default-guarded style.
+//
+// R6a: the |url filter's no-__baseUrl fallback uses publicOrigin()
+// (FB_PUBLIC_URL / config url) instead of the old hardcoded PHP
+// origin — renders without an explicit base must name the Next
+// origin now, not dead PHP.
+
+import { publicOrigin } from "./public-url";
 
 type Ctx = Record<string, unknown>;
 
@@ -239,7 +246,7 @@ function evalFilterChain(expr: string, ctx: Ctx & { __baseUrl?: string; __curren
       case "trim": value = String(value ?? "").trim(); break;
       case "url": {
         const named = parseNamedArgs(f.args);
-        const base = (ctx.__baseUrl ?? "http://127.0.0.1:8080/").replace(/\/?$/, "/");
+        const base = (ctx.__baseUrl ?? `${publicOrigin()}/`).replace(/\/?$/, "/");
         let path = String(value ?? "");
         let qs = "";
         if (named.query) {

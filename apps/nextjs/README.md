@@ -14,14 +14,19 @@ recommended defaults unless Josh directs otherwise).
   capture corpus (guest → signup → login → order → invoice → paid).
 - **Phase 1 (this app):** Next.js 15 / React 19 / TypeScript frontend that
   owns no billing state. All data flows through the typed dispatcher client
-  in `src/lib/fossbilling.ts` (server-side) or the same-origin proxy in
-  `src/app/api/fb/[...path]/route.ts` (browser), both targeting the PHP API
-  at `FOSSBILLING_URL` (default `http://127.0.0.1:8080`).
+  in `src/lib/fossbilling.ts` (server-side, in-process dispatch since R6a)
+  or the same-origin seam route in `src/app/api/fb/[...path]/route.ts`
+  (browser), both targeting the TS implementations in `src/server/`
+  against the shared database. (R6a deleted the PHP proxy and
+  `FOSSBILLING_URL`; URL construction now uses `FB_PUBLIC_URL`, falling
+  back to the config-url SYSTEM_URL semantics — see
+  `docs/nextjs-strangler/phase5/findings-r6a.md`.)
 - **Phase 2 (started):** backend modules are being ported to TypeScript
   behind the same dispatcher contract, sharing the PHP database. The seam
   lives in `src/server/` (dispatcher, DB layer, PHP-session auth); the
-  proxy serves a call from TS only when its module is enabled via
-  `FB_TS_MODULES` (comma list) and falls back to PHP otherwise. Ported so
+  seam serves a call from TS when its module is enabled via
+  `FB_TS_MODULES` (comma list); since R6a there is no PHP fallback —
+  unported calls return the TS 740. Ported so
   far: `system` (guest reads), `currency` (guest + admin reads and admin
   mutations), `profile` (client + admin get), `client` (admin
   get/get_list/get_pairs), `staff` (admin reads, mutations, and group
@@ -31,25 +36,25 @@ recommended defaults unless Josh directs otherwise).
   verified at 16/16 + 32/32 + 21/21 + 27/27 parity against PHP (96
   checks). Runtime-bound System endpoints (env, updater, cache) stay
   on PHP by design; see `docs/nextjs-strangler/phase2/`.
-  (`FB_PARITY=1` deep-compares TS vs PHP responses; see
-  `docs/nextjs-strangler/phase2/`). TS modules need
+  (`FB_PARITY=1` was removed in R6a with the proxy; parity suites in
+  `docs/nextjs-strangler/phase5/` supersede it.) TS modules need
   `FB_DATABASE_PATH` pointing at the install's SQLite file in the
   reference setup.
 
 ## Run
 
 ```bash
-# 1. Run FOSSBilling PHP (existing install) on :8080
-# 2. Then:
+# The TS seam reads the shared database directly (FB_DATABASE_PATH);
+# PHP is no longer consulted at runtime (R6a). Then:
 npm install
-FOSSBILLING_URL=http://127.0.0.1:8080 npm run dev   # http://localhost:3001
+FB_PUBLIC_URL=http://127.0.0.1:3001 npm run dev   # http://localhost:3001
 ```
 
 ## Pages
 
 - `/` — client area home; renders `guest/system/company` live (smoke test
   for the seam).
-- `/login` — client sign-in via the proxy to `guest/client/login`
+- `/login` — client sign-in via `/api/fb` to `guest/client/login`
   (CSRF: `fossbilling_csrf` cookie → `CSRFToken` field).
 - `/signup` — client signup via `guest/client/create` (auto-login on
   success).
@@ -58,8 +63,8 @@ FOSSBILLING_URL=http://127.0.0.1:8080 npm run dev   # http://localhost:3001
 - `/invoices` — client invoice list (`client/invoice/get_list`, session
   cookie forwarded server-side).
 - `/invoices/[hash]` — invoice detail (client-role access is by hash).
-- `/invoices/[hash]/pdf` — streams the PHP web route
-  `GET /invoice/pdf/<hash>` through this origin.
+- `/invoices/[hash]/pdf` — TS-generated invoice PDF (Phase 4 batch 2),
+  not proxied from PHP's mPDF route.
 - `/support`, `/support/new`, `/support/[id]` — ticket list, create, and
   detail with reply/close (`client/support/*`).
 - `/admin` — staff dashboard (`admin/stats/get_summary` +
@@ -69,10 +74,9 @@ FOSSBILLING_URL=http://127.0.0.1:8080 npm run dev   # http://localhost:3001
   theme's top surfaces, ported in Phase 1 batch 2. Deeper admin modules
   remain on the PHP theme until later phases.
 - `/api/fb/__prime` — cookie priming: the `fossbilling_csrf` cookie is set
-  only by PHP **web pages**, never by API responses (verified live,
-  Phase 1), so this proxy route relays the PHP login page's cookies and
-  `fbPost` calls it before the browser's first POST. See
-  `docs/nextjs-strangler/phase1/findings.md`.
+  by login or by this TS-native route (session's token, or a fresh
+  token with no session) and `fbPost` calls it before the browser's
+  first POST. See `docs/nextjs-strangler/phase5/findings-r6a.md`.
 
 ## Auth facts (verified live, Phase 0)
 
