@@ -62,7 +62,13 @@ def flatten(d, prefix=""):
 TABLES = ["service_domain", "service_hosting", "service_hosting_server",
           "service_hosting_hp", "tld", "tld_registrar",
           "service_downloadable", "service_downloadable_file",
-          "service_license", "service_custom", "client_order", "product"]
+          "service_license", "service_custom", "client_order", "product",
+          # R5g harness fix: PHP client login creates a cart row for the
+          # new session, and parity21's guest/client/login case leaked
+          # exactly one cart row + one session row per run. Snapshot both
+          # so a normal run restores them (a killed run still needs
+          # manual cleanup, like every other suite).
+          "cart", "session"]
 
 
 def main():
