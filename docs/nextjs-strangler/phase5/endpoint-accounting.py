@@ -39,13 +39,13 @@ REMOVED = {
     ("admin", "theme", m) for m in ["select", "preset_delete", "preset_select"]
 }
 
-DEFERRED = {
-    ("admin", "security", m) for m in ["ip_lookup", "run_check", "run_checks"]
-}
+DEFERRED = set()
 # R5a closed the six system deferrals (localization_settings,
 # update_localization_settings, error_reporting_enabled,
 # toggle_error_reporting, last_error_reporting_change, instance_id) —
 # they now have handlers, so they count as resolving, not deferred.
+# R5i closed the last three (security ip_lookup, run_check,
+# run_checks) — DEFERRED is empty, so accounting is 548 + 31 + 0.
 
 # Magic __call: served by the servicecustom magic handler (R4d), not by a
 # literal register() call. The catalog holds exactly one __call entry.

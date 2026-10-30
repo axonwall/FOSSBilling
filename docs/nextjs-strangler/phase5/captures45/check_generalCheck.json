@@ -1,0 +1,8 @@
+{
+  "result": {
+    "result": "failed",
+    "message": "- Fail: HTTPS is not enforced.\n- Warning: Debug mode is enabled for your FOSSBilling installation.\n- Warning: You appear to be using a non-release version of FOSSBilling.\n",
+    "id": "generalCheck"
+  },
+  "error": null
+}

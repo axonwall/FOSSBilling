@@ -1,0 +1,25 @@
+{
+  "result": [
+    {
+      "id": "dangerousFunctions",
+      "name": "Dangerous PHP functions",
+      "description": "Checks to see if potentially dangerous PHP functions are enabled."
+    },
+    {
+      "id": "generalCheck",
+      "name": "General Check",
+      "description": "Checks general information such as the FOSSBilling configuration."
+    },
+    {
+      "id": "phpVersion",
+      "name": "PHP Version Check",
+      "description": "Checks if the PHP version FOSSBilling is running on is still receiving security support."
+    },
+    {
+      "id": "webserver",
+      "name": "Webserver Check",
+      "description": "Performs simple checks to validate your if webserver blocks access to sensitive files."
+    }
+  ],
+  "error": null
+}

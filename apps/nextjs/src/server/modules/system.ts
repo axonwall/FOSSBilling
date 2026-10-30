@@ -400,7 +400,7 @@ register("admin", "system", "update_params", async (ctx: CallContext) => {
 
 /**
  * R5a — the six deferred system endpoints (the other three deferred,
- * security ip_lookup/run_check/run_checks, belong to R5i).
+ * security ip_lookup/run_check/run_checks, were ported in R5i).
  * Permission keys are PHP's, including the pinned asymmetry:
  * update_localization_settings uses system/update_params, NOT
  * system/manage_settings — do not "fix" this into uniformity.

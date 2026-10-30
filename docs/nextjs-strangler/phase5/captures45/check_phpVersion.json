@@ -1,0 +1,8 @@
+{
+  "result": {
+    "result": "failed",
+    "message": "Failed to lookup PHP version status.",
+    "id": "phpVersion"
+  },
+  "error": null
+}

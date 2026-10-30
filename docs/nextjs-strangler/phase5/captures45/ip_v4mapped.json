@@ -1,0 +1,11 @@
+{
+  "result": {
+    "ip": {
+      "address": "::ffff:8.8.8.8",
+      "type": "IPv6"
+    },
+    "country": [],
+    "asn": []
+  },
+  "error": null
+}

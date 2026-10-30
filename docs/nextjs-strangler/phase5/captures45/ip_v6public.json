@@ -1,0 +1,21 @@
+{
+  "result": {
+    "ip": {
+      "address": "2001:4860:4860::8888",
+      "type": "IPv6"
+    },
+    "country": {
+      "name": "United States",
+      "flag": "🇺🇸",
+      "currencies": [
+        "USD",
+        "USN"
+      ]
+    },
+    "asn": {
+      "asnNumber": 15169,
+      "asnOrg": "GOOGLE"
+    }
+  },
+  "error": null
+}

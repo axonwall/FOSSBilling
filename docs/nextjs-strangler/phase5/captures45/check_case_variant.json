@@ -1,0 +1,7 @@
+{
+  "result": null,
+  "error": {
+    "message": "The check GeneralCheck does not exist.",
+    "code": 9999
+  }
+}
