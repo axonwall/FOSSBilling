@@ -29,6 +29,14 @@ export interface Db {
   /** Misc execution (no result needed). Transactions use withTransaction. */
   exec(sql: string): Promise<void>;
   /**
+   * Raw execution WITHOUT the driver's SQL translation (R5j: the
+   * installer's content.sql replay). Implemented by DbPg (direct
+   * runner.query, still inside the transaction when called on a tx
+   * handle) and DbSqlite (identical to exec). Absent on other handles,
+   * where callers fall back to exec.
+   */
+  rawExec?(sql: string): Promise<void>;
+  /**
    * Single-row INSERT returning the new id. Postgres appends
    * RETURNING id; SQLite reads lastInsertRowid. The SQL must be a plain
    * single-row INSERT with a column list and no RETURNING clause.
@@ -66,6 +74,9 @@ export class DbSqlite implements Db {
     return new SqliteStatement(this.conn.prepare(sql));
   }
   async exec(sql: string): Promise<void> {
+    this.conn.exec(sql);
+  }
+  async rawExec(sql: string): Promise<void> {
     this.conn.exec(sql);
   }
   async insertAndGetId(sql: string, ...params: unknown[]): Promise<number> {

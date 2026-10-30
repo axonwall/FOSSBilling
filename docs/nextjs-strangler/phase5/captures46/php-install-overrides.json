@@ -1,0 +1,23 @@
+{
+  "_source": "src/install/install.php getConfigOutput, transcribed from source (not executed)",
+  "security.force_https": "computed: systemUrl starts with https://",
+  "security.trusted_proxies": "computed: {enabled, proxies, headers} only when trusted-proxy enabled, else sample default {enabled: false, proxies: [], headers: x_forwarded}",
+  "debug_and_monitoring.report_errors": "computed: (bool) installer diagnostics choice (error_reporting session value)",
+  "debug_and_monitoring.debug": "computed: isDebug, false on a fresh install",
+  "update_branch": "computed: 'preview' if isPreviewVersion else 'release'; 0.0.1 is preview, so fresh installs get 'preview'",
+  "info.instance_id": "computed: fresh UUID v4 (Uuid::v4), never edited afterwards",
+  "info.salt": "computed: bin2hex(random_bytes(16)) evaluated at require time, i.e. fresh 32 lowercase hex chars per getConfigOutput call; TS equivalent crypto.randomBytes(16).toString('hex')",
+  "url": "computed: systemUrl with scheme stripped, trailing slash (normalizeSystemUrl: lowercase scheme+host, optional port, '/' + trimmed path)",
+  "path_data": "computed: PATH_DATA of the install root",
+  "db": "computed: sqlite {driver: pdo_sqlite, path} or {driver, host, port normalized (pgsql 5432 / mysql 3306), name, user, password}",
+  "twig.cache": "computed: PATH_CACHE of the install root",
+  "disable_auto_cron": "computed: !preview && !dev; false on a fresh preview install",
+  "_dropped_by_r5j_scope": [
+    ".htaccess fetch from GitHub (install.php throws on failure; Next routing does not use .htaccess, so a fetch failure must not fail an install)",
+    "client theme config template copy (no theme files in Next)"
+  ],
+  "_not_in_install_portable": [
+    "generateEmailTemplates (install.php post-step): syncs file-backed email templates for ACTIVE modules into email_template rows; out of R5j scope \u2014 the TS email service falls back to emailDefaults when no DB row exists, and activation syncs rows in both stacks",
+    "install.php deletion after install (web-endpoint hygiene; a standalone script has nothing to delete)"
+  ]
+}

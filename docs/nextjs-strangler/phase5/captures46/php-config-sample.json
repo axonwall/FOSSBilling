@@ -1,0 +1,87 @@
+{
+    "security": {
+        "mode": "strict",
+        "force_https": true,
+        "trusted_proxies": {
+            "enabled": false,
+            "proxies": [],
+            "headers": "x_forwarded"
+        },
+        "session_lifespan": 7200,
+        "session_regeneration_grace_period": 300,
+        "perform_session_fingerprinting": true,
+        "debug_fingerprint": false
+    },
+    "debug_and_monitoring": {
+        "debug": false,
+        "log_stacktrace": true,
+        "stacktrace_length": 25,
+        "report_errors": false
+    },
+    "info": {
+        "salt": "<redacted: 32 lowercase hex chars, fresh per require>",
+        "instance_id": "XXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX"
+    },
+    "url": "localhost/",
+    "admin_area_prefix": "/admin",
+    "update_branch": "release",
+    "maintenance_mode": {
+        "enabled": false,
+        "allowed_urls": [],
+        "allowed_ips": []
+    },
+    "disable_auto_cron": true,
+    "i18n": {
+        "locale": "en_US",
+        "auto_detect_locale": true,
+        "timezone": "UTC",
+        "date_format": "medium",
+        "time_format": "short",
+        "datetime_pattern": ""
+    },
+    "path_data": "/home/hatch/scratch/fossbilling/repo/src/data",
+    "db": {
+        "driver": "pdo_mysql",
+        "host": "127.0.0.1",
+        "name": "fossbilling",
+        "user": "foo",
+        "password": "bar",
+        "port": "3306"
+    },
+    "cache": {
+        "driver": "filesystem",
+        "redis": {
+            "host": "127.0.0.1",
+            "port": 6379,
+            "password": null,
+            "database": 0,
+            "tls": {
+                "enabled": false,
+                "verify_peer": true,
+                "verify_peer_name": true,
+                "cafile": null,
+                "allow_self_signed": false
+            }
+        },
+        "memcached": {
+            "host": "127.0.0.1",
+            "port": 11211
+        }
+    },
+    "twig": {
+        "debug": false,
+        "auto_reload": true,
+        "cache": "/home/hatch/scratch/fossbilling/repo/src/data/cache",
+        "strict_variables": true
+    },
+    "api": {
+        "require_referrer_header": false,
+        "allowed_ips": [],
+        "CSRFPrevention": true
+    },
+    "rate_limiter": {
+        "enabled": true,
+        "whitelist_ips": [],
+        "policies": []
+    }
+}

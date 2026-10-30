@@ -653,6 +653,10 @@ export class DbPg implements Db {
   async exec(sql: string): Promise<void> {
     await this.queryRows(sql, []);
   }
+  /** Direct runner.query, bypassing translateSql (R5j installer replay). */
+  async rawExec(sql: string): Promise<void> {
+    await this.runner.query(sql);
+  }
   async insertAndGetId(sql: string, ...params: unknown[]): Promise<number> {
     const trimmed = sql.trim().replace(/;\s*$/, "");
     if (!/^\s*INSERT\s+INTO\s+/i.test(trimmed)) {
