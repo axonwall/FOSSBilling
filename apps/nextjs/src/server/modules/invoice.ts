@@ -52,8 +52,8 @@ import {
   insertInvoiceEvent,
   listInvoiceEvents,
   listOrders,
-  nextNrForSerie,
   nowTimestamp,
+  reserveNumericParamValue,
   setSettingValue,
   updateOrderRow,
   type ClientRow,
@@ -216,7 +216,14 @@ export async function invoiceArray(
       : {}),
   }));
   const { tax, subtotal, total } = invoiceTotals(items, inv.taxrate ?? "0");
-  const subscribableLine = items.find((it) => it.type === "order" && it.period);
+  // R6b: PHP's rule is NOT "has an order line with a period" (the old
+  // TS rule): Subscription::getSubscriptionPeriodByInvoiceId scans
+  // ALL lines by id — skips zero/negative lines, returns null if any
+  // positive line has an empty period or if positive periods differ,
+  // else the single period. A recurring checkout's setup line (positive
+  // price, no period) therefore makes the invoice NOT subscribable,
+  // where TS previously said true. The shadow harness caught it.
+  const subscriptionPeriod = subscriptionPeriodForItems(items);
   const client = await findClientById(inv.client_id);
   const company = await getCompany();
   const isDraft = !inv.issued;
@@ -315,13 +322,13 @@ export async function invoiceArray(
     income: (inv.base_income ?? 0) - (inv.base_refund ?? 0),
     refund: inv.refund === null || inv.refund === undefined ? 0 : formatDecimal(inv.refund),
     credit: inv.credit === null || inv.credit === undefined ? 0 : formatDecimal(inv.credit),
-    subscribable: subscribableLine !== undefined,
-    ...(subscribableLine
+    subscribable: subscriptionPeriod !== null,
+    ...(subscriptionPeriod
       ? {
           subscription: {
-            unit: subscribableLine.period!.slice(-1),
-            cycle: parseInt(subscribableLine.period!, 10) || 1,
-            period: subscribableLine.period,
+            unit: subscriptionPeriod.slice(-1),
+            cycle: parseInt(subscriptionPeriod, 10) || 1,
+            period: subscriptionPeriod,
           },
         }
       : {}),
@@ -352,7 +359,7 @@ function formatDecimal(v: number): string {
 async function summaryArray(inv: InvoiceRowFull): Promise<Record<string, unknown>> {
   const items = await listInvoiceItems(inv.id);
   const { tax, subtotal, total } = invoiceTotals(items, inv.taxrate ?? "0");
-  const subscribableLine = items.find((it) => it.type === "order" && it.period);
+  const subscriptionPeriod = subscriptionPeriodForItems(items);
   const client = await findClientById(inv.client_id);
   return {
     id: inv.id,
@@ -606,7 +613,8 @@ register("admin", "invoice", "mark_as_paid", async (ctx: CallContext) => {
       amount: total,
       currency: inv.currency,
       status: "processed",
-      ip: null,
+      // R6b: PHP records the request IP on admin-created transactions.
+      ip: ctx.ip ?? null,
       ipn,
       ipn_hash: createHash("sha256").update(ipn).digest("hex"),
       note: transactionId ? `Custom transaction No: ${transactionId}` : null,
@@ -892,8 +900,9 @@ async function checkGuestInvoiceAuth(inv: InvoiceRowFull, ctx: CallContext): Pro
  * lines must share one non-empty period (zero-price lines skipped, no
  * items -> null). Deliberately NOT the type-filtered invoiceArray
  * subscription: PHP's payment path uses this pure query. */
-async function subscriptionPeriodForInvoice(invoiceId: number): Promise<string | null> {
-  const items = await listInvoiceItems(invoiceId);
+function subscriptionPeriodForItems(
+  items: { price: number; quantity: number; period: string | null }[],
+): string | null {
   if (items.length === 0) return null;
   let period: string | null = null;
   for (const it of items) {
@@ -908,6 +917,10 @@ async function subscriptionPeriodForInvoice(invoiceId: number): Promise<string |
     if (period !== p) return null;
   }
   return period;
+}
+
+async function subscriptionPeriodForInvoice(invoiceId: number): Promise<string | null> {
+  return subscriptionPeriodForItems(await listInvoiceItems(invoiceId));
 }
 
 register("guest", "invoice", "payment", async (ctx: CallContext) => {
@@ -1623,7 +1636,9 @@ export async function refundInvoiceCore(inv: InvoiceRowFull, onlyIds: Set<number
   );
   const amount = onlyIds ? refundAmount : remaining;
   const serie = "CN-";
-  const nr = String(await nextNrForSerie(serie));
+  // R6b: PHP numbers credit notes from the dedicated counter, not
+  // MAX(nr)+1 (see reserveNumericParamValue).
+  const nr = String(await reserveNumericParamValue("invoice_cn_starting_number", 1));
   const noteId = await insertInvoiceNote(
     noteRowFrom(inv, {
       serie,
@@ -1675,7 +1690,15 @@ export async function refundInvoiceCore(inv: InvoiceRowFull, onlyIds: Set<number
   // call mirrors both PHP writes.
   await countIncome(inv.id);
   await insertInvoiceEvent(inv.id, "refunded", { status: "refunded" });
-  await queueInvoiceEmail("mod_invoice_refunded", noteId);
+  // R6b: the refunded template renders original_invoice.serie_nr
+  // (mod_invoice_refunded.html.twig:40); without it TS rendered an
+  // empty "against invoice" slot. Same serie_nr formula as
+  // invoiceEmailContext.
+  await queueInvoiceEmail("mod_invoice_refunded", noteId, {
+    original_invoice: {
+      serie_nr: `${inv.serie ?? ""}${String(inv.nr ?? inv.id).padStart(5, "0")}`,
+    },
+  });
   return noteId;
 }
 
@@ -1730,7 +1753,8 @@ register("admin", "invoice", "debit", async (ctx: CallContext) => {
   // matches: error + nothing changed.
   await assertCountIncomeWritable(String(inv.currency ?? "USD"));
   const serie = "DN-";
-  const nr = String(await nextNrForSerie(serie));
+  // R6b: same counter rule as credit notes (invoice_dn_starting_number).
+  const nr = String(await reserveNumericParamValue("invoice_dn_starting_number", 1));
   const noteId = await insertInvoiceNote(
     noteRowFrom(inv, {
       serie,
@@ -1975,7 +1999,9 @@ export async function runBatchPayWithCredits(clientId?: number): Promise<boolean
  * executed. Renew-task execution is a pinned gap (TS has order-renew
  * logic but wiring renew-task execution into the batch is a separate
  * piece); deposit/custom items are likewise not marked here (PHP
- * marks them executed unconditionally — pinned gap). Divergence,
+ * marks them executed unconditionally — since R6b the custom/deposit
+ * branch below covers them; only renew-task execution stays a pinned
+ * gap). Divergence,
  * proven by capture42 §I: a bare order with service_type NULL fails
  * PHP activation (mod_service('service') throws "Module service
  * does not have a service class") leaving attempts 1 + a note and
@@ -1999,6 +2025,22 @@ export async function runBatchActivatePaid(): Promise<void> {
       )
       .run(nowTimestamp(), inv.id, order.id);
   }
+  // R6b: PHP's doBatchPaidInvoiceActivation executes EVERY
+  // non-executed item of every paid invoice (Service.php:4125-4165),
+  // and executeTask marks custom + deposit items executed
+  // unconditionally (ServiceInvoiceItem.php:193-205). The order loop
+  // above never touched them, so the 106 custom/void items of paid
+  // reference invoices never executed on TS — the shadow harness
+  // caught it. Order-task items keep the order-driven path above
+  // (renew-task execution remains a pinned gap).
+  await getDbWrite()
+    .prepare(
+      `UPDATE invoice_item SET status = 'executed', updated_at = ?
+       WHERE status NOT IN ('executed', 'failed')
+         AND type IN ('custom', 'deposit')
+         AND invoice_id IN (SELECT id FROM invoice WHERE status = 'paid')`,
+    )
+    .run(nowTimestamp());
 }
 
 // --- generate -----------------------------------------------------------------

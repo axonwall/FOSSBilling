@@ -52,6 +52,46 @@ import "@/server/modules";
 
 export const VALID_ROLES = new Set(["admin", "client", "guest"]);
 
+/**
+ * Expand form-encoded bracket keys (new_item[price], items[490][title],
+ * ids[0]) into nested objects — the shape PHP builds natively from
+ * $_POST/$_GET and JSON bodies already carry in rawParams. R6b: the
+ * route previously left rawParams EMPTY for urlencoded bodies, so
+ * every handler reading a nested object from rawParams (invoice
+ * update's new_item/items, refund/debit items, theme client) silently
+ * dropped form-posted nested params while returning success — the
+ * shadow harness caught invoice update losing its line. Expansion
+ * applies to rawParams ONLY: params keeps the flat literal keys, so
+ * handlers that expand specific bracket keys themselves (cart
+ * staffAddParams, client/email ids[]) are unaffected. Values stay
+ * strings (PHP form values are strings too); CSRFToken is skipped
+ * (auth material, enforced separately from params/header).
+ */
+export function expandBracketParams(
+  params: Record<string, string>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(params)) {
+    if (k === "CSRFToken") continue;
+    const m = /^([^\[]+)((?:\[[^\]]*\])*)$/.exec(k);
+    if (!m) {
+      out[k] = v;
+      continue;
+    }
+    const parts = [m[1]];
+    for (const seg of m[2].matchAll(/\[([^\]]*)\]/g)) parts.push(seg[1]);
+    let cur: Record<string, unknown> = out;
+    for (let i = 0; i < parts.length - 1; i++) {
+      const p = parts[i] === "" ? String(Object.keys(cur).length) : parts[i];
+      if (typeof cur[p] !== "object" || cur[p] === null || Array.isArray(cur[p]))
+        cur[p] = {};
+      cur = cur[p] as Record<string, unknown>;
+    }
+    cur[parts[parts.length - 1]] = v;
+  }
+  return out;
+}
+
 /** PHP router error for paths the API router does not recognize. */
 export function unknownApiError(path: string[]): FbError {
   return new FbError(`Unknown API call ${path.join("/")}`, 879);

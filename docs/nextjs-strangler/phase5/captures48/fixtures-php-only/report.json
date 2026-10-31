@@ -1,0 +1,1150 @@
+{
+  "scenarios": [
+    {
+      "id": "invoice-mixed-taxed-and-untaxed-lines",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "prepare",
+            "params": {
+              "client_id": 1
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "update",
+            "params": {
+              "id": 489,
+              "new_item": {
+                "price": 100,
+                "quantity": 1,
+                "taxed": true,
+                "title": "Taxed line"
+              }
+            },
+            "json": true
+          }
+        },
+        {
+          "n": 2,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "update",
+            "params": {
+              "id": 489,
+              "new_item": {
+                "price": 50,
+                "quantity": 1,
+                "taxed": false,
+                "title": "Untaxed line"
+              }
+            },
+            "json": true
+          }
+        },
+        {
+          "n": 3,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "issue",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 4,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "get",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    },
+    {
+      "id": "invoice-quantity-and-rounding",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "prepare",
+            "params": {
+              "client_id": 1
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "update",
+            "params": {
+              "id": 489,
+              "new_item": {
+                "price": 33.33,
+                "quantity": 3,
+                "taxed": true,
+                "title": "Bulk line"
+              }
+            },
+            "json": true
+          }
+        },
+        {
+          "n": 2,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "issue",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 3,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "get",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    },
+    {
+      "id": "cart-once-product-checkout",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "anon",
+          "request": {
+            "kind": "api",
+            "role": "guest",
+            "module": "cart",
+            "method": "reset",
+            "params": {},
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "anon",
+          "request": {
+            "kind": "api",
+            "role": "guest",
+            "module": "cart",
+            "method": "add_item",
+            "params": {
+              "id": 3
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 2,
+          "persona": "anon",
+          "request": {
+            "kind": "api",
+            "role": "guest",
+            "module": "cart",
+            "method": "get",
+            "params": {},
+            "json": false
+          }
+        },
+        {
+          "n": 3,
+          "persona": "client",
+          "request": {
+            "kind": "api",
+            "role": "client",
+            "module": "cart",
+            "method": "checkout",
+            "params": {
+              "gateway_id": 1
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 4,
+          "persona": "anon",
+          "request": {
+            "kind": "api",
+            "role": "client",
+            "module": "order",
+            "method": "get",
+            "params": {
+              "id": 182
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 5,
+          "persona": "client",
+          "request": {
+            "kind": "api",
+            "role": "client",
+            "module": "invoice",
+            "method": "get",
+            "params": {
+              "hash": "eb73a002c0cc877e15686a8a4a17fb75f750d9dc7d7a944259"
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    },
+    {
+      "id": "cart-promo-percentage",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "anon",
+          "request": {
+            "kind": "api",
+            "role": "guest",
+            "module": "cart",
+            "method": "reset",
+            "params": {},
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "anon",
+          "request": {
+            "kind": "api",
+            "role": "guest",
+            "module": "cart",
+            "method": "add_item",
+            "params": {
+              "id": 3
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 2,
+          "persona": "anon",
+          "request": {
+            "kind": "api",
+            "role": "guest",
+            "module": "cart",
+            "method": "apply_promo",
+            "params": {
+              "promocode": "FIXTURE10"
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 3,
+          "persona": "anon",
+          "request": {
+            "kind": "api",
+            "role": "guest",
+            "module": "cart",
+            "method": "get",
+            "params": {},
+            "json": false
+          }
+        },
+        {
+          "n": 4,
+          "persona": "client",
+          "request": {
+            "kind": "api",
+            "role": "client",
+            "module": "cart",
+            "method": "checkout",
+            "params": {
+              "gateway_id": 1
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 5,
+          "persona": "client",
+          "request": {
+            "kind": "api",
+            "role": "client",
+            "module": "invoice",
+            "method": "get",
+            "params": {
+              "hash": "64ffc7761561973d6c312e6ae5e05b423ff646"
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    },
+    {
+      "id": "pay-with-credits-consumes-balance",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "prepare",
+            "params": {
+              "client_id": 1
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "update",
+            "params": {
+              "id": 489,
+              "new_item": {
+                "price": 30,
+                "quantity": 1,
+                "title": "Credit-paid line"
+              }
+            },
+            "json": true
+          }
+        },
+        {
+          "n": 2,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "issue",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 3,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "pay_with_credits",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 4,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "get",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    },
+    {
+      "id": "mark-as-paid-via-custom-gateway",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "prepare",
+            "params": {
+              "client_id": 1
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "update",
+            "params": {
+              "id": 489,
+              "new_item": {
+                "price": 25,
+                "quantity": 1,
+                "title": "Gateway-paid line"
+              }
+            },
+            "json": true
+          }
+        },
+        {
+          "n": 2,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "issue",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 3,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "mark_as_paid",
+            "params": {
+              "gateway_id": 1,
+              "id": 489,
+              "transactionId": "fixture-txn-1"
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 4,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "get",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    },
+    {
+      "id": "cart-recurring-with-setup-checkout",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "anon",
+          "request": {
+            "kind": "api",
+            "role": "guest",
+            "module": "cart",
+            "method": "reset",
+            "params": {},
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "anon",
+          "request": {
+            "kind": "api",
+            "role": "guest",
+            "module": "cart",
+            "method": "add_item",
+            "params": {
+              "id": 9,
+              "period": "1M"
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 2,
+          "persona": "anon",
+          "request": {
+            "kind": "api",
+            "role": "guest",
+            "module": "cart",
+            "method": "get",
+            "params": {},
+            "json": false
+          }
+        },
+        {
+          "n": 3,
+          "persona": "client",
+          "request": {
+            "kind": "api",
+            "role": "client",
+            "module": "cart",
+            "method": "checkout",
+            "params": {
+              "gateway_id": 1
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 4,
+          "persona": "client",
+          "request": {
+            "kind": "api",
+            "role": "client",
+            "module": "invoice",
+            "method": "get",
+            "params": {
+              "hash": "b36ef7028945f0ba9f9ef0489e2f92e226c4"
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    },
+    {
+      "id": "tax-state-beats-country-and-global",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "prepare",
+            "params": {
+              "client_id": 1
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "update",
+            "params": {
+              "id": 489,
+              "new_item": {
+                "price": 100,
+                "quantity": 1,
+                "taxed": true,
+                "title": "Taxed line"
+              }
+            },
+            "json": true
+          }
+        },
+        {
+          "n": 2,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "issue",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 3,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "get",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    },
+    {
+      "id": "tax-country-rule-when-no-state-match",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "prepare",
+            "params": {
+              "client_id": 319
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "update",
+            "params": {
+              "id": 489,
+              "new_item": {
+                "price": 100,
+                "quantity": 1,
+                "taxed": true,
+                "title": "Taxed line"
+              }
+            },
+            "json": true
+          }
+        },
+        {
+          "n": 2,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "issue",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 3,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "get",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    },
+    {
+      "id": "tax-global-fallback",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "prepare",
+            "params": {
+              "client_id": 319
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "update",
+            "params": {
+              "id": 489,
+              "new_item": {
+                "price": 100,
+                "quantity": 1,
+                "taxed": true,
+                "title": "Taxed line"
+              }
+            },
+            "json": true
+          }
+        },
+        {
+          "n": 2,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "issue",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 3,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "get",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    },
+    {
+      "id": "tax-no-rule-means-zero",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "prepare",
+            "params": {
+              "client_id": 1
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "update",
+            "params": {
+              "id": 489,
+              "new_item": {
+                "price": 100,
+                "quantity": 1,
+                "taxed": true,
+                "title": "Taxed line"
+              }
+            },
+            "json": true
+          }
+        },
+        {
+          "n": 2,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "issue",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 3,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "get",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    },
+    {
+      "id": "tax-exempt-client-pays-none",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "prepare",
+            "params": {
+              "client_id": 319
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "update",
+            "params": {
+              "id": 489,
+              "new_item": {
+                "price": 100,
+                "quantity": 1,
+                "taxed": true,
+                "title": "Taxed line"
+              }
+            },
+            "json": true
+          }
+        },
+        {
+          "n": 2,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "issue",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 3,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "get",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    },
+    {
+      "id": "tax-disabled-globally",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "prepare",
+            "params": {
+              "client_id": 1
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "update",
+            "params": {
+              "id": 489,
+              "new_item": {
+                "price": 100,
+                "quantity": 1,
+                "taxed": true,
+                "title": "Taxed line"
+              }
+            },
+            "json": true
+          }
+        },
+        {
+          "n": 2,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "issue",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 3,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "get",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    }
+  ],
+  "php_port": 18081,
+  "ts_port": 3012,
+  "php_db": "/home/hatch/scratch/fossbilling/r5-logs/shadow-run-39778/php/src/data/fossbilling.sqlite",
+  "ts_db": null
+}

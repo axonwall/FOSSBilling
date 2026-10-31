@@ -141,14 +141,21 @@ export async function POST(req: Request) {
       http_raw_post_data: rawBody,
       server: null,
     });
+    // R6b: PHP's create leaves amount unset (NULL) until gateway
+    // processing fills it, and records the request IP; the "0"/null
+    // defaults here diverged on every parked transaction.
+    const requestIp = (
+      (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() ||
+      "127.0.0.1"
+    ).replace(/^::ffff:/, "");
     const txId = await insertTransactionFull({
       txn_id: null,
       txn_status: null,
-      amount: "0",
+      amount: null,
       currency: null,
       type: null,
       status: "received",
-      ip: null,
+      ip: requestIp,
       ipn,
       note: null,
       invoice_id: invoiceId,
@@ -161,9 +168,14 @@ export async function POST(req: Request) {
     } catch (e) {
       // createAndProcess parks the failure on the transaction and the
       // caller still sees the error envelope (PHP behavior).
+      // markTransactionError persists the exception's CODE as
+      // error_code (ServiceTransaction.php:717-732) — e.g. 7002 for
+      // the Custom manual-approval park, which the route dropped.
       await updateTransactionRow(txId, {
         status: "error",
         error: e instanceof Error ? e.message : String(e),
+        error_code:
+          e instanceof FbError ? e.code : e instanceof Error ? 9999 : null,
       });
       throw e;
     }
@@ -216,11 +228,14 @@ async function handleJsonWebhook(
   const txId = await insertTransactionFull({
     txn_id: event.id ?? null,
     txn_status: event.type ?? null,
-    amount: "0",
+    // R6b: same PHP-create rule as the form path — amount unset
+    // (NULL) until processing fills it; ip recorded, not null.
+    amount: null,
     currency: null,
     type: null,
     status: "received",
-    ip: null,
+    ip: ((req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() ||
+      "127.0.0.1").replace(/^::ffff:/, ""),
     ipn,
     note: null,
     invoice_id: null,

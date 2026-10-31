@@ -21,7 +21,9 @@ export class FbError extends Error {
 export interface CallContext {
   params: Record<string, string>;
   /** The parsed JSON body when the call was JSON-encoded — nested
-   * structures (invoice new_item, items maps) survive here; `params`
+   * structures (invoice new_item, items maps) survive here — or, for
+   * urlencoded bodies since R6b, the bracket-expanded form params;
+   * `params`
    * only carries their stringified form. */
   rawParams: Record<string, unknown>;
   /** Best-effort client IP (first X-Forwarded-For entry, else loopback). */

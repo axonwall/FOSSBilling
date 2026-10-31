@@ -1,0 +1,603 @@
+{
+  "scenarios": [
+    {
+      "id": "invoice-pay-refund",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "prepare",
+            "params": {
+              "client_id": 1
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "update",
+            "params": {
+              "id": 489,
+              "new_item": {
+                "price": 25,
+                "quantity": 1,
+                "title": "Shadow line"
+              }
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 2,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "issue",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 3,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "mark_as_paid",
+            "params": {
+              "gateway_id": 1,
+              "id": 489,
+              "transactionId": "shadow-txn-1"
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 4,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "refund",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 5,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "get",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    },
+    {
+      "id": "invoice-pay-credits",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "prepare",
+            "params": {
+              "client_id": 1
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "update",
+            "params": {
+              "id": 489,
+              "new_item": {
+                "price": 30,
+                "quantity": 1,
+                "title": "Credit-paid line"
+              }
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 2,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "issue",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 3,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "pay_with_credits",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 4,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "get",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    },
+    {
+      "id": "order-lifecycle",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "order",
+            "method": "create",
+            "params": {
+              "client_id": 1,
+              "period": "1M",
+              "product_id": 9
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "order",
+            "method": "activate",
+            "params": {
+              "id": 182
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 2,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "order",
+            "method": "renew",
+            "params": {
+              "id": 182
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 3,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "order",
+            "method": "cancel",
+            "params": {
+              "id": 182
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 4,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "order",
+            "method": "get",
+            "params": {
+              "id": 182
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    },
+    {
+      "id": "cart-checkout",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "client",
+          "request": {
+            "kind": "api",
+            "role": "guest",
+            "module": "cart",
+            "method": "reset",
+            "params": {},
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "client",
+          "request": {
+            "kind": "api",
+            "role": "guest",
+            "module": "cart",
+            "method": "add_item",
+            "params": {
+              "id": 3
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 2,
+          "persona": "client",
+          "request": {
+            "kind": "api",
+            "role": "guest",
+            "module": "cart",
+            "method": "get",
+            "params": {},
+            "json": false
+          }
+        },
+        {
+          "n": 3,
+          "persona": "client",
+          "request": {
+            "kind": "api",
+            "role": "client",
+            "module": "cart",
+            "method": "checkout",
+            "params": {
+              "gateway_id": 1
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 4,
+          "persona": "client",
+          "request": {
+            "kind": "api",
+            "role": "client",
+            "module": "invoice",
+            "method": "get",
+            "params": {
+              "hash": "bfb8b3dff30e68f184ecd3b673ae989982f4bda35f17"
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    },
+    {
+      "id": "staff-basket-checkout",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "cart",
+            "method": "staff_basket_add_item",
+            "params": {
+              "client_id": 1,
+              "id": 3
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "cart",
+            "method": "staff_basket_get",
+            "params": {
+              "client_id": 1
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 2,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "cart",
+            "method": "staff_basket_checkout",
+            "params": {
+              "client_id": 1,
+              "gateway_id": 1,
+              "mark_invoice_paid": true,
+              "transactionId": "shadow-staff-txn-1"
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 3,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "get",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 4,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "order",
+            "method": "get",
+            "params": {
+              "id": 182
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    },
+    {
+      "id": "cron-run",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "cron",
+            "method": "run",
+            "params": {},
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    },
+    {
+      "id": "gateway-ipn-form",
+      "php_vs_php_envelope_diffs": [],
+      "php_vs_php_db_diffs": {},
+      "capture": [
+        {
+          "n": 0,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "prepare",
+            "params": {
+              "client_id": 1
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 1,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "update",
+            "params": {
+              "id": 489,
+              "new_item": {
+                "price": 25,
+                "quantity": 1,
+                "title": "IPN line"
+              }
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 2,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "issue",
+            "params": {
+              "id": 489
+            },
+            "json": false
+          }
+        },
+        {
+          "n": 3,
+          "persona": "anon",
+          "request": {
+            "kind": "ipn",
+            "path": "/ipn.php?gateway_id=1",
+            "form": {
+              "invoice_id": 489
+            }
+          }
+        },
+        {
+          "n": 4,
+          "persona": "admin",
+          "request": {
+            "kind": "api",
+            "role": "admin",
+            "module": "invoice",
+            "method": "transaction_get_list",
+            "params": {
+              "invoice_id": 489
+            },
+            "json": false
+          }
+        }
+      ],
+      "normalized_fields": [
+        "created_at",
+        "due_at",
+        "group_id",
+        "hash",
+        "hash_expires_at",
+        "ipn_hash",
+        "last_cron_exec",
+        "paid_at",
+        "reminded_at",
+        "updated_at"
+      ]
+    }
+  ],
+  "php_port": 18081,
+  "ts_port": 3012,
+  "php_db": "/home/hatch/scratch/fossbilling/r5-logs/shadow-run-39658/php/src/data/fossbilling.sqlite",
+  "ts_db": null
+}

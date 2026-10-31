@@ -488,6 +488,21 @@ export async function tryPayWithCredits(invoiceId: number): Promise<boolean> {
     });
   }
   await markInvoicePaid(invoiceId);
+  // R6b: PHP tryPayWithCredits executes item tasks immediately after
+  // commit (Service.php:1690-1695); executeTask marks custom +
+  // deposit items executed unconditionally
+  // (ServiceInvoiceItem.php:193-205). Order-task items stay deferred
+  // to the activate_paid batch (pinned divergence, parity39 §8) —
+  // only the unconditional branches move here. The shadow harness
+  // caught a custom line staying pending_setup after credit payment
+  // where PHP marks it executed.
+  await getDbWrite()
+    .prepare(
+      `UPDATE invoice_item SET status = 'executed', updated_at = ?
+       WHERE invoice_id = ? AND type IN ('custom', 'deposit')
+       AND status NOT IN ('executed', 'failed')`,
+    )
+    .run(nowTimestamp(), invoiceId);
   return true;
 }
 

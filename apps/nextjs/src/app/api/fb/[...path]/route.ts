@@ -5,6 +5,7 @@ import { RateLimitError } from "@/server/ratelimit";
 import {
   VALID_ROLES,
   dispatchSeamCall,
+  expandBracketParams,
   unknownApiError,
 } from "@/server/seam-call";
 import { readSession } from "@/server/session";
@@ -113,7 +114,12 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
             params[k] = typeof v === "object" ? JSON.stringify(v) : String(v);
           }
         } else {
+          // Urlencoded: params keeps the flat literal keys; rawParams
+          // carries the bracket-expanded shape PHP builds from $_POST
+          // (R6b: previously rawParams stayed empty here, silently
+          // dropping form-posted nested params like new_item).
           for (const [k, v] of new URLSearchParams(bodyText)) params[k] = v;
+          rawParams = expandBracketParams(params);
         }
       }
     }

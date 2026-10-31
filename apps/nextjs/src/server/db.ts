@@ -2191,6 +2191,31 @@ export async function nextNrForSerie(serie: string): Promise<number> {
   return (row.m ?? 0) + 1;
 }
 
+/**
+ * System\\Service::reserveNextNumericParamValue, TS port (R6b):
+ * return the counter's current int value and advance it by one; a
+ * missing or non-numeric row seeds to `seed` (writing seed+1). PHP
+ * uses this — NOT MAX(nr)+1 — for credit notes
+ * (invoice_cn_starting_number, Service.php:1866) and debit notes
+ * (invoice_dn_starting_number, Service.php:2519). The shadow harness
+ * caught TS refund minting CN nr 29 (MAX+1 over surviving notes)
+ * where PHP mints 3 (the counter) and advances it to 4. No max
+ * guard: PHP trusts the counter exactly.
+ */
+export async function reserveNumericParamValue(
+  param: string,
+  seed: number,
+): Promise<number> {
+  const raw = await getSetting(param);
+  const current = raw === null ? NaN : parseInt(raw, 10);
+  if (!Number.isFinite(current)) {
+    await setSettingValue(param, String(seed + 1));
+    return seed;
+  }
+  await setSettingValue(param, String(current + 1));
+  return current;
+}
+
 export interface InvoiceEventRow {
   id: number;
   type: string;
