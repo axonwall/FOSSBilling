@@ -1,8 +1,0 @@
-{
-  "id": "activity",
-  "type": "mod",
-  "name": "Activity",
-  "description": "Tracks and displays system activity logs for staff, clients, orders, invoices, and other administrative events.",
-  "version": "1.0.0",
-  "icon_url": "icon.svg"
-}

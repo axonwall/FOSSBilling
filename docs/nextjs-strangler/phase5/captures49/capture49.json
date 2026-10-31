@@ -1,0 +1,905 @@
+{
+ "installer_before": {
+  "config_keys": [
+   "CSRFPrevention",
+   "admin_area_prefix",
+   "allow_self_signed",
+   "allowed_ips",
+   "allowed_ips",
+   "allowed_urls",
+   "api",
+   "auto_detect_locale",
+   "auto_reload",
+   "cache",
+   "cache",
+   "cafile",
+   "database",
+   "date_format",
+   "datetime_pattern",
+   "db",
+   "debug",
+   "debug",
+   "debug_and_monitoring",
+   "debug_fingerprint",
+   "disable_auto_cron",
+   "driver",
+   "driver",
+   "enabled",
+   "enabled",
+   "enabled",
+   "enabled",
+   "force_https",
+   "headers",
+   "host",
+   "host",
+   "i18n",
+   "info",
+   "instance_id",
+   "locale",
+   "log_stacktrace",
+   "maintenance_mode",
+   "memcached",
+   "mode",
+   "password",
+   "path",
+   "path_data",
+   "perform_session_fingerprinting",
+   "policies",
+   "port",
+   "port",
+   "proxies",
+   "rate_limiter",
+   "redis",
+   "report_errors",
+   "require_referrer_header",
+   "salt",
+   "security",
+   "session_lifespan",
+   "session_regeneration_grace_period",
+   "stacktrace_length",
+   "strict_variables",
+   "time_format",
+   "timezone",
+   "tls",
+   "trusted_proxies",
+   "twig",
+   "update_branch",
+   "url",
+   "verify_peer",
+   "verify_peer_name",
+   "whitelist_ips"
+  ],
+  "geoip": {
+   "copied": true,
+   "dir": "/home/hatch/scratch/fossbilling/r5-logs/capture49-disposable/data/geoip",
+   "reason": null
+  },
+  "nonempty_counts": {
+   "admin": 1,
+   "admin_group": 3,
+   "admin_group_member": 1,
+   "client_group": 1,
+   "currency": 1,
+   "extension": 3,
+   "pay_gateway": 2,
+   "post": 3,
+   "product": 1,
+   "product_category": 1,
+   "setting": 35,
+   "support_helpdesk": 1,
+   "support_kb_article": 3,
+   "support_kb_article_category": 2,
+   "support_pr": 17,
+   "support_pr_category": 7,
+   "tld": 1,
+   "tld_registrar": 3
+  },
+  "salt_present_shape": true,
+  "seeded_rows": 86,
+  "tables": 64,
+  "total_rows": 86
+ },
+ "live_before": {
+  "general_check": {
+   "error": null,
+   "result": {
+    "id": "generalCheck",
+    "message": "- Fail: HTTPS is not enforced.\n- Warning: Debug mode is enabled for your FOSSBilling installation.\n- Warning: You appear to be using a non-release version of FOSSBilling.\n",
+    "result": "failed"
+   }
+  },
+  "ip_lookup": {
+   "1.1.1.1": {
+    "error": null,
+    "result": {
+     "asn": {
+      "asnNumber": 13335,
+      "asnOrg": "CLOUDFLARENET"
+     },
+     "country": {
+      "currencies": [
+       "AUD"
+      ],
+      "flag": "\ud83c\udde6\ud83c\uddfa",
+      "name": "Australia"
+     },
+     "ip": {
+      "address": "1.1.1.1",
+      "type": "IPv4"
+     }
+    }
+   },
+   "10.0.0.5": {
+    "error": null,
+    "result": {
+     "asn": [],
+     "country": [],
+     "ip": {
+      "address": "10.0.0.5",
+      "type": "IPv4"
+     }
+    }
+   },
+   "127.0.0.1": {
+    "error": null,
+    "result": {
+     "asn": [],
+     "country": [],
+     "ip": {
+      "address": "127.0.0.1",
+      "type": "IPv4"
+     }
+    }
+   },
+   "192.168.1.1": {
+    "error": null,
+    "result": {
+     "asn": [],
+     "country": {
+      "currencies": [
+       "AUD"
+      ],
+      "flag": "\ud83c\udde6\ud83c\uddfa",
+      "name": "Australia"
+     },
+     "ip": {
+      "address": "192.168.1.1",
+      "type": "IPv4"
+     }
+    }
+   },
+   "2001:4860:4860::8888": {
+    "error": null,
+    "result": {
+     "asn": {
+      "asnNumber": 15169,
+      "asnOrg": "GOOGLE"
+     },
+     "country": {
+      "currencies": [
+       "USD",
+       "USN"
+      ],
+      "flag": "\ud83c\uddfa\ud83c\uddf8",
+      "name": "United States"
+     },
+     "ip": {
+      "address": "2001:4860:4860::8888",
+      "type": "IPv6"
+     }
+    }
+   },
+   "8.8.8.8": {
+    "error": null,
+    "result": {
+     "asn": {
+      "asnNumber": 15169,
+      "asnOrg": "GOOGLE"
+     },
+     "country": {
+      "currencies": [
+       "USD",
+       "USN"
+      ],
+      "flag": "\ud83c\uddfa\ud83c\uddf8",
+      "name": "United States"
+     },
+     "ip": {
+      "address": "8.8.8.8",
+      "type": "IPv4"
+     }
+    }
+   },
+   "::1": {
+    "error": null,
+    "result": {
+     "asn": [],
+     "country": [],
+     "ip": {
+      "address": "::1",
+      "type": "IPv6"
+     }
+    }
+   },
+   "::ffff:8.8.8.8": {
+    "error": null,
+    "result": {
+     "asn": [],
+     "country": [],
+     "ip": {
+      "address": "::ffff:8.8.8.8",
+      "type": "IPv6"
+     }
+    }
+   }
+  },
+  "page_get_pairs": {
+   "error": null,
+   "result": {
+    "mod_page_about-us": "Mod Page About Us",
+    "mod_page_login": "Mod Page Login",
+    "mod_page_password-reset": "Mod Page Password Reset",
+    "mod_page_preview_markdown": "Mod Page Preview Markdown",
+    "mod_page_privacy-policy": "Mod Page Privacy Policy",
+    "mod_page_signup": "Mod Page Signup",
+    "mod_page_tos": "Mod Page Tos"
+   }
+  },
+  "plugin_get_pairs": {
+   "error": null,
+   "result": {
+    "Simple": "Simple"
+   }
+  }
+ },
+ "manifest": [
+  {
+   "php_rel": "modules/Client/templates/email/mod_client_confirm.html.twig",
+   "sha256": "bbcb1a6e9e68a673b822be2a0125584d38f1e96f08d69a1963b9fde573e723c5",
+   "size": 1188
+  },
+  {
+   "php_rel": "modules/Client/templates/email/mod_client_password_reset_information.html.twig",
+   "sha256": "56f2276f4fcf181908609d72142585ab38d3bc7065f23d73ce9ed8a5db82e293",
+   "size": 1144
+  },
+  {
+   "php_rel": "modules/Client/templates/email/mod_client_password_reset_request.html.twig",
+   "sha256": "b27b9b0382d19ec0a1e232eaed8f49cba40e88b53bd88ba649f64fd7d0766cf9",
+   "size": 1391
+  },
+  {
+   "php_rel": "modules/Client/templates/email/mod_client_signup.html.twig",
+   "sha256": "39023e31470bc4ea58f237aa1508ef83d96cce686364f8d83d781a152344a452",
+   "size": 1487
+  },
+  {
+   "php_rel": "modules/Client/templates/email/mod_client_signup_admin.html.twig",
+   "sha256": "7f5910d18a95bad6f63f68840d48cfb7b0bb868d2f6a77c6703b5061debb9094",
+   "size": 1625
+  },
+  {
+   "php_rel": "modules/Email/templates/email/mod_email_test.html.twig",
+   "sha256": "e9a5a00ccf0c393e2ba4d7993b7c8321210d6c44a779eebf02e56ef6bbba16dd",
+   "size": 925
+  },
+  {
+   "php_rel": "modules/Invoice/templates/email/mod_invoice_canceled.html.twig",
+   "sha256": "4eab2405b7c6118abd4e08341b87ea58ad0b5e07da2b8b485afdeb55ad49b30a",
+   "size": 1640
+  },
+  {
+   "php_rel": "modules/Invoice/templates/email/mod_invoice_created.html.twig",
+   "sha256": "5556cb671fc5cb133a1cd8cc4744dd9902c4064dd5ed998d48b55479e957e9d5",
+   "size": 2206
+  },
+  {
+   "php_rel": "modules/Invoice/templates/email/mod_invoice_debited.html.twig",
+   "sha256": "c875fabc8b9129ad06aaf5b274676e808cd3cc994eac2ebd50cdf9281ce940a8",
+   "size": 1707
+  },
+  {
+   "php_rel": "modules/Invoice/templates/email/mod_invoice_due_after.html.twig",
+   "sha256": "a200418a81da95fc7b2a27bb0d0aa040fdfb393a6ee348f56eebb0df978d768c",
+   "size": 2224
+  },
+  {
+   "php_rel": "modules/Invoice/templates/email/mod_invoice_paid.html.twig",
+   "sha256": "7837697cebf51fc8e192c9ca6b4aa2bffdf531011ba00825bb4521b72adc9efd",
+   "size": 2220
+  },
+  {
+   "php_rel": "modules/Invoice/templates/email/mod_invoice_payment_reminder.html.twig",
+   "sha256": "7163ebc6d578232a4917779542791a0290f16470cad99bd15d6ebb454d3ddf68",
+   "size": 2236
+  },
+  {
+   "php_rel": "modules/Invoice/templates/email/mod_invoice_refunded.html.twig",
+   "sha256": "d0d9e1930229970faa93e935a2a72f5ad0d5ef5afe628e91a64796fdf05d7633",
+   "size": 1706
+  },
+  {
+   "php_rel": "modules/Order/templates/email/mod_order_suspension_warning.html.twig",
+   "sha256": "9b54ae83af5fdcafdbd4b81474df54ee590b5e42ab35da8c7ad194536af0bf8c",
+   "size": 1024
+  },
+  {
+   "php_rel": "modules/Serviceapikey/templates/email/mod_serviceapikey_activated.html.twig",
+   "sha256": "6a512d3bda2f8d0b4cc7bafd771d7ecfaab50e4d97aaa93a2aa4fb9ff8144524",
+   "size": 1219
+  },
+  {
+   "php_rel": "modules/Serviceapikey/templates/email/mod_serviceapikey_canceled.html.twig",
+   "sha256": "2f82d1f632928877256604395bf2d7a904018f733d5a669d824e07fca3f87780",
+   "size": 1479
+  },
+  {
+   "php_rel": "modules/Serviceapikey/templates/email/mod_serviceapikey_renewed.html.twig",
+   "sha256": "21e21d5bd7a862609986d2cf04856dec1663a57aff02e8f3423bff313b10e40d",
+   "size": 1309
+  },
+  {
+   "php_rel": "modules/Serviceapikey/templates/email/mod_serviceapikey_suspended.html.twig",
+   "sha256": "07f2dd9ab3fb61d0ca0dcbf91f33608954b464a39dd3ba3019fc215b50a4fbec",
+   "size": 1481
+  },
+  {
+   "php_rel": "modules/Serviceapikey/templates/email/mod_serviceapikey_unsuspended.html.twig",
+   "sha256": "4eb74cf451e4f683558c491104a52309a21109951a18f5cfa90926a2356363a4",
+   "size": 1161
+  },
+  {
+   "php_rel": "modules/Servicecustom/templates/email/mod_servicecustom_activated.html.twig",
+   "sha256": "e7037ce809ff5fb6788a386f0907f8816807c0b13a81b084b39423f07c247ad4",
+   "size": 1142
+  },
+  {
+   "php_rel": "modules/Servicecustom/templates/email/mod_servicecustom_canceled.html.twig",
+   "sha256": "2f82d1f632928877256604395bf2d7a904018f733d5a669d824e07fca3f87780",
+   "size": 1479
+  },
+  {
+   "php_rel": "modules/Servicecustom/templates/email/mod_servicecustom_renewed.html.twig",
+   "sha256": "631e0367037726b4640dcd284689f08051ea4deaf089c5e2ca1329c2039579cb",
+   "size": 1318
+  },
+  {
+   "php_rel": "modules/Servicecustom/templates/email/mod_servicecustom_suspended.html.twig",
+   "sha256": "0565280262669345d57a61843a57e73f737590f6bc8d50b332defdd46ce3aa37",
+   "size": 1483
+  },
+  {
+   "php_rel": "modules/Servicecustom/templates/email/mod_servicecustom_unsuspended.html.twig",
+   "sha256": "00851874d9a3d4bbedcb7d00b227ce9d523738d39f372bcba95663e2e98750e2",
+   "size": 1174
+  },
+  {
+   "php_rel": "modules/Servicedomain/templates/email/mod_servicedomain_activated.html.twig",
+   "sha256": "f6d18901d8e87db5a998d563951d6b704d1ff9c7c07e0695396da4894c5098e3",
+   "size": 2615
+  },
+  {
+   "php_rel": "modules/Servicedomain/templates/email/mod_servicedomain_renewed.html.twig",
+   "sha256": "0f857f408e5616cef9b32b3d8db0ef099bb72ea8bebc9823dd7e2e8f975c75a1",
+   "size": 1319
+  },
+  {
+   "php_rel": "modules/Servicedomain/templates/email/mod_servicedomain_suspended.html.twig",
+   "sha256": "e61338333da5a0b5b459b3528f6d481b1f55da9ace98acd35212877da77cc681",
+   "size": 1482
+  },
+  {
+   "php_rel": "modules/Servicedomain/templates/email/mod_servicedomain_unsuspended.html.twig",
+   "sha256": "28de7b84e513dbab50e11f147cfdbc598e12a4890298830fcf74ffdcb248fc5b",
+   "size": 1173
+  },
+  {
+   "php_rel": "modules/Servicedownloadable/templates/email/mod_servicedownloadable_activated.html.twig",
+   "sha256": "766be6da1d40a55c5c26c140b714082219802fc7a8e5835885dfb25ca3b5ce5d",
+   "size": 1204
+  },
+  {
+   "php_rel": "modules/Servicehosting/templates/email/mod_servicehosting_activated.html.twig",
+   "sha256": "0ecd6298d1e871b2659c0c818667cf1aba6b51b4910f06f36aa6ec7c2829d32f",
+   "size": 3884
+  },
+  {
+   "php_rel": "modules/Servicehosting/templates/email/mod_servicehosting_canceled.html.twig",
+   "sha256": "c31fd6a0ec6583a3c90552d1a46430b9c14efc5b69a315fe69ea463db802a7b2",
+   "size": 1478
+  },
+  {
+   "php_rel": "modules/Servicehosting/templates/email/mod_servicehosting_renewed.html.twig",
+   "sha256": "0f857f408e5616cef9b32b3d8db0ef099bb72ea8bebc9823dd7e2e8f975c75a1",
+   "size": 1319
+  },
+  {
+   "php_rel": "modules/Servicehosting/templates/email/mod_servicehosting_suspended.html.twig",
+   "sha256": "0565280262669345d57a61843a57e73f737590f6bc8d50b332defdd46ce3aa37",
+   "size": 1483
+  },
+  {
+   "php_rel": "modules/Servicehosting/templates/email/mod_servicehosting_unsuspended.html.twig",
+   "sha256": "28de7b84e513dbab50e11f147cfdbc598e12a4890298830fcf74ffdcb248fc5b",
+   "size": 1173
+  },
+  {
+   "php_rel": "modules/Servicelicense/templates/email/mod_servicelicense_activated.html.twig",
+   "sha256": "abcd7f58b60194b7af2c92c7ec569b144277017e95a4fd1aeb636fc4e472d59e",
+   "size": 1291
+  },
+  {
+   "php_rel": "modules/Servicelicense/templates/email/mod_servicelicense_canceled.html.twig",
+   "sha256": "2f82d1f632928877256604395bf2d7a904018f733d5a669d824e07fca3f87780",
+   "size": 1479
+  },
+  {
+   "php_rel": "modules/Servicelicense/templates/email/mod_servicelicense_renewed.html.twig",
+   "sha256": "0f857f408e5616cef9b32b3d8db0ef099bb72ea8bebc9823dd7e2e8f975c75a1",
+   "size": 1319
+  },
+  {
+   "php_rel": "modules/Servicelicense/templates/email/mod_servicelicense_suspended.html.twig",
+   "sha256": "e61338333da5a0b5b459b3528f6d481b1f55da9ace98acd35212877da77cc681",
+   "size": 1482
+  },
+  {
+   "php_rel": "modules/Servicelicense/templates/email/mod_servicelicense_unsuspended.html.twig",
+   "sha256": "28de7b84e513dbab50e11f147cfdbc598e12a4890298830fcf74ffdcb248fc5b",
+   "size": 1173
+  },
+  {
+   "php_rel": "modules/Staff/templates/email/mod_staff_client_order.html.twig",
+   "sha256": "f1eb8d2bd683e0f607f30422aabb448713618ffb42498d1f2f0f27d19afde706",
+   "size": 1134
+  },
+  {
+   "php_rel": "modules/Staff/templates/email/mod_staff_client_signup.html.twig",
+   "sha256": "bfc162d2d1493ccff75ded62290a5826873585e10b171a83c43757564cbe0b78",
+   "size": 1011
+  },
+  {
+   "php_rel": "modules/Staff/templates/email/mod_staff_order_suspended.html.twig",
+   "sha256": "99aa2a6f38d748fc908365c014f7c671da0954d5cdb3374ad864a6b58b6e76dc",
+   "size": 839
+  },
+  {
+   "php_rel": "modules/Staff/templates/email/mod_staff_password_reset_approve.html.twig",
+   "sha256": "95fbcd4628997b9fe788858ad975201fece48de041ec3f88324e3b6ba9600770",
+   "size": 1118
+  },
+  {
+   "php_rel": "modules/Staff/templates/email/mod_staff_password_reset_request.html.twig",
+   "sha256": "7c9557278dfce8cd3725a7cc98dc4f61c0690967db357d70e28f420881fe0e76",
+   "size": 1418
+  },
+  {
+   "php_rel": "modules/Staff/templates/email/mod_staff_ticket_close.html.twig",
+   "sha256": "057de79d1fbd0c1786f89e6bbb4ebac60375cb68b9bcbcabc9939deefe015c9d",
+   "size": 1222
+  },
+  {
+   "php_rel": "modules/Staff/templates/email/mod_staff_ticket_open.html.twig",
+   "sha256": "49e83c8b8f6d36565c5c711f965df06e87e5a1c808045430c6bc08b17aa25f15",
+   "size": 1722
+  },
+  {
+   "php_rel": "modules/Staff/templates/email/mod_staff_ticket_reply.html.twig",
+   "sha256": "6fb8c618dd0e49d7392cfc64d3ab0e07562dff02d93d7d96cf8c88c2b41b8ac9",
+   "size": 1621
+  },
+  {
+   "php_rel": "modules/Support/templates/email/mod_support_helpdesk_ticket_open.html.twig",
+   "sha256": "ebb1af13fe710afa262066f6438ed43bc53e3caac590ccac2fb2d229aedf26f0",
+   "size": 1518
+  },
+  {
+   "php_rel": "modules/Support/templates/email/mod_support_ticket_open.html.twig",
+   "sha256": "217cf5cafe664bba9a11a110f2ee3da6c3769dada1554cccc781a77e1f8b41f0",
+   "size": 1782
+  },
+  {
+   "php_rel": "modules/Support/templates/email/mod_support_ticket_staff_close.html.twig",
+   "sha256": "f8997e0afc2d3c5a78068a99fced107932bcd966e0a5b36c4d4cfecb0a5b0ad5",
+   "size": 1901
+  },
+  {
+   "php_rel": "modules/Support/templates/email/mod_support_ticket_staff_open.html.twig",
+   "sha256": "781d6d36df5952e3a3862b10795bd5fe12e15cb4d74426c86214e4d6e29e9321",
+   "size": 1835
+  },
+  {
+   "php_rel": "modules/Support/templates/email/mod_support_ticket_staff_reply.html.twig",
+   "sha256": "1c819f6430ed1b1389e84d7c0b18893ebc24b30d8f6b4e5752c1c50c832e37fb",
+   "size": 1867
+  },
+  {
+   "php_rel": "modules/Page/templates/client/mod_page_about-us.html.twig",
+   "sha256": "a59194b8de883784490bf97ca11b6391f583742b6d6262c0b762134c0f07272e",
+   "size": 1229
+  },
+  {
+   "php_rel": "modules/Page/templates/client/mod_page_login.html.twig",
+   "sha256": "d1aa355a5584606dcfec7e72df7da27c7aea1aa3a4f01f0a12a2c5b85e3cd7be",
+   "size": 3548
+  },
+  {
+   "php_rel": "modules/Page/templates/client/mod_page_password-reset.html.twig",
+   "sha256": "d131c89feb9379fabb85a0ea2099f5abe139525cbf3fbc327b3233436c15531d",
+   "size": 2545
+  },
+  {
+   "php_rel": "modules/Page/templates/client/mod_page_preview_markdown.html.twig",
+   "sha256": "986ed34a22eb354dbc387458989df6f1419fc62a195e568088919fa6433cf04c",
+   "size": 443
+  },
+  {
+   "php_rel": "modules/Page/templates/client/mod_page_privacy-policy.html.twig",
+   "sha256": "8563ef2d7c55f4e78f0929b98cb0baa7b1988f162935dee60358ad619f2fe64f",
+   "size": 1623
+  },
+  {
+   "php_rel": "modules/Page/templates/client/mod_page_signup.html.twig",
+   "sha256": "b1b5acf628955bbe573c99e05d32e2e3fd91c5f6f97b7e6c3de1e766bf9f2491",
+   "size": 14556
+  },
+  {
+   "php_rel": "modules/Page/templates/client/mod_page_sitemap.xml",
+   "sha256": "3cbb98962c7f46e3f1be527d4045585e15f5a62f74073ad31f24e735579b8f1a",
+   "size": 5122
+  },
+  {
+   "php_rel": "modules/Page/templates/client/mod_page_tos.html.twig",
+   "sha256": "882f7c3a6f434d2b5e4a6988e4e066a140aa1287423c37e7e23db5a03b05a049",
+   "size": 1288
+  },
+  {
+   "php_rel": "modules/Page/templates/client/partial_company_logo.html.twig",
+   "sha256": "210c4325e211baa80ed1329059d97ae1e72cad455d08f0fee30df4318fe4d50e",
+   "size": 981
+  },
+  {
+   "php_rel": "themes/default/client/html/error.html.twig",
+   "sha256": "99f13eef58b9a9e61acd056ffeb99be32335c248291a662ea6cc369580a3b8be",
+   "size": 1256
+  },
+  {
+   "php_rel": "themes/default/client/html/layout_default.html.twig",
+   "sha256": "3331765c0259c57cf0bbc942bfb2f36af87ab060ef3809eca1931005598df8c6",
+   "size": 16139
+  },
+  {
+   "php_rel": "themes/default/client/html/layout_public.html.twig",
+   "sha256": "cdfdfc925adbdebcb9eea963795a1cb67c104e676623a6c0a8081e7ed8054e71",
+   "size": 2694
+  },
+  {
+   "php_rel": "themes/default/client/html/macro_functions.html.twig",
+   "sha256": "a275de387801ec4c825fbff6d3928bdf8b6684dcd69a3dcedb2beba981c609ba",
+   "size": 4979
+  },
+  {
+   "php_rel": "themes/default/client/html/mobile_menu.html.twig",
+   "sha256": "5b19b502a452ca00f6b7718046b4f6cdd147b9292ac26291a0d37bfb18000c8f",
+   "size": 6038
+  },
+  {
+   "php_rel": "themes/default/client/html/partial_menu.html.twig",
+   "sha256": "b5d343c69b6780dbad145032f6b0ea0b7ec94b4b91604b8ad95c71036b00fdb3",
+   "size": 6406
+  },
+  {
+   "php_rel": "themes/default/client/html/partial_message.html.twig",
+   "sha256": "57c9464b1b49c341defb56c94f62a8db543d90153901eb42417bc3a940b27caa",
+   "size": 209
+  },
+  {
+   "php_rel": "themes/default/client/html/partial_pagination.html.twig",
+   "sha256": "79b9620dbdd61c13b385201812a9c19209e93da463413a2221ffceda3f88df03",
+   "size": 3084
+  },
+  {
+   "php_rel": "themes/default/client/html/partial_pending_messages.html.twig",
+   "sha256": "6b96446d721944f06ceb459f22260e1cabf35b432357fc57e6531c6562119aa2",
+   "size": 359
+  },
+  {
+   "php_rel": "themes/default/client/html/partial_pricing.html.twig",
+   "sha256": "a19734bb56d273876966841d12b587c48de783b6f8bde31bab44af1076b00572",
+   "size": 3180
+  },
+  {
+   "php_rel": "themes/default/client/html/partial_sortable_th.html.twig",
+   "sha256": "fd068ce820267d23b06108b6ce391eee5e7cf3b3986ecc4fadeb240370a695a1",
+   "size": 1566
+  },
+  {
+   "php_rel": "themes/default/client/html/partials/theme_init.html.twig",
+   "sha256": "2bb88b8f586ad830e82bcabf82120aa8dc0f7c9a19ed1accdcad5997ae6b633e",
+   "size": 649
+  },
+  {
+   "php_rel": "modules/Servicelicense/Plugin/Simple.php",
+   "sha256": "7d1784a4a9372ee53b7e8226dd6e661b2f9b3b1201eb124255ba7365d7cbbc34",
+   "size": 1156
+  },
+  {
+   "php_rel": "install/sql/content.sql",
+   "sha256": "5a7f7f4d8e56271912dc04bea28141cfc9803719d80343c396980e6d536d98a5",
+   "size": 22644
+  },
+  {
+   "php_rel": "library/FOSSBilling/GeoIP/Databases/CC0-Country.mmdb",
+   "sha256": "184978ea86ac4f50e9e9f4d3ae1671982377a149bb7bd66e7b9ef5f9d390469e",
+   "size": 6534834
+  },
+  {
+   "php_rel": "library/FOSSBilling/GeoIP/Databases/PDDL-ASN.mmdb",
+   "sha256": "e8c6ada6216deb2c07b05ac375dea3a0db81d6c4fa0e25220125f671e0e8a3b8",
+   "size": 8806141
+  }
+ ],
+ "template_blocks": {
+  "modules/Client/templates/email/mod_client_confirm.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 1052,
+   "subject": "[{{ guest.system_company.name }}] Please confirm your email address "
+  },
+  "modules/Client/templates/email/mod_client_password_reset_information.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 1026,
+   "subject": "[{{ guest.system_company.name }}] Password Changed"
+  },
+  "modules/Client/templates/email/mod_client_password_reset_request.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 1267,
+   "subject": "[{{ guest.system_company.name }}] Confirm Password Reset"
+  },
+  "modules/Client/templates/email/mod_client_signup.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 1347,
+   "subject": "[{{ guest.system_company.name }}] Welcome {{ c.first_name|default('') }}"
+  },
+  "modules/Client/templates/email/mod_client_signup_admin.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 1485,
+   "subject": "[{{ guest.system_company.name }}] Welcome {{ c.first_name|default('') }}"
+  },
+  "modules/Email/templates/email/mod_email_test.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 801,
+   "subject": "[{{ guest.system_company.name }}] FOSSBilling Email Test"
+  },
+  "modules/Invoice/templates/email/mod_invoice_canceled.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 1524,
+   "subject": "[{{ guest.system_company.name }}] Invoice Voided"
+  },
+  "modules/Invoice/templates/email/mod_invoice_created.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 2089,
+   "subject": "[{{ guest.system_company.name }}] Invoice Created"
+  },
+  "modules/Invoice/templates/email/mod_invoice_debited.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 1588,
+   "subject": "[{{ guest.system_company.name }}] Debit Note Issued"
+  },
+  "modules/Invoice/templates/email/mod_invoice_due_after.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 2111,
+   "subject": "[{{ guest.system_company.name }}] Invoice Due"
+  },
+  "modules/Invoice/templates/email/mod_invoice_paid.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 2102,
+   "subject": "[{{ guest.system_company.name }}] Payment Received"
+  },
+  "modules/Invoice/templates/email/mod_invoice_payment_reminder.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 2117,
+   "subject": "[{{ guest.system_company.name }}] Payment Reminder"
+  },
+  "modules/Invoice/templates/email/mod_invoice_refunded.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 1586,
+   "subject": "[{{ guest.system_company.name }}] Credit Note Issued"
+  },
+  "modules/Order/templates/email/mod_order_suspension_warning.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"utf-8\">\n</head>\n<body>\n    <h1>Final Suspension Warning</h1>\n    <p>Hello {{ c.first_name|default('') }} {{ c.last",
+   "content_len": 852,
+   "subject": "[{{ guest.system_company.name }}] Final suspension warning for {{ order.title|default('your service') }}"
+  },
+  "modules/Serviceapikey/templates/email/mod_serviceapikey_activated.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1078,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Activated"
+  },
+  "modules/Serviceapikey/templates/email/mod_serviceapikey_canceled.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1339,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Canceled"
+  },
+  "modules/Serviceapikey/templates/email/mod_serviceapikey_renewed.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1170,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Renewed"
+  },
+  "modules/Serviceapikey/templates/email/mod_serviceapikey_suspended.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1340,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Suspended"
+  },
+  "modules/Serviceapikey/templates/email/mod_serviceapikey_unsuspended.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1018,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Reactivated"
+  },
+  "modules/Servicecustom/templates/email/mod_servicecustom_activated.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1001,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Activated"
+  },
+  "modules/Servicecustom/templates/email/mod_servicecustom_canceled.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1339,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Canceled"
+  },
+  "modules/Servicecustom/templates/email/mod_servicecustom_renewed.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1179,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Renewed"
+  },
+  "modules/Servicecustom/templates/email/mod_servicecustom_suspended.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1342,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Suspended"
+  },
+  "modules/Servicecustom/templates/email/mod_servicecustom_unsuspended.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1030,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Reactivated "
+  },
+  "modules/Servicedomain/templates/email/mod_servicedomain_activated.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n{% set service = service|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n",
+   "content_len": 2484,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }}"
+  },
+  "modules/Servicedomain/templates/email/mod_servicedomain_renewed.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1180,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Renewed"
+  },
+  "modules/Servicedomain/templates/email/mod_servicedomain_suspended.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1341,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Suspended"
+  },
+  "modules/Servicedomain/templates/email/mod_servicedomain_unsuspended.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1030,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Reactivated"
+  },
+  "modules/Servicedownloadable/templates/email/mod_servicedownloadable_activated.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1055,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Ready to Download"
+  },
+  "modules/Servicehosting/templates/email/mod_servicehosting_activated.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n{% set service = service|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n",
+   "content_len": 3743,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Activated"
+  },
+  "modules/Servicehosting/templates/email/mod_servicehosting_canceled.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1338,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Canceled"
+  },
+  "modules/Servicehosting/templates/email/mod_servicehosting_renewed.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1180,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Renewed"
+  },
+  "modules/Servicehosting/templates/email/mod_servicehosting_suspended.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1342,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Suspended"
+  },
+  "modules/Servicehosting/templates/email/mod_servicehosting_unsuspended.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1030,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Reactivated"
+  },
+  "modules/Servicelicense/templates/email/mod_servicelicense_activated.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n{% set service = service|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n",
+   "content_len": 1150,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Activated"
+  },
+  "modules/Servicelicense/templates/email/mod_servicelicense_canceled.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1339,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Canceled"
+  },
+  "modules/Servicelicense/templates/email/mod_servicelicense_renewed.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1180,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Renewed"
+  },
+  "modules/Servicelicense/templates/email/mod_servicelicense_suspended.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1341,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Suspended"
+  },
+  "modules/Servicelicense/templates/email/mod_servicelicense_unsuspended.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1030,
+   "subject": "[{{ guest.system_company.name }}] {{ order.title|default('') }} Reactivated"
+  },
+  "modules/Staff/templates/email/mod_staff_client_order.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t",
+   "content_len": 1016,
+   "subject": "[{{ guest.system_company.name }}] New Order Placed"
+  },
+  "modules/Staff/templates/email/mod_staff_client_signup.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 889,
+   "subject": "[{{ guest.system_company.name }}] New Client Signed Up"
+  },
+  "modules/Staff/templates/email/mod_staff_order_suspended.html.twig": {
+   "content_head": "\n{% set order = order|default({}) %}\n<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"utf-8\">\n</head>\n<body>\n    <h1>Order Suspended</h1>\n    <p>Hello {{ staff.name|default('') }},</p>\n    <p>The serv",
+   "content_len": 694,
+   "subject": "[{{ guest.system_company.name }}] Order #{{ order.id|default('') }} suspended"
+  },
+  "modules/Staff/templates/email/mod_staff_password_reset_approve.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"utf-8\">\n    <style type=\"text/css\">\n        body {\n            font-family: Arial, sans-serif;\n            font-size: 14px;\n            color: #333333",
+   "content_len": 1000,
+   "subject": "[{{ guest.system_company.name }}] Password Changed"
+  },
+  "modules/Staff/templates/email/mod_staff_password_reset_request.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 1294,
+   "subject": "[{{ guest.system_company.name }}] Confirm Password Reset"
+  },
+  "modules/Staff/templates/email/mod_staff_ticket_close.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 1088,
+   "subject": "[{{ guest.system_company.name }}] {{ ticket.subject|default('') }}"
+  },
+  "modules/Staff/templates/email/mod_staff_ticket_open.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 1588,
+   "subject": "[{{ guest.system_company.name }}] {{ ticket.subject|default('') }}"
+  },
+  "modules/Staff/templates/email/mod_staff_ticket_reply.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 1487,
+   "subject": "[{{ guest.system_company.name }}] {{ ticket.subject|default('') }}"
+  },
+  "modules/Support/templates/email/mod_support_helpdesk_ticket_open.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 1386,
+   "subject": "[{{ guest.system_company.name }}] {{ticket.subject|default('')}}"
+  },
+  "modules/Support/templates/email/mod_support_ticket_open.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 1648,
+   "subject": "[{{ guest.system_company.name }}] {{ ticket.subject|default('') }}"
+  },
+  "modules/Support/templates/email/mod_support_ticket_staff_close.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 1769,
+   "subject": "[{{ guest.system_company.name }}] {{ticket.subject|default('')}}"
+  },
+  "modules/Support/templates/email/mod_support_ticket_staff_open.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 1703,
+   "subject": "[{{ guest.system_company.name }}] {{ticket.subject|default('')}}"
+  },
+  "modules/Support/templates/email/mod_support_ticket_staff_reply.html.twig": {
+   "content_head": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfo",
+   "content_len": 1735,
+   "subject": "[{{ guest.system_company.name }}] {{ticket.subject|default('')}}"
+  }
+ },
+ "theme_html_mod_page_count": 0
+}

@@ -1,8 +1,0 @@
-{
-  "id": "order",
-  "type": "mod",
-  "name": "Orders",
-  "description": "Configures ordering behavior, fraud checks, order activation, and checkout-related preferences.",
-  "icon_url": "icon.svg",
-  "version": "1.0.0"
-}

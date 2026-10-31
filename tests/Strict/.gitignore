@@ -1,3 +1,0 @@
-# Findings JSON files are written by StrictVariablesTest and TwigAstLinterTest in informative mode.
-findings*.json
-ast-linter-findings.json

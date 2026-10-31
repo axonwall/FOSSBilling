@@ -1,8 +1,0 @@
-{
-  "id": "theme",
-  "type": "mod",
-  "name": "Theme",
-  "description": "Manages active admin and client themes, theme presets, and appearance-related configuration.",
-  "icon_url": "icon.svg",
-  "version": "1.0.0"
-}

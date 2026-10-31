@@ -11,8 +11,11 @@ import { register, requireAdmin } from "../dispatch";
  * basename with '-' and '_' turned into spaces. PHP's Finder
  * order is readdir order; the TS scan sorts filenames so the
  * result is deterministic (it matches the captured order on the
- * reference install). Scans FOSSBILLING_PHP_SRC (the PHP tree
- * the seam proxies to); without it, no templates are visible.
+ * reference install). Scans the vendored theme + Page template dirs
+ * (R6c: apps/nextjs/vendor/php-themes + vendor/php-modules); an
+ * explicit FOSSBILLING_PHP_SRC override still wins when its dirs
+ * exist (operators with custom template trees). Missing dirs are
+ * skipped, as before.
  */
 
 function labelFor(fileName: string): string {
@@ -30,9 +33,16 @@ register("admin", "page", "get_pairs", async (ctx) => {
   const theme = await getSetting("theme");
   const themeCode = theme && theme !== "" ? theme : "default/client";
   const src = process.env.FOSSBILLING_PHP_SRC ?? "";
-  const dirs = src
-    ? [join(src, "themes", themeCode, "html"), join(src, "modules", "Page", "templates", "client")]
-    : [];
+  const themeOverride = src ? join(src, "themes", themeCode, "html") : "";
+  const pageOverride = src ? join(src, "modules", "Page", "templates", "client") : "";
+  const dirs = [
+    themeOverride && existsSync(themeOverride)
+      ? themeOverride
+      : join(process.cwd(), "vendor", "php-themes", themeCode, "html"),
+    pageOverride && existsSync(pageOverride)
+      ? pageOverride
+      : join(process.cwd(), "vendor", "php-modules", "Page", "templates", "client"),
+  ];
   const out: Record<string, string> = {};
   for (const dir of dirs) {
     if (!existsSync(dir)) continue;

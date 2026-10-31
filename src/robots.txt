@@ -1,8 +1,0 @@
-User-agent: *
-Disallow: /data/
-Disallow: /library/
-Disallow: /locale/
-Disallow: /modules/
-Disallow: /uploads/
-Disallow: /vendor/
-Disallow: /install/

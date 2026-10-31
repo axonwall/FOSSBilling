@@ -8,7 +8,7 @@
 // the message/code inside the result. PHP TypeErrors (license update
 // with a non-string list) surface verbatim with code 9998.
 
-import { readdirSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { FbError, register, requireAdmin, requireClient, type CallContext } from "../dispatch";
 import { getDb, getDbWrite, nowTimestamp } from "../db";
@@ -145,7 +145,14 @@ async function storeLicense(svc: LicenseRow, patch: Partial<LicenseRow>): Promis
 
 register("admin", "servicelicense", "plugin_get_pairs", (ctx) => {
   requireAdmin(ctx);
-  const dir = join(process.env.FOSSBILLING_PHP_SRC ?? "", "modules", "Servicelicense", "Plugin");
+  // R6c: vendored Plugin dir (apps/nextjs/vendor/php-modules/...);
+  // an explicit FOSSBILLING_PHP_SRC override wins when it exists.
+  const override = process.env.FOSSBILLING_PHP_SRC ?? "";
+  const overrideDir = override ? join(override, "modules", "Servicelicense", "Plugin") : "";
+  const dir =
+    overrideDir && existsSync(overrideDir)
+      ? overrideDir
+      : join(process.cwd(), "vendor", "php-modules", "Servicelicense", "Plugin");
   const out: Record<string, string> = {};
   try {
     for (const f of readdirSync(dir)) {

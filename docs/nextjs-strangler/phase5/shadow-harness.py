@@ -339,7 +339,9 @@ def setup_ts_disposable(work, snapshot):
         "FB_CONFIG_PATH": str(cfg),
         "FB_PAYPAL_SKIP_VERIFY": "1",
         "FB_CALLBACK_SALT": callback_salt(),
-        "FOSSBILLING_PHP_SRC": str(REPO / "src"),
+        # R6c: no FOSSBILLING_PHP_SRC — the disposable TS instance
+        # proves the vendored defaults (templates/geoip/pairs) on every
+        # shadow run. Its disposable PHP still comes from RUNTIME_SRC.
     })
     proc = subprocess.Popen(
         ["npx", "next", "start", "-p", str(TS_PORT)],

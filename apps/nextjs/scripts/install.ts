@@ -241,17 +241,16 @@ async function listTables(db: Db, platform: "sqlite" | "postgres"): Promise<stri
   return rows.map((r) => String(r["table_name"]));
 }
 
+// R6c: vendored defaults (apps/nextjs/vendor/) — the fork src/ tree is
+// gone. --content-sql / FB_INSTALL_CONTENT_SQL and --geoip-source
+// overrides still win; FOSSBILLING_PHP_SRC is no longer consulted.
 function defaultContentSqlPath(): string {
-  const phpSrc = process.env["FOSSBILLING_PHP_SRC"];
-  if (!phpSrc) {
-    fail("content.sql not found: pass --content-sql or set FOSSBILLING_PHP_SRC.");
-  }
-  return path.join(phpSrc, "install", "sql", "content.sql");
+  return path.join(process.cwd(), "vendor", "content.sql");
 }
 
 function defaultGeoipSource(): string | null {
-  const phpSrc = process.env["FOSSBILLING_PHP_SRC"];
-  return phpSrc ? path.join(phpSrc, "library", "FOSSBilling", "GeoIP", "Databases") : null;
+  const vendored = path.join(process.cwd(), "vendor", "geoip");
+  return fs.existsSync(vendored) ? vendored : null;
 }
 
 export async function main(argv: string[]): Promise<number> {
@@ -409,7 +408,7 @@ async function runInstall(opts: InstallOptions): Promise<number> {
       const source = opts.geoipSource ?? defaultGeoipSource();
       const destDir = path.join(dataDir, "geoip");
       if (source === null) {
-        geoip = { copied: false, dir: null, reason: "no GeoIP source (set FOSSBILLING_PHP_SRC or --geoip-source)" };
+        geoip = { copied: false, dir: null, reason: "no GeoIP source (vendored vendor/geoip missing; pass --geoip-source)" };
       } else {
         const missing = GEOIP_FILES.filter((f) => {
           try { return !fs.statSync(path.join(source, f)).isFile(); } catch { return true; }

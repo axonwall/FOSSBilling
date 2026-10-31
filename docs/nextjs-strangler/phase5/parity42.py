@@ -244,7 +244,7 @@ def main():
         os.makedirs(nodb_dir_country, exist_ok=True)
         for f in os.listdir(nodb_dir_country):
             os.unlink(os.path.join(nodb_dir_country, f))
-        real_db = "/home/hatch/scratch/fossbilling/repo/src/library/FOSSBilling/GeoIP/Databases"
+        real_db = "/home/hatch/scratch/fossbilling/repo/apps/nextjs/vendor/geoip"
         os.symlink(os.path.join(real_db, "CC0-Country.mmdb"),
                    os.path.join(nodb_dir_country, "CC0-Country.mmdb"))
         nodb_proc, nodb_base = start_nodb_ts(3004, nodb_dir_empty)

@@ -1,9 +1,12 @@
 // File-backed email template defaults, mirroring PHP's Email service
 // (Service.php: _getDefaults, getDefaultTemplate, syncBuiltinTemplate,
 // resetBuiltinTemplate, createBuiltinTemplateRecord, getVars).
-// Defaults live in the PHP tree at modules/<Module>/templates/email/
-// <code>.html.twig; the tree is FOSSBILLING_PHP_SRC, or the fork's
-// own src/ when the Next app runs from apps/nextjs.
+// Defaults live in the vendored tree at vendor/php-modules/<Module>/
+// templates/email/<code>.html.twig (R6c: copied byte-identical from
+// the PHP tree when fork src/ was deleted; see vendor/README.md).
+// An explicit FOSSBILLING_PHP_SRC override still wins when its
+// modules dir exists (operators with custom template trees); otherwise
+// the vendored default applies. The old cwd ../../src fallback is gone.
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -31,8 +34,9 @@ const CORE_MODULES = new Set([
 ]);
 
 export function phpModulesDir(): string {
-  const base = process.env.FOSSBILLING_PHP_SRC ?? join(process.cwd(), "..", "..", "src");
-  return join(base, "modules");
+  const override = process.env.FOSSBILLING_PHP_SRC;
+  if (override && existsSync(join(override, "modules"))) return join(override, "modules");
+  return join(process.cwd(), "vendor", "php-modules");
 }
 
 function codeModuleSegment(code: string): string | null {

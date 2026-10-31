@@ -1,8 +1,0 @@
-{
-  "id": "client",
-  "type": "mod",
-  "name": "Client",
-  "description": "Manages client accounts, profiles, authentication settings, and client-facing account preferences.",
-  "icon_url": "icon.svg",
-  "version": "1.0.0"
-}

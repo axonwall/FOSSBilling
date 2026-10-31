@@ -123,7 +123,12 @@ def main():
               str(before["invoice_overdue_invoked"]))
 
         # ---- B: installer-test ----
-        env = dict(os.environ, FOSSBILLING_PHP_SRC=os.path.join(REPO, "src"))
+        # R6c: no FOSSBILLING_PHP_SRC — the installer must prove its
+        # vendored default in-chain (installer-test.mjs itself no
+        # longer reads the var either). The assignment form is kept:
+        # a later block builds on `env` (dict(env, ...)).
+        env = {k: v for k, v in os.environ.items()
+               if k != "FOSSBILLING_PHP_SRC"}
         r = subprocess.run(["node", "scripts/installer-test.mjs"],
                            cwd=APP, capture_output=True, text=True, env=env,
                            timeout=900)
@@ -191,13 +196,17 @@ def main():
                            timeout=60)
         check("C3 geoip module resolves FB_GEOIP_DB_DIR to the copied dir",
               r.stdout.strip() == geo_dir, r.stdout.strip() + r.stderr[-300:])
+        # R6c: the default is now the VENDORED dir. The probe must run
+        # with cwd=APP (the default is cwd-relative by design, same as
+        # emailDefaults' old cwd pattern) and WITHOUT FOSSBILLING_PHP_SRC
+        # (explicitly stripped, not just unset — the var must not leak
+        # in from the suite's inherited environment).
+        probe_env = {k: v for k, v in os.environ.items()
+                     if k != "FOSSBILLING_PHP_SRC"}
         r = subprocess.run(["node", probe], capture_output=True, text=True,
-                           env=dict(os.environ,
-                                    FOSSBILLING_PHP_SRC=os.path.join(REPO, "src")),
-                           timeout=60)
-        check("C4 geoip default resolution (PHP tree) still works",
-              r.stdout.strip() == os.path.join(
-                  REPO, "src", "library", "FOSSBilling", "GeoIP", "Databases"),
+                           cwd=APP, env=probe_env, timeout=60)
+        check("C4 geoip default resolution (vendored dir) works",
+              r.stdout.strip() == os.path.join(APP, "vendor", "geoip"),
               r.stdout.strip() + r.stderr[-300:])
 
         # ---- D: reference invariants AFTER (must be identical) ----

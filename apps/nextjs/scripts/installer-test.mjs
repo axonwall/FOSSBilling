@@ -39,7 +39,11 @@ const CAPTURES = path.join(REPO, "docs", "nextjs-strangler", "phase5", "captures
 const TMP = path.join(HERE, ".tmp-installer-test");
 const WORK = fs.mkdtempSync(path.join(os.homedir(), "scratch", "fossbilling", "r5-logs", "installer-test-"));
 const PHP = path.join(os.homedir(), "scratch", "bin", "php");
-const PHPSRC = path.join(REPO, "src");
+// R6c: the installer reads the VENDORED content.sql (apps/nextjs/vendor/);
+// the fork src/ tree is gone. The php binary above (outside the repo)
+// is still used by the B28 TS<->PHP config cross-check, which needs no
+// repo src/ (it probes a WORK-dir config with the binary alone).
+const VENDOR_CONTENT_SQL = path.join(APP, "vendor", "content.sql");
 
 let pass = 0, fail = 0, skip = 0;
 const failures = [];
@@ -60,7 +64,7 @@ const phpSample = JSON.parse(fs.readFileSync(path.join(CAPTURES, "php-config-sam
 function runCli(script, args, env = {}) {
   return spawnSync("node", [path.join(HERE, script), ...args], {
     cwd: APP, encoding: "utf8",
-    env: { ...process.env, FOSSBILLING_PHP_SRC: PHPSRC, ...env },
+    env: { ...process.env, ...env },
   });
 }
 
@@ -517,7 +521,7 @@ try {
         "tokens REAL NOT NULL DEFAULT 0, updated_ms REAL NOT NULL DEFAULT 0, " +
         "PRIMARY KEY (policy, subject_hash))",
     );
-    const contentSql = fs.readFileSync(path.join(PHPSRC, "install", "sql", "content.sql"), "utf8");
+    const contentSql = fs.readFileSync(VENDOR_CONTENT_SQL, "utf8");
     try {
       // seedContent's resync is its LAST step, so a throw naming
       // pg_get_serial_sequence means all content rows ARE inserted and

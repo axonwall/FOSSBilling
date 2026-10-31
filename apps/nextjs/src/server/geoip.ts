@@ -8,17 +8,17 @@ import { GEOIP_CURRENCIES } from "./geoip-currencies";
  * GeoIP lookups — TS port of FOSSBilling\GeoIP\Reader + Country + ASN
  * (src/library/FOSSBilling/GeoIP/) for the security ip_lookup endpoint.
  *
- * Database files (bundled in the PHP tree, NOT vendored into git):
+ * Database files (vendored at R6c into apps/nextjs/vendor/geoip when
+ * the fork src/ tree was deleted — the PHP tree's copies are gone, so
+ * there is no duplication left in the tree):
  *   CC0-Country.mmdb  6,534,834 bytes (~6.2 MiB)
  *   PDDL-ASN.mmdb     8,806,141 bytes (~8.4 MiB)
- * at <php-src>/library/FOSSBilling/GeoIP/Databases/. Vendoring 15.3 MB
- * of binaries into git would duplicate the PHP tree's copies until R6
- * deletes PHP; reading the same files keeps TS and PHP byte-identical
- * (same records for every IP, proven by parity42). Resolution:
- *   FB_GEOIP_DB_DIR, else $FOSSBILLING_PHP_SRC/library/FOSSBilling/GeoIP/Databases.
- * R6 NOTE: when PHP is deleted, the Databases directory must be
- * relocated (or vendored then) and FB_GEOIP_DB_DIR pointed at it —
- * otherwise every ip_lookup fails with the missing-file error below.
+ * Reading the same files keeps TS and PHP byte-identical (same records
+ * for every IP, proven by parity42 and re-proven by parity46).
+ * Resolution:
+ *   FB_GEOIP_DB_DIR (explicit; a set-but-missing dir errors loudly,
+ *   as before), else the vendored dir (exists-checked so non-server
+ *   contexts such as probes keep the old null behavior).
  *
  * Readers are opened FRESH per lookup (no reader or result caching):
  * PHP constructs a new ASN Reader per lookupIP call, and its country
@@ -58,11 +58,8 @@ const GENERIC = "An unexpected error occurred. Please try again later.";
 export function resolveGeoipDir(): string | null {
   const override = process.env.FB_GEOIP_DB_DIR;
   if (override !== undefined && override !== "") return override;
-  const phpSrc = process.env.FOSSBILLING_PHP_SRC;
-  if (phpSrc !== undefined && phpSrc !== "") {
-    return path.join(phpSrc, "library", "FOSSBilling", "GeoIP", "Databases");
-  }
-  return null;
+  const vendored = path.join(process.cwd(), "vendor", "geoip");
+  return fs.existsSync(vendored) ? vendored : null;
 }
 
 function flagEmoji(iso: string): string {

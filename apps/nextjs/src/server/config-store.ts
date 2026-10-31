@@ -14,9 +14,11 @@
  *   2. dirname(dirname(FB_DATABASE_PATH)) + "/config.php" — the
  *      standard layout, where the data dir sits directly under the
  *      install root (runtime/src/data/*.sqlite -> runtime/src/config.php).
- *   3. FOSSBILLING_PHP_SRC + "/config.php" — the install root in a
- *      deployment where the seam runs against the PHP tree.
  *   Otherwise the store throws instead of silently reading a wrong file.
+ *   (R6c deleted the old third fallback, FOSSBILLING_PHP_SRC +
+ *   "/config.php": config resolution is install-layout, not content
+ *   override, and the PHP tree is gone. Deployments that relied on it
+ *   must set FB_CONFIG_PATH or use the standard layout.)
  *
  * Precedence contract (decision R5-2): env > config.php for
  * DEPLOYMENT values (salt, DB credentials — the crypt.ts precedent
@@ -80,8 +82,6 @@ export function resolveConfigPath(): string {
   if (explicit) return explicit;
   const dbPath = process.env.FB_DATABASE_PATH;
   if (dbPath) return path.join(path.dirname(path.dirname(dbPath)), "config.php");
-  const phpSrc = process.env.FOSSBILLING_PHP_SRC;
-  if (phpSrc) return path.join(phpSrc, "config.php");
   throw new FbError("FOSSBilling configuration file path could not be resolved.");
 }
 

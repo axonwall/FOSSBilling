@@ -123,9 +123,10 @@ def main():
                                 {"ticket": GUEST_TICKET})
         rec["t26_client"] = send("mod_support_ticket_staff_open", "client@example.com",
                                  {"ticket": CLIENT_TICKET, "c": CLIENT})
-        # Crafted staff_close from the PHP block file (subject + content
-        # block inners; the file itself is not a seeded DB template).
-        src = pathlib.Path("/home/hatch/scratch/fossbilling/repo/src/modules/Support/templates/email/mod_support_ticket_staff_close.html.twig").read_text()
+        # Crafted staff_close from the vendored block file (R6c: byte-
+        # identical copy of the PHP original; the file itself is not a
+        # seeded DB template).
+        src = pathlib.Path("/home/hatch/scratch/fossbilling/repo/apps/nextjs/vendor/php-modules/Support/templates/email/mod_support_ticket_staff_close.html.twig").read_text()
         subj = src.split("{% block subject %}")[1].split("{% endblock %}")[0]
         content = src.split("{% block content %}")[1].rsplit("{% endblock %}", 1)[0]
         d.execute(
