@@ -1,0 +1,368 @@
+{
+ "id": "order-lifecycle",
+ "description": "Admin order: create (recurring product 9, 1M) + activate + renew + cancel + get.",
+ "source": "scenario",
+ "metadata": {
+  "generator": "generate-goldens.py v1",
+  "generated_at": "2026-11-01T14:30:32.986913+00:00",
+  "ts_commit": "8be5ab7621905643ce17e24a6f4382ee8a9969df",
+  "ts_worktree_dirty_files": [],
+  "ts_worktree_note": "Goldens recorded against 8be5ab7 plus the three TS fix files listed in ts_fix_files, committed in this batch (see findings-goldens.md fix section + the batch commit message for the batch commit SHA); bare 8be5ab7 does not include those fixes.",
+  "oracle_version": "runtime/ frozen oracle (no git) \u2014 reference DB snapshot + config hash at generation",
+  "oracle_config_hash": "6e3c529673c1d089",
+  "normalization": [
+   "created_at",
+   "due_at",
+   "group_id",
+   "hash",
+   "hash_expires_at",
+   "ipn_hash",
+   "last_cron_exec",
+   "paid_at",
+   "reminded_at",
+   "updated_at",
+   "any key ending in _at",
+   "embedded 30-60 hex invoice hashes -> *HASH*",
+   "embedded datetimes -> *TS*",
+   "transaction ipn column server sub-object -> *"
+  ],
+  "payload_sha256": "117c73339e4891e1e3216f314b9c2ad53138eac149414376caeab27a7e4d63f1",
+  "ts_fix_files": [
+   "apps/nextjs/src/server/seam-call.ts",
+   "apps/nextjs/src/server/modules/cart.ts",
+   "apps/nextjs/src/server/modules/invoice.ts"
+  ]
+ },
+ "envelopes": [
+  {
+   "result": 182,
+   "error": null
+  },
+  {
+   "result": true,
+   "error": null
+  },
+  {
+   "result": true,
+   "error": null
+  },
+  {
+   "result": true,
+   "error": null
+  },
+  {
+   "result": {
+    "id": 182,
+    "client_id": 1,
+    "product_id": 9,
+    "form_id": null,
+    "promo_id": null,
+    "promo_used": null,
+    "group_id": "*",
+    "group_master": true,
+    "invoice_option": "no-invoice",
+    "title": "Phase3 Recurring Widget",
+    "currency": "USD",
+    "unpaid_invoice_id": null,
+    "service_id": 29,
+    "service_type": "custom",
+    "period": "1M",
+    "quantity": 1,
+    "unit": "product",
+    "price": "15",
+    "discount": 0,
+    "promo_recurring": null,
+    "status": "canceled",
+    "reason": null,
+    "notes": null,
+    "suspension_grace_days": null,
+    "referred_by": null,
+    "expires_at": "*",
+    "activated_at": "*",
+    "suspended_at": "*",
+    "unsuspended_at": "*",
+    "canceled_at": "*",
+    "created_at": "*",
+    "updated_at": "*",
+    "config": {
+     "period": "1M"
+    },
+    "total": 15,
+    "meta": [],
+    "active_tickets": 0,
+    "client": {
+     "id": 1,
+     "email": "phase0.client@example.com",
+     "email_approved": null,
+     "type": null,
+     "first_name": "Phase",
+     "last_name": "Zero",
+     "gender": null,
+     "birthday": null,
+     "phone_cc": "1",
+     "phone": "5125550100",
+     "company": null,
+     "company_vat": null,
+     "company_number": null,
+     "address_1": "1 Phase Way",
+     "address_2": null,
+     "city": "Austin",
+     "state": "Texas",
+     "postcode": "78701",
+     "country": "US",
+     "currency": "USD",
+     "lang": null,
+     "timezone": null
+    },
+    "plugin": null,
+    "product_suspension_grace_days": 0
+   },
+   "error": null
+  }
+ ],
+ "deltas": {
+  "client_order": {
+   "added": {
+    "182": {
+     "id": 182,
+     "client_id": 1,
+     "product_id": 9,
+     "form_id": null,
+     "promo_id": null,
+     "promo_recurring": null,
+     "promo_used": null,
+     "group_id": "*",
+     "group_master": 1,
+     "invoice_option": "no-invoice",
+     "title": "Phase3 Recurring Widget",
+     "currency": "USD",
+     "unpaid_invoice_id": null,
+     "service_id": 29,
+     "service_type": "custom",
+     "period": "1M",
+     "quantity": 1,
+     "unit": "product",
+     "price": 15,
+     "discount": null,
+     "status": "canceled",
+     "reason": null,
+     "notes": null,
+     "config": "{\"period\":\"1M\"}",
+     "suspension_grace_days": null,
+     "referred_by": null,
+     "expires_at": "*",
+     "activated_at": "*",
+     "suspended_at": "*",
+     "unsuspended_at": "*",
+     "canceled_at": "*",
+     "created_at": "*",
+     "updated_at": "*"
+    }
+   },
+   "removed": {},
+   "changed": {}
+  },
+  "client_order_status": {
+   "added": {
+    "14": {
+     "id": 14,
+     "status": "pending_setup",
+     "notes": "Order Created",
+     "created_at": "*",
+     "updated_at": "*",
+     "client_order_id": 182
+    },
+    "15": {
+     "id": 15,
+     "status": "active",
+     "notes": "Order activated",
+     "created_at": "*",
+     "updated_at": "*",
+     "client_order_id": 182
+    },
+    "16": {
+     "id": 16,
+     "status": "active",
+     "notes": "Order renewed",
+     "created_at": "*",
+     "updated_at": "*",
+     "client_order_id": 182
+    },
+    "17": {
+     "id": 17,
+     "status": "canceled",
+     "notes": "Order canceled",
+     "created_at": "*",
+     "updated_at": "*",
+     "client_order_id": 182
+    }
+   },
+   "removed": {},
+   "changed": {}
+  },
+  "service_custom": {
+   "added": {
+    "29": {
+     "id": 29,
+     "client_id": 1,
+     "plugin": null,
+     "plugin_config": null,
+     "f1": null,
+     "f2": null,
+     "f3": null,
+     "f4": null,
+     "f5": null,
+     "f6": null,
+     "f7": null,
+     "f8": null,
+     "f9": null,
+     "f10": null,
+     "config": "{\"period\":\"1M\"}",
+     "created_at": "*",
+     "updated_at": "*"
+    }
+   },
+   "removed": {},
+   "changed": {}
+  }
+ },
+ "capture": [
+  {
+   "n": 0,
+   "persona": "admin",
+   "request": {
+    "kind": "api",
+    "role": "admin",
+    "module": "order",
+    "method": "create",
+    "params": {
+     "client_id": 1,
+     "period": "1M",
+     "product_id": 9
+    },
+    "json": false
+   }
+  },
+  {
+   "n": 1,
+   "persona": "admin",
+   "request": {
+    "kind": "api",
+    "role": "admin",
+    "module": "order",
+    "method": "activate",
+    "params": {
+     "id": 182
+    },
+    "json": false
+   }
+  },
+  {
+   "n": 2,
+   "persona": "admin",
+   "request": {
+    "kind": "api",
+    "role": "admin",
+    "module": "order",
+    "method": "renew",
+    "params": {
+     "id": 182
+    },
+    "json": false
+   }
+  },
+  {
+   "n": 3,
+   "persona": "admin",
+   "request": {
+    "kind": "api",
+    "role": "admin",
+    "module": "order",
+    "method": "cancel",
+    "params": {
+     "id": 182
+    },
+    "json": false
+   }
+  },
+  {
+   "n": 4,
+   "persona": "admin",
+   "request": {
+    "kind": "api",
+    "role": "admin",
+    "module": "order",
+    "method": "get",
+    "params": {
+     "id": 182
+    },
+    "json": false
+   }
+  }
+ ],
+ "scenario": {
+  "steps": [
+   {
+    "as": "admin",
+    "call": "admin/order/create",
+    "params": {
+     "client_id": 1,
+     "period": "1M",
+     "product_id": 9
+    },
+    "save": {
+     "ord": "result"
+    }
+   },
+   {
+    "as": "admin",
+    "call": "admin/order/activate",
+    "params": {
+     "id": "$ord"
+    }
+   },
+   {
+    "as": "admin",
+    "call": "admin/order/renew",
+    "params": {
+     "id": "$ord"
+    }
+   },
+   {
+    "as": "admin",
+    "call": "admin/order/cancel",
+    "params": {
+     "id": "$ord"
+    }
+   },
+   {
+    "as": "admin",
+    "call": "admin/order/get",
+    "params": {
+     "id": "$ord"
+    }
+   }
+  ],
+  "seed_sql": [],
+  "seed_ops": []
+ },
+ "php_review": {
+  "verdict": "TRIAGED-DIVERGENCE",
+  "envelope_diffs": 0,
+  "money_diff": false,
+  "db_diff_tables": [
+   "client_order_status",
+   "email_queue"
+  ],
+  "triaged_table_reasons": {
+   "client_order_status": "findings-r6b.md \u00a78: TS writes an extra pending_setup/Order Created row at order create; PHP's first row is active/Order activated. Audit-only.",
+   "email_queue": "findings-r6b.md \u00a78: order-lifecycle + checkout notification gaps (PHP queues order Activated/Renewed/Canceled + New Order Placed; TS queues 0/1) and cron send-status transport (PHP sending vs TS failed, no SMTP on disposable TS). Row creation compared; send status triaged."
+  },
+  "diff_fields": [],
+  "harness_reports": [
+   "report.json",
+   "report.json"
+  ],
+  "note": "TS output recorded in this golden; the verdict is the TS-vs-PHP comparison for the same steps. TRIAGED-DIVERGENCE means the gap is understood, non-money, and documented \u2014 not that the golden is 'correct'."
+ }
+}

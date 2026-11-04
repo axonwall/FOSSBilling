@@ -1794,7 +1794,17 @@ register("admin", "invoice", "debit", async (ctx: CallContext) => {
   // base_income = toBaseCurrency(no-tax item sum), currency_rate
   // stays NULL, base_refund stays NULL.
   await countIncome(noteId);
-  await queueInvoiceEmail("mod_invoice_debited", noteId);
+  // Same shape as the R6b refund fix (invoice.ts refund path): the
+  // debited template renders original_invoice.serie_nr
+  // (mod_invoice_debited.html.twig:40); without it TS rendered an
+  // empty "against invoice" slot where PHP renders FOSS00358 —
+  // proven by the goldens batch's debit probe, which compared the
+  // email_queue content row-for-row.
+  await queueInvoiceEmail("mod_invoice_debited", noteId, {
+    original_invoice: {
+      serie_nr: `${inv.serie ?? ""}${String(inv.nr ?? inv.id).padStart(5, "0")}`,
+    },
+  });
   return noteId;
 });
 

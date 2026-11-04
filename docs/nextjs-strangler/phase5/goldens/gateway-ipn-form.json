@@ -1,0 +1,405 @@
+{
+ "id": "gateway-ipn-form",
+ "description": "Gateway callback: issued invoice + form POST to /ipn.php (Custom gateway 1) + transaction list. Tests the manual-approval/form path without live gateway secrets.",
+ "source": "scenario",
+ "metadata": {
+  "generator": "generate-goldens.py v1",
+  "generated_at": "2026-11-01T14:30:51.306450+00:00",
+  "ts_commit": "8be5ab7621905643ce17e24a6f4382ee8a9969df",
+  "ts_worktree_dirty_files": [],
+  "ts_worktree_note": "Goldens recorded against 8be5ab7 plus the three TS fix files listed in ts_fix_files, committed in this batch (see findings-goldens.md fix section + the batch commit message for the batch commit SHA); bare 8be5ab7 does not include those fixes.",
+  "oracle_version": "runtime/ frozen oracle (no git) \u2014 reference DB snapshot + config hash at generation",
+  "oracle_config_hash": "6e3c529673c1d089",
+  "normalization": [
+   "created_at",
+   "due_at",
+   "group_id",
+   "hash",
+   "hash_expires_at",
+   "ipn_hash",
+   "last_cron_exec",
+   "paid_at",
+   "reminded_at",
+   "updated_at",
+   "any key ending in _at",
+   "embedded 30-60 hex invoice hashes -> *HASH*",
+   "embedded datetimes -> *TS*",
+   "transaction ipn column server sub-object -> *"
+  ],
+  "payload_sha256": "fe6c4b4e70e351486116c57e36e56ce63f89bb52d4ae09e89c74b66d0caf7d11",
+  "ts_fix_files": [
+   "apps/nextjs/src/server/seam-call.ts",
+   "apps/nextjs/src/server/modules/cart.ts",
+   "apps/nextjs/src/server/modules/invoice.ts"
+  ]
+ },
+ "envelopes": [
+  {
+   "result": 489,
+   "error": null
+  },
+  {
+   "result": true,
+   "error": null
+  },
+  {
+   "result": true,
+   "error": null
+  },
+  {
+   "result": null,
+   "error": {
+    "message": "Custom payments must be approved by an administrator.",
+    "code": 7002
+   }
+  },
+  {
+   "result": {
+    "pages": 1,
+    "page": 1,
+    "per_page": 100,
+    "total": 1,
+    "list": [
+     {
+      "id": 279,
+      "invoice_id": 489,
+      "txn_id": null,
+      "txn_status": null,
+      "gateway_id": 1,
+      "gateway": "Custom",
+      "gateway_code": "Custom",
+      "requires_manual_approval": true,
+      "amount": 0,
+      "currency": null,
+      "type": null,
+      "status": "error",
+      "ip": "127.0.0.1",
+      "error": "Custom payments must be approved by an administrator.",
+      "error_code": 7002,
+      "note": null,
+      "created_at": "*",
+      "updated_at": "*"
+     }
+    ]
+   },
+   "error": null
+  }
+ ],
+ "deltas": {
+  "email_queue": {
+   "added": {
+    "530": {
+     "id": 530,
+     "recipient": "phase0.client@example.com",
+     "sender": "support@yourcompany.com",
+     "subject": "[Company Name] Invoice Created",
+     "content": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>Invoice Created</h1>\n\t<p>Hello Phase Zero,</p>\n\t<p>This is to notify that invoice 489 was generated on Nov 1, 2026.</p>\n    <ul>\n        <li><strong>Amount Due:</strong> $25.00</li>\n        <li><strong>Due Date:</strong>  Nov 6, 2026</li>\n            </ul>\n\n    <p>You may view and pay the invoice <a href='http://127.0.0.1:8080/invoice/*HASH*' target=\"_blank\">here.</a></p>\n    <p>You can also <a href=\"http://127.0.0.1:8080/invoice/pdf/*HASH*\" target=\"_blank\">download the invoice as a PDF</a>, <a href=\"http://127.0.0.1:8080/login?email=phase0.client%40example.com\" target=\"_blank\">login</a>, or <a href=\"http://127.0.0.1:8080/client/profile\" target=\"_blank\">edit your profile.</a></p>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+     "to_name": "Phase Zero",
+     "from_name": "Company Name",
+     "client_id": 1,
+     "admin_id": null,
+     "priority": 1,
+     "tries": 0,
+     "status": "pending",
+     "attachment_name": null,
+     "attachment_content": null,
+     "attachment_mime": null,
+     "created_at": "*",
+     "updated_at": "*"
+    }
+   },
+   "removed": {},
+   "changed": {}
+  },
+  "invoice": {
+   "added": {
+    "489": {
+     "id": 489,
+     "client_id": 1,
+     "serie": "FOSS",
+     "nr": "358",
+     "hash": "*",
+     "currency": "USD",
+     "currency_rate": null,
+     "credit": null,
+     "base_income": null,
+     "base_refund": null,
+     "refund": null,
+     "notes": null,
+     "text_1": null,
+     "text_2": null,
+     "status": "unpaid",
+     "credit_note_for_invoice_id": null,
+     "debit_note_for_invoice_id": null,
+     "replaces_invoice_id": null,
+     "replaced_by_invoice_id": null,
+     "seller_company": "Company Name",
+     "seller_company_vat": null,
+     "seller_company_number": null,
+     "seller_address": "Demo address line 1 Demo address line 2 Demo address line 3",
+     "seller_phone": "+123 456 12345",
+     "seller_email": "support@yourcompany.com",
+     "buyer_first_name": "Phase",
+     "buyer_last_name": "Zero",
+     "buyer_company": null,
+     "buyer_company_vat": null,
+     "buyer_company_number": null,
+     "buyer_address": "1 Phase Way",
+     "buyer_city": "Austin",
+     "buyer_state": "Texas",
+     "buyer_country": "US",
+     "buyer_zip": "78701",
+     "buyer_phone": "1 5125550100",
+     "buyer_email": "phase0.client@example.com",
+     "issued": 1,
+     "taxname": "",
+     "taxrate": "0",
+     "due_at": "*",
+     "reminded_at": "*",
+     "paid_at": "*",
+     "hash_expires_at": "*",
+     "created_at": "*",
+     "updated_at": "*",
+     "gateway_id": null
+    }
+   },
+   "removed": {},
+   "changed": {}
+  },
+  "invoice_event": {
+   "added": {
+    "835": {
+     "id": 835,
+     "invoice_id": 489,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": null,
+     "snapshot": "{\"serie_nr\":\"FOSS358\",\"status\":\"unpaid\",\"issued\":true}",
+     "created_at": "*"
+    }
+   },
+   "removed": {},
+   "changed": {}
+  },
+  "invoice_item": {
+   "added": {
+    "490": {
+     "id": 490,
+     "type": "custom",
+     "rel_id": null,
+     "refunded_item_id": null,
+     "task": "void",
+     "status": "pending_payment",
+     "title": "IPN line",
+     "period": null,
+     "quantity": 1,
+     "unit": null,
+     "price": 25,
+     "charged": 0,
+     "taxed": 0,
+     "attempts": 0,
+     "created_at": "*",
+     "updated_at": "*",
+     "invoice_id": 489
+    }
+   },
+   "removed": {},
+   "changed": {}
+  },
+  "setting": {
+   "added": {},
+   "removed": {},
+   "changed": {
+    "25": {
+     "value": [
+      "358",
+      "359"
+     ],
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ]
+    }
+   }
+  },
+  "transaction": {
+   "added": {
+    "279": {
+     "id": 279,
+     "txn_id": null,
+     "txn_status": null,
+     "s_id": null,
+     "s_period": null,
+     "amount": null,
+     "currency": null,
+     "type": null,
+     "status": "error",
+     "ip": "127.0.0.1",
+     "error": "Custom payments must be approved by an administrator.",
+     "error_code": 7002,
+     "ipn": {
+      "source": "ipn",
+      "get": {
+       "gateway_id": "1"
+      },
+      "post": {
+       "invoice_id": "489"
+      },
+      "http_raw_post_data": "invoice_id=489",
+      "server": "*"
+     },
+     "ipn_hash": "*",
+     "output": null,
+     "note": null,
+     "created_at": "*",
+     "updated_at": "*",
+     "invoice_id": 489,
+     "gateway_id": 1
+    }
+   },
+   "removed": {},
+   "changed": {}
+  }
+ },
+ "capture": [
+  {
+   "n": 0,
+   "persona": "admin",
+   "request": {
+    "kind": "api",
+    "role": "admin",
+    "module": "invoice",
+    "method": "prepare",
+    "params": {
+     "client_id": 1
+    },
+    "json": false
+   }
+  },
+  {
+   "n": 1,
+   "persona": "admin",
+   "request": {
+    "kind": "api",
+    "role": "admin",
+    "module": "invoice",
+    "method": "update",
+    "params": {
+     "id": 489,
+     "new_item": {
+      "price": 25,
+      "quantity": 1,
+      "title": "IPN line"
+     }
+    },
+    "json": false
+   }
+  },
+  {
+   "n": 2,
+   "persona": "admin",
+   "request": {
+    "kind": "api",
+    "role": "admin",
+    "module": "invoice",
+    "method": "issue",
+    "params": {
+     "id": 489
+    },
+    "json": false
+   }
+  },
+  {
+   "n": 3,
+   "persona": "anon",
+   "request": {
+    "kind": "ipn",
+    "path": "/ipn.php?gateway_id=1",
+    "form": {
+     "invoice_id": 489
+    }
+   }
+  },
+  {
+   "n": 4,
+   "persona": "admin",
+   "request": {
+    "kind": "api",
+    "role": "admin",
+    "module": "invoice",
+    "method": "transaction_get_list",
+    "params": {
+     "invoice_id": 489
+    },
+    "json": false
+   }
+  }
+ ],
+ "scenario": {
+  "steps": [
+   {
+    "as": "admin",
+    "call": "admin/invoice/prepare",
+    "params": {
+     "client_id": 1
+    },
+    "save": {
+     "inv": "result"
+    }
+   },
+   {
+    "as": "admin",
+    "call": "admin/invoice/update",
+    "params": {
+     "id": "$inv",
+     "new_item": {
+      "price": 25,
+      "quantity": 1,
+      "title": "IPN line"
+     }
+    }
+   },
+   {
+    "as": "admin",
+    "call": "admin/invoice/issue",
+    "params": {
+     "id": "$inv"
+    }
+   },
+   {
+    "ipn": {
+     "form": {
+      "invoice_id": "$inv"
+     },
+     "path": "/ipn.php?gateway_id=1"
+    }
+   },
+   {
+    "as": "admin",
+    "call": "admin/invoice/transaction_get_list",
+    "params": {
+     "invoice_id": "$inv"
+    }
+   }
+  ],
+  "seed_sql": [],
+  "seed_ops": []
+ },
+ "php_review": {
+  "verdict": "TRIAGED-DIVERGENCE",
+  "envelope_diffs": 0,
+  "money_diff": false,
+  "db_diff_tables": [
+   "invoice_event"
+  ],
+  "triaged_table_reasons": {
+   "invoice_event": "findings-r6b.md \u00a78: PHP logs created+updated+issued+paid(+refunded) with full snapshots + actor ids; TS logs issued+paid(+refunded) minimal, NULL actors, unpadded serie_nr in snapshots. Audit-only, not a money table."
+  },
+  "diff_fields": [],
+  "harness_reports": [
+   "report.json",
+   "report.json"
+  ],
+  "note": "TS output recorded in this golden; the verdict is the TS-vs-PHP comparison for the same steps. TRIAGED-DIVERGENCE means the gap is understood, non-money, and documented \u2014 not that the golden is 'correct'."
+ }
+}

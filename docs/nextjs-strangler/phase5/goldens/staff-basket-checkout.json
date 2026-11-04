@@ -1,0 +1,703 @@
+{
+ "id": "staff-basket-checkout",
+ "description": "TRIPWIRE (R5b \u00a79): full staff basket checkout with mark-as-paid, asserting base_income/base_refund/currency_rate via the DB delta + invoice get.",
+ "source": "scenario",
+ "metadata": {
+  "generator": "generate-goldens.py v1",
+  "generated_at": "2026-11-01T14:30:37.462470+00:00",
+  "ts_commit": "8be5ab7621905643ce17e24a6f4382ee8a9969df",
+  "ts_worktree_dirty_files": [],
+  "ts_worktree_note": "Goldens recorded against 8be5ab7 plus the three TS fix files listed in ts_fix_files, committed in this batch (see findings-goldens.md fix section + the batch commit message for the batch commit SHA); bare 8be5ab7 does not include those fixes.",
+  "oracle_version": "runtime/ frozen oracle (no git) \u2014 reference DB snapshot + config hash at generation",
+  "oracle_config_hash": "6e3c529673c1d089",
+  "normalization": [
+   "created_at",
+   "due_at",
+   "group_id",
+   "hash",
+   "hash_expires_at",
+   "ipn_hash",
+   "last_cron_exec",
+   "paid_at",
+   "reminded_at",
+   "updated_at",
+   "any key ending in _at",
+   "embedded 30-60 hex invoice hashes -> *HASH*",
+   "embedded datetimes -> *TS*",
+   "transaction ipn column server sub-object -> *"
+  ],
+  "payload_sha256": "d2cd5a75a6529479006a8535363a2efaf98f8bca0726fbfc8928058ec8a420c1",
+  "ts_fix_files": [
+   "apps/nextjs/src/server/seam-call.ts",
+   "apps/nextjs/src/server/modules/cart.ts",
+   "apps/nextjs/src/server/modules/invoice.ts"
+  ]
+ },
+ "envelopes": [
+  {
+   "result": true,
+   "error": null
+  },
+  {
+   "result": {
+    "promocode": null,
+    "promo_source": null,
+    "auto_promos": [],
+    "discount": 0,
+    "subtotal": 10,
+    "total": 10,
+    "items": [
+     {
+      "__cart_family": "*HASH*",
+      "id": 60,
+      "product_id": 3,
+      "form_id": null,
+      "title": "Phase0 Widget Hosting",
+      "type": "custom",
+      "quantity": 1,
+      "unit": "product",
+      "price": 10,
+      "setup_price": 0,
+      "discount": 0,
+      "discount_price": 0,
+      "discount_setup": 0,
+      "total": 10
+     }
+    ],
+    "currency": {
+     "code": "USD",
+     "name": "US Dollar",
+     "symbol": "$",
+     "conversion_rate": 1,
+     "is_rate_manual": false,
+     "format_pattern": null,
+     "fraction_digits": null,
+     "default": true
+    },
+    "subscribable": false
+   },
+   "error": null
+  },
+  {
+   "result": {
+    "gateway_id": 1,
+    "invoice_id": 489,
+    "invoice_hash": "*HASH*",
+    "order_id": 182,
+    "orders": [
+     182
+    ]
+   },
+   "error": null
+  },
+  {
+   "result": {
+    "id": 489,
+    "serie": "FOSS",
+    "nr": "358",
+    "client_id": 1,
+    "serie_nr": "FOSS00358",
+    "hash": "*",
+    "hash_expires_at": "*",
+    "gateway_id": 1,
+    "taxname": "",
+    "taxrate": "0",
+    "currency": "USD",
+    "currency_rate": 1,
+    "tax": 0,
+    "subtotal": 10,
+    "total": 10,
+    "status": "paid",
+    "notes": null,
+    "text_1": null,
+    "text_2": null,
+    "due_at": "*",
+    "paid_at": "*",
+    "created_at": "*",
+    "updated_at": "*",
+    "lines": [
+     {
+      "id": 490,
+      "title": "Phase0 Widget Hosting",
+      "period": null,
+      "quantity": 1,
+      "unit": "product",
+      "price": "10",
+      "tax": 0,
+      "taxed": 0,
+      "charged": 0,
+      "total": 10,
+      "order_id": "182",
+      "type": "order",
+      "rel_id": "182",
+      "task": "activate",
+      "status": "pending_setup",
+      "remaining_quantity": 1
+     }
+    ],
+    "buyer": {
+     "first_name": "Phase",
+     "last_name": "Zero",
+     "company": null,
+     "company_vat": null,
+     "company_number": null,
+     "address": "1 Phase Way",
+     "city": "Austin",
+     "state": "Texas",
+     "country": "US",
+     "phone": "1 5125550100",
+     "email": "phase0.client@example.com",
+     "zip": "78701"
+    },
+    "seller": {
+     "company": "Company Name",
+     "company_vat": "",
+     "company_number": "",
+     "address": "Demo address line 1 Demo address line 2 Demo address line 3",
+     "address_1": "Demo address line 1 Demo address line 2 Demo address line 3",
+     "address_2": "",
+     "address_3": "",
+     "phone": "+123 456 12345",
+     "email": "support@yourcompany.com",
+     "account_number": null,
+     "bank_name": null,
+     "bic": null
+    },
+    "client": {
+     "id": 1,
+     "email": "phase0.client@example.com",
+     "email_approved": null,
+     "type": null,
+     "first_name": "Phase",
+     "last_name": "Zero",
+     "gender": null,
+     "birthday": null,
+     "phone_cc": "1",
+     "phone": "5125550100",
+     "company": null,
+     "company_vat": null,
+     "company_number": null,
+     "address_1": "1 Phase Way",
+     "address_2": null,
+     "city": "Austin",
+     "state": "Texas",
+     "postcode": "78701",
+     "country": "US",
+     "currency": "USD",
+     "lang": null,
+     "timezone": null
+    },
+    "reminded_at": "*",
+    "issued": true,
+    "editable": false,
+    "cancellable": false,
+    "deletable": false,
+    "credit_note_for_invoice_id": null,
+    "debit_note_for_invoice_id": null,
+    "replaces_invoice_id": null,
+    "replaced_by_invoice_id": null,
+    "refunded_by_invoice_ids": [],
+    "refunded_total": 0,
+    "remaining_refundable": 10,
+    "income": 10,
+    "refund": 0,
+    "credit": 0,
+    "subscribable": false,
+    "orders": [
+     {
+      "id": 182,
+      "title": "Phase0 Widget Hosting",
+      "expires_at": "*",
+      "product_name": "Phase0 Widget Hosting",
+      "product_type": "custom"
+     }
+    ],
+    "promo_applications": [],
+    "debited_by_invoice_ids": []
+   },
+   "error": null
+  },
+  {
+   "result": {
+    "id": 182,
+    "client_id": 1,
+    "product_id": 3,
+    "form_id": null,
+    "promo_id": null,
+    "promo_used": null,
+    "group_id": "*",
+    "group_master": true,
+    "invoice_option": "issue-invoice",
+    "title": "Phase0 Widget Hosting",
+    "currency": "USD",
+    "unpaid_invoice_id": null,
+    "service_id": null,
+    "service_type": "custom",
+    "period": null,
+    "quantity": 1,
+    "unit": "product",
+    "price": "10",
+    "discount": "0",
+    "promo_recurring": null,
+    "status": "pending_setup",
+    "reason": null,
+    "notes": null,
+    "suspension_grace_days": null,
+    "referred_by": null,
+    "expires_at": "*",
+    "activated_at": "*",
+    "suspended_at": "*",
+    "unsuspended_at": "*",
+    "canceled_at": "*",
+    "created_at": "*",
+    "updated_at": "*",
+    "config": {
+     "id": 60,
+     "product_id": 3,
+     "form_id": null,
+     "title": "Phase0 Widget Hosting",
+     "type": "custom",
+     "quantity": 1,
+     "unit": "product",
+     "price": 10,
+     "setup_price": 0,
+     "discount": 0,
+     "discount_price": 0,
+     "discount_setup": 0,
+     "total": 10
+    },
+    "total": 10,
+    "meta": [],
+    "active_tickets": 0,
+    "client": {
+     "id": 1,
+     "email": "phase0.client@example.com",
+     "email_approved": null,
+     "type": null,
+     "first_name": "Phase",
+     "last_name": "Zero",
+     "gender": null,
+     "birthday": null,
+     "phone_cc": "1",
+     "phone": "5125550100",
+     "company": null,
+     "company_vat": null,
+     "company_number": null,
+     "address_1": "1 Phase Way",
+     "address_2": null,
+     "city": "Austin",
+     "state": "Texas",
+     "postcode": "78701",
+     "country": "US",
+     "currency": "USD",
+     "lang": null,
+     "timezone": null
+    },
+    "plugin": null,
+    "product_suspension_grace_days": 0
+   },
+   "error": null
+  }
+ ],
+ "deltas": {
+  "client_order": {
+   "added": {
+    "182": {
+     "id": 182,
+     "client_id": 1,
+     "product_id": 3,
+     "form_id": null,
+     "promo_id": null,
+     "promo_recurring": null,
+     "promo_used": null,
+     "group_id": "*",
+     "group_master": 1,
+     "invoice_option": "issue-invoice",
+     "title": "Phase0 Widget Hosting",
+     "currency": "USD",
+     "unpaid_invoice_id": null,
+     "service_id": null,
+     "service_type": "custom",
+     "period": null,
+     "quantity": 1,
+     "unit": "product",
+     "price": 10,
+     "discount": 0,
+     "status": "pending_setup",
+     "reason": null,
+     "notes": null,
+     "config": "{\"id\":60,\"product_id\":3,\"form_id\":null,\"title\":\"Phase0 Widget Hosting\",\"type\":\"custom\",\"quantity\":1,\"unit\":\"product\",\"price\":10,\"setup_price\":0,\"discount\":0,\"discount_price\":0,\"discount_setup\":0,\"total\":10}",
+     "suspension_grace_days": null,
+     "referred_by": null,
+     "expires_at": "*",
+     "activated_at": "*",
+     "suspended_at": "*",
+     "unsuspended_at": "*",
+     "canceled_at": "*",
+     "created_at": "*",
+     "updated_at": "*"
+    }
+   },
+   "removed": {},
+   "changed": {}
+  },
+  "client_order_status": {
+   "added": {
+    "14": {
+     "id": 14,
+     "status": "pending_setup",
+     "notes": "Order Created",
+     "created_at": "*",
+     "updated_at": "*",
+     "client_order_id": 182
+    }
+   },
+   "removed": {},
+   "changed": {}
+  },
+  "email_queue": {
+   "added": {
+    "530": {
+     "id": 530,
+     "recipient": "phase0.client@example.com",
+     "sender": "support@yourcompany.com",
+     "subject": "[Company Name] Invoice Created",
+     "content": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>Invoice Created</h1>\n\t<p>Hello Phase Zero,</p>\n\t<p>This is to notify that invoice 489 was generated on Nov 1, 2026.</p>\n    <ul>\n        <li><strong>Amount Due:</strong> $10.00</li>\n        <li><strong>Due Date:</strong>  Nov 6, 2026</li>\n                                    <li><strong>Order ID:</strong> #182</li>\n                                    <li><strong>Product:</strong> Phase0 Widget Hosting</li>\n                                                        </ul>\n\n    <p>You may view and pay the invoice <a href='http://127.0.0.1:8080/invoice/*HASH*' target=\"_blank\">here.</a></p>\n    <p>You can also <a href=\"http://127.0.0.1:8080/invoice/pdf/*HASH*\" target=\"_blank\">download the invoice as a PDF</a>, <a href=\"http://127.0.0.1:8080/login?email=phase0.client%40example.com\" target=\"_blank\">login</a>, or <a href=\"http://127.0.0.1:8080/client/profile\" target=\"_blank\">edit your profile.</a></p>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+     "to_name": "Phase Zero",
+     "from_name": "Company Name",
+     "client_id": 1,
+     "admin_id": null,
+     "priority": 1,
+     "tries": 0,
+     "status": "pending",
+     "attachment_name": null,
+     "attachment_content": null,
+     "attachment_mime": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "531": {
+     "id": 531,
+     "recipient": "phase0.client@example.com",
+     "sender": "support@yourcompany.com",
+     "subject": "[Company Name] Payment Received",
+     "content": "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>Invoice Paid</h1>\n\t<p>Hello Phase Zero,</p>\n\t<p>This is a payment receipt for invoice <strong>FOSS00358</strong> issued on Nov 1, 2026</p>\n    <ul>\n        <li><strong>Total Paid:</strong> $10.00</li>\n        <li><strong>Date Paid:</strong>  Nov 1, 2026</li>\n                                    <li><strong>Order ID:</strong> #182</li>\n                                    <li><strong>Product:</strong> Phase0 Widget Hosting</li>\n                                                        </ul>\n\n    <p>You may view the invoice <a href='http://127.0.0.1:8080/invoice/*HASH*' target=\"_blank\">here.</a></p>\n    <p>You can also <a href=\"http://127.0.0.1:8080/invoice/pdf/*HASH*\" target=\"_blank\">download the invoice as a PDF</a>, <a href=\"http://127.0.0.1:8080/login?email=phase0.client%40example.com\" target=\"_blank\">login</a>, or <a href=\"http://127.0.0.1:8080/client/profile\" target=\"_blank\">edit your profile.</a></p>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+     "to_name": "Phase Zero",
+     "from_name": "Company Name",
+     "client_id": 1,
+     "admin_id": null,
+     "priority": 1,
+     "tries": 0,
+     "status": "pending",
+     "attachment_name": null,
+     "attachment_content": null,
+     "attachment_mime": null,
+     "created_at": "*",
+     "updated_at": "*"
+    }
+   },
+   "removed": {},
+   "changed": {}
+  },
+  "invoice": {
+   "added": {
+    "489": {
+     "id": 489,
+     "client_id": 1,
+     "serie": "FOSS",
+     "nr": "358",
+     "hash": "*",
+     "currency": "USD",
+     "currency_rate": 1,
+     "credit": null,
+     "base_income": 10,
+     "base_refund": null,
+     "refund": null,
+     "notes": null,
+     "text_1": null,
+     "text_2": null,
+     "status": "paid",
+     "credit_note_for_invoice_id": null,
+     "debit_note_for_invoice_id": null,
+     "replaces_invoice_id": null,
+     "replaced_by_invoice_id": null,
+     "seller_company": "Company Name",
+     "seller_company_vat": null,
+     "seller_company_number": null,
+     "seller_address": "Demo address line 1 Demo address line 2 Demo address line 3",
+     "seller_phone": "+123 456 12345",
+     "seller_email": "support@yourcompany.com",
+     "buyer_first_name": "Phase",
+     "buyer_last_name": "Zero",
+     "buyer_company": null,
+     "buyer_company_vat": null,
+     "buyer_company_number": null,
+     "buyer_address": "1 Phase Way",
+     "buyer_city": "Austin",
+     "buyer_state": "Texas",
+     "buyer_country": "US",
+     "buyer_zip": "78701",
+     "buyer_phone": "1 5125550100",
+     "buyer_email": "phase0.client@example.com",
+     "issued": 1,
+     "taxname": "",
+     "taxrate": "0",
+     "due_at": "*",
+     "reminded_at": "*",
+     "paid_at": "*",
+     "hash_expires_at": "*",
+     "created_at": "*",
+     "updated_at": "*",
+     "gateway_id": 1
+    }
+   },
+   "removed": {},
+   "changed": {}
+  },
+  "invoice_event": {
+   "added": {
+    "835": {
+     "id": 835,
+     "invoice_id": 489,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": null,
+     "snapshot": "{\"serie_nr\":\"FOSS358\",\"status\":\"unpaid\",\"issued\":true}",
+     "created_at": "*"
+    },
+    "836": {
+     "id": 836,
+     "invoice_id": 489,
+     "type": "paid",
+     "admin_id": null,
+     "client_id": null,
+     "snapshot": "{\"status\":\"paid\"}",
+     "created_at": "*"
+    }
+   },
+   "removed": {},
+   "changed": {}
+  },
+  "invoice_item": {
+   "added": {
+    "490": {
+     "id": 490,
+     "type": "order",
+     "rel_id": "182",
+     "refunded_item_id": null,
+     "task": "activate",
+     "status": "pending_setup",
+     "title": "Phase0 Widget Hosting",
+     "period": null,
+     "quantity": 1,
+     "unit": "product",
+     "price": 10,
+     "charged": 0,
+     "taxed": 0,
+     "attempts": 0,
+     "created_at": "*",
+     "updated_at": "*",
+     "invoice_id": 489
+    }
+   },
+   "removed": {},
+   "changed": {}
+  },
+  "setting": {
+   "added": {},
+   "removed": {},
+   "changed": {
+    "25": {
+     "value": [
+      "358",
+      "359"
+     ],
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ]
+    }
+   }
+  },
+  "transaction": {
+   "added": {
+    "279": {
+     "id": 279,
+     "txn_id": "shadow-staff-txn-1",
+     "txn_status": null,
+     "s_id": null,
+     "s_period": null,
+     "amount": 10,
+     "currency": "USD",
+     "type": null,
+     "status": "processed",
+     "ip": "127.0.0.1",
+     "error": null,
+     "error_code": null,
+     "ipn": {
+      "source": "admin",
+      "get": null,
+      "post": {
+       "invoice_id": 489,
+       "txn_id": "shadow-staff-txn-1"
+      },
+      "http_raw_post_data": null,
+      "server": "*"
+     },
+     "ipn_hash": "*",
+     "output": null,
+     "note": "Custom transaction No: shadow-staff-txn-1",
+     "created_at": "*",
+     "updated_at": "*",
+     "invoice_id": 489,
+     "gateway_id": 1
+    }
+   },
+   "removed": {},
+   "changed": {}
+  }
+ },
+ "capture": [
+  {
+   "n": 0,
+   "persona": "admin",
+   "request": {
+    "kind": "api",
+    "role": "admin",
+    "module": "cart",
+    "method": "staff_basket_add_item",
+    "params": {
+     "client_id": 1,
+     "id": 3
+    },
+    "json": false
+   }
+  },
+  {
+   "n": 1,
+   "persona": "admin",
+   "request": {
+    "kind": "api",
+    "role": "admin",
+    "module": "cart",
+    "method": "staff_basket_get",
+    "params": {
+     "client_id": 1
+    },
+    "json": false
+   }
+  },
+  {
+   "n": 2,
+   "persona": "admin",
+   "request": {
+    "kind": "api",
+    "role": "admin",
+    "module": "cart",
+    "method": "staff_basket_checkout",
+    "params": {
+     "client_id": 1,
+     "gateway_id": 1,
+     "mark_invoice_paid": true,
+     "transactionId": "shadow-staff-txn-1"
+    },
+    "json": false
+   }
+  },
+  {
+   "n": 3,
+   "persona": "admin",
+   "request": {
+    "kind": "api",
+    "role": "admin",
+    "module": "invoice",
+    "method": "get",
+    "params": {
+     "id": 489
+    },
+    "json": false
+   }
+  },
+  {
+   "n": 4,
+   "persona": "admin",
+   "request": {
+    "kind": "api",
+    "role": "admin",
+    "module": "order",
+    "method": "get",
+    "params": {
+     "id": 182
+    },
+    "json": false
+   }
+  }
+ ],
+ "scenario": {
+  "steps": [
+   {
+    "as": "admin",
+    "call": "admin/cart/staff_basket_add_item",
+    "params": {
+     "client_id": 1,
+     "id": 3
+    }
+   },
+   {
+    "as": "admin",
+    "call": "admin/cart/staff_basket_get",
+    "params": {
+     "client_id": 1
+    }
+   },
+   {
+    "as": "admin",
+    "call": "admin/cart/staff_basket_checkout",
+    "params": {
+     "client_id": 1,
+     "gateway_id": 1,
+     "mark_invoice_paid": true,
+     "transactionId": "shadow-staff-txn-1"
+    },
+    "save": {
+     "inv": "result.invoice_id",
+     "invhash": "result.invoice_hash",
+     "ord": "result.order_id"
+    }
+   },
+   {
+    "as": "admin",
+    "call": "admin/invoice/get",
+    "params": {
+     "id": "$inv"
+    }
+   },
+   {
+    "as": "admin",
+    "call": "admin/order/get",
+    "params": {
+     "id": "$ord"
+    }
+   }
+  ],
+  "seed_sql": [],
+  "seed_ops": []
+ },
+ "php_review": {
+  "verdict": "TRIAGED-DIVERGENCE",
+  "envelope_diffs": 0,
+  "money_diff": false,
+  "db_diff_tables": [
+   "invoice_event"
+  ],
+  "triaged_table_reasons": {
+   "invoice_event": "findings-r6b.md \u00a78: PHP logs created+updated+issued+paid(+refunded) with full snapshots + actor ids; TS logs issued+paid(+refunded) minimal, NULL actors, unpadded serie_nr in snapshots. Audit-only, not a money table."
+  },
+  "diff_fields": [],
+  "harness_reports": [
+   "report.json",
+   "report.json"
+  ],
+  "note": "TS output recorded in this golden; the verdict is the TS-vs-PHP comparison for the same steps. TRIAGED-DIVERGENCE means the gap is understood, non-money, and documented \u2014 not that the golden is 'correct'."
+ }
+}

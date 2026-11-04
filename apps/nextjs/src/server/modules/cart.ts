@@ -861,7 +861,24 @@ function expandBrackets(params: Record<string, string>): Record<string, unknown>
     }
     cur[parts[parts.length - 1]] = v;
   }
-  return out;
+  // Same PHP-parsing rule as seam-call's expandBracketParams: a map
+  // whose keys are exactly 0..n-1 is a list (see there for the debit
+  // probe that proved the object shape breaks array handlers).
+  const toArrays = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(toArrays);
+    if (typeof v !== "object" || v === null) return v;
+    const entries = Object.entries(v).map(([k, val]) => [k, toArrays(val)] as const);
+    const keys = entries.map(([k]) => k);
+    if (
+      keys.length > 0 &&
+      keys.every((k) => String(Number(k)) === k && Number.isInteger(Number(k)) && Number(k) >= 0)
+    ) {
+      const sorted = [...entries].sort(([a], [b]) => Number(a) - Number(b));
+      if (sorted.every(([k], i) => Number(k) === i)) return sorted.map(([, val]) => val);
+    }
+    return Object.fromEntries(entries);
+  };
+  return toArrays(out) as Record<string, unknown>;
 }
 
 /**

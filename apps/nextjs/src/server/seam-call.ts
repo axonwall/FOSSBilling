@@ -67,6 +67,32 @@ export const VALID_ROLES = new Set(["admin", "client", "guest"]);
  * strings (PHP form values are strings too); CSRFToken is skipped
  * (auth material, enforced separately from params/header).
  */
+/** PHP form parsing turns `a[0]=x&a[1]=y` (and `a[][x]` sequences)
+ * into a LIST, not a map with "0"/"1" keys — Admin::debit does
+ * `array_values($items)` on exactly that shape. The builder above
+ * only ever produces plain objects, so a post-order pass converts
+ * any object whose keys are exactly 0..n-1 (canonical integers, so
+ * "01" or id-keyed maps like invoice update's items[490] never
+ * convert) into a real array. Without this, every handler that
+ * requires an array from rawParams (debit items, support
+ * batch_delete ids) 9998s/throws on form posts while JSON posts
+ * work — the goldens batch's debit probe proved it (PHP minted
+ * note 490, TS answered "Debit items are missing"). */
+export function arraysFromNumericKeys(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(arraysFromNumericKeys);
+  if (typeof v !== "object" || v === null) return v;
+  const entries = Object.entries(v).map(([k, val]) => [k, arraysFromNumericKeys(val)] as const);
+  const keys = entries.map(([k]) => k);
+  if (
+    keys.length > 0 &&
+    keys.every((k) => String(Number(k)) === k && Number.isInteger(Number(k)) && Number(k) >= 0)
+  ) {
+    const sorted = [...entries].sort(([a], [b]) => Number(a) - Number(b));
+    if (sorted.every(([k], i) => Number(k) === i)) return sorted.map(([, val]) => val);
+  }
+  return Object.fromEntries(entries);
+}
+
 export function expandBracketParams(
   params: Record<string, string>,
 ): Record<string, unknown> {
@@ -89,7 +115,7 @@ export function expandBracketParams(
     }
     cur[parts[parts.length - 1]] = v;
   }
-  return out;
+  return arraysFromNumericKeys(out) as Record<string, unknown>;
 }
 
 /** PHP router error for paths the API router does not recognize. */

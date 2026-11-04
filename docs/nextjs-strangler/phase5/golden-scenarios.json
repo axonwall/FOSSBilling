@@ -1,0 +1,441 @@
+{
+ "scenarios": [
+  {
+   "description": "Admin invoice: prepare + line + issue + mark-as-paid (Custom) + full refund + get. Asserts the R5b money columns via the DB delta.",
+   "id": "invoice-pay-refund",
+   "seed_ops": [],
+   "seed_sql": [],
+   "steps": [
+    {
+     "as": "admin",
+     "call": "admin/invoice/prepare",
+     "params": {
+      "client_id": 1
+     },
+     "save": {
+      "inv": "result"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/update",
+     "params": {
+      "id": "$inv",
+      "new_item": {
+       "price": 25,
+       "quantity": 1,
+       "title": "Shadow line"
+      }
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/issue",
+     "params": {
+      "id": "$inv"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/mark_as_paid",
+     "params": {
+      "gateway_id": 1,
+      "id": "$inv",
+      "transactionId": "shadow-txn-1"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/refund",
+     "params": {
+      "id": "$inv"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/get",
+     "params": {
+      "id": "$inv"
+     }
+    }
+   ]
+  },
+  {
+   "description": "Admin invoice paid with client credits (fixture flow: 50 balance, 30 line).",
+   "id": "invoice-pay-credits",
+   "seed_ops": [],
+   "seed_sql": [
+    "INSERT INTO client_balance (type, rel_id, invoice_item_id, amount, description, created_at, updated_at, client_id) VALUES ('fixture', NULL, NULL, 50, 'Shadow top-up', datetime('now'), datetime('now'), 1)"
+   ],
+   "steps": [
+    {
+     "as": "admin",
+     "call": "admin/invoice/prepare",
+     "params": {
+      "client_id": 1
+     },
+     "save": {
+      "inv": "result"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/update",
+     "params": {
+      "id": "$inv",
+      "new_item": {
+       "price": 30,
+       "quantity": 1,
+       "title": "Credit-paid line"
+      }
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/issue",
+     "params": {
+      "id": "$inv"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/pay_with_credits",
+     "params": {
+      "id": "$inv"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/get",
+     "params": {
+      "id": "$inv"
+     }
+    }
+   ]
+  },
+  {
+   "description": "Admin order: create (recurring product 9, 1M) + activate + renew + cancel + get.",
+   "id": "order-lifecycle",
+   "seed_ops": [],
+   "seed_sql": [],
+   "steps": [
+    {
+     "as": "admin",
+     "call": "admin/order/create",
+     "params": {
+      "client_id": 1,
+      "period": "1M",
+      "product_id": 9
+     },
+     "save": {
+      "ord": "result"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/order/activate",
+     "params": {
+      "id": "$ord"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/order/renew",
+     "params": {
+      "id": "$ord"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/order/cancel",
+     "params": {
+      "id": "$ord"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/order/get",
+     "params": {
+      "id": "$ord"
+     }
+    }
+   ]
+  },
+  {
+   "description": "Client-session checkout: the guest cart endpoints are session-based, so the LOGGED-IN client jar drives them (same session through add and checkout). The earlier separate-jar shape proved only that both stacks fail identically on an orphaned guest cart (empty-cart error, no order) \u2014 it never exercised checkout. Anonymous-add-then-login cart migration is NOT covered by either shape.",
+   "id": "cart-checkout",
+   "seed_ops": [],
+   "seed_sql": [],
+   "steps": [
+    {
+     "as": "client",
+     "call": "guest/cart/reset",
+     "params": {}
+    },
+    {
+     "as": "client",
+     "call": "guest/cart/add_item",
+     "params": {
+      "id": 3
+     }
+    },
+    {
+     "as": "client",
+     "call": "guest/cart/get",
+     "params": {}
+    },
+    {
+     "as": "client",
+     "call": "client/cart/checkout",
+     "params": {
+      "gateway_id": 1
+     },
+     "save": {
+      "invhash": "result.invoice_hash",
+      "ord": "result.order_id"
+     }
+    },
+    {
+     "as": "client",
+     "call": "client/invoice/get",
+     "params": {
+      "hash": "$invhash"
+     }
+    }
+   ]
+  },
+  {
+   "description": "TRIPWIRE (R5b \u00a79): full staff basket checkout with mark-as-paid, asserting base_income/base_refund/currency_rate via the DB delta + invoice get.",
+   "id": "staff-basket-checkout",
+   "seed_ops": [],
+   "seed_sql": [],
+   "steps": [
+    {
+     "as": "admin",
+     "call": "admin/cart/staff_basket_add_item",
+     "params": {
+      "client_id": 1,
+      "id": 3
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/cart/staff_basket_get",
+     "params": {
+      "client_id": 1
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/cart/staff_basket_checkout",
+     "params": {
+      "client_id": 1,
+      "gateway_id": 1,
+      "mark_invoice_paid": true,
+      "transactionId": "shadow-staff-txn-1"
+     },
+     "save": {
+      "inv": "result.invoice_id",
+      "invhash": "result.invoice_hash",
+      "ord": "result.order_id"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/get",
+     "params": {
+      "id": "$inv"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/order/get",
+     "params": {
+      "id": "$ord"
+     }
+    }
+   ]
+  },
+  {
+   "description": "Admin cron run (all 13 jobs) on disposable stacks; diffs envelopes + invoice/order/email deltas. Email-send transport behavior is triaged as non-money if it diverges (see findings).",
+   "id": "cron-run",
+   "seed_ops": [],
+   "seed_sql": [],
+   "steps": [
+    {
+     "as": "admin",
+     "call": "admin/cron/run",
+     "params": {}
+    }
+   ]
+  },
+  {
+   "description": "Gateway callback: issued invoice + form POST to /ipn.php (Custom gateway 1) + transaction list. Tests the manual-approval/form path without live gateway secrets.",
+   "id": "gateway-ipn-form",
+   "seed_ops": [],
+   "seed_sql": [],
+   "steps": [
+    {
+     "as": "admin",
+     "call": "admin/invoice/prepare",
+     "params": {
+      "client_id": 1
+     },
+     "save": {
+      "inv": "result"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/update",
+     "params": {
+      "id": "$inv",
+      "new_item": {
+       "price": 25,
+       "quantity": 1,
+       "title": "IPN line"
+      }
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/issue",
+     "params": {
+      "id": "$inv"
+     }
+    },
+    {
+     "ipn": {
+      "form": {
+       "invoice_id": "$inv"
+      },
+      "path": "/ipn.php?gateway_id=1"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/transaction_get_list",
+     "params": {
+      "invoice_id": "$inv"
+     }
+    }
+   ]
+  },
+  {
+   "id": "invoice-debit-note",
+   "description": "Admin invoice: prepare + line + issue + debit note (DN counter) + note get. Covers R6b fix 3 (debit side) + the bracket-array fix + debit-email original_invoice context.",
+   "seed_sql": [],
+   "seed_ops": [],
+   "steps": [
+    {
+     "as": "admin",
+     "call": "admin/invoice/prepare",
+     "params": {
+      "client_id": 1
+     },
+     "save": {
+      "inv": "result"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/update",
+     "params": {
+      "id": "$inv",
+      "new_item": {
+       "price": 25,
+       "quantity": 1,
+       "title": "Orig line"
+      }
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/issue",
+     "params": {
+      "id": "$inv"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/debit",
+     "params": {
+      "id": "$inv",
+      "items": [
+       {
+        "title": "Debit line",
+        "price": 10,
+        "quantity": 1
+       }
+      ]
+     },
+     "save": {
+      "note": "result"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/get",
+     "params": {
+      "id": "$note"
+     }
+    }
+   ]
+  },
+  {
+   "id": "invoice-paypal-form",
+   "description": "Admin invoice: prepare + line + issue + get (hash) + guest payment form for PayPalEmail gateway 2. Gateway coverage: PayPal form generation (no live call).",
+   "seed_sql": [],
+   "seed_ops": [],
+   "steps": [
+    {
+     "as": "admin",
+     "call": "admin/invoice/prepare",
+     "params": {
+      "client_id": 1
+     },
+     "save": {
+      "inv": "result"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/update",
+     "params": {
+      "id": "$inv",
+      "new_item": {
+       "price": 25,
+       "quantity": 1,
+       "title": "PayPal line"
+      }
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/issue",
+     "params": {
+      "id": "$inv"
+     }
+    },
+    {
+     "as": "admin",
+     "call": "admin/invoice/get",
+     "params": {
+      "id": "$inv"
+     },
+     "save": {
+      "hash": "result.hash"
+     }
+    },
+    {
+     "as": "anon",
+     "call": "guest/invoice/payment",
+     "params": {
+      "hash": "$hash",
+      "gateway_id": 2
+     }
+    }
+   ]
+  }
+ ]
+}

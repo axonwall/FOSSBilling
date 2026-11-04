@@ -152,17 +152,76 @@ sandbox; the exact commands below run on a docker host)**
 
 ## G5 — D6-2 oracle retention (runtime/ frozen oracle)
 
-**Status: MET (retained) — with the deletion gate explicitly NOT met**
+**Status: MET (retained) — D6-1's exit criteria now all MET, but
+deletion itself is STILL a separate later decision, NOT approved
+by this edit**
 
 - `runtime/` (the frozen oracle: PHP install at the last
-  PHP-serving commit) is RETAINED. R6d does NOT delete it.
+  PHP-serving commit) is RETAINED. This batch does NOT delete it.
 - Deletion is a SEPARATE later decision, gated on D6-1's exit
   criteria: (1) R6c green — MET; (2) one clean full-chain run
   against the frozen oracle — MET (the R6c chain); (3) the
-  money-path goldens generated AND reviewed — NOT MET
-  (goldens do not exist yet). Until (3) is met, oracle
-  deletion is NOT approved, and no batch may delete
-  `runtime/` as a side effect.
+  money-path goldens generated AND reviewed — MET (goldens
+  batch, 2026-11-01: 19 goldens in
+  `docs/nextjs-strangler/phase5/goldens/`; per-golden PHP
+  review in `findings-goldens.md` — 0 DIFFERS, 0 MISSING;
+  replay proof AFTER the comparison-side fix, 2026-11-04:
+  parity48 18/19 MATCH, 200 passed / 1 failed, on the
+  immediate re-run AND again after a full chain run that
+  advanced reference sequences (email_queue 535→538, client
+  550→579) — the single failure in both runs was cron-run
+  ONLY, a date-window divergence, not a money difference:
+  the batch_expire cart purge (today−7 cutoff) removes 248
+  baseline carts on Nov 4 vs 113 on Nov 1, and the
+  due-window reminder job queues 12 new "Invoice Due"
+  emails vs 0 — money tables (invoice, invoice_item,
+  transaction, client_order) showed NO diff in the cron
+  replay. The 18/19 numbers are SUPERSEDED by the narrowing
+  batch below. The comparison fix itself (parity48.py id
+  canonicalization + month-date scrub, negative control
+  4/4) is recorded in `findings-goldens.md`'s fix section.)
+  Replay proof AFTER the cron-run scope narrowing,
+  2026-11-04 (Josh's tap: "narrow cron-run's scope, then
+  commit"; record in `findings-goldens.md` §11): parity48
+  19/19 MATCH, 201 passed / 0 failed, on the immediate
+  re-run AND again after a full chain run that advanced
+  reference sequences further (email_queue 538→541, client
+  579→608, cart 337→339). The narrowing is comparison-side
+  only, in parity48.py only, for cron-run ONLY: (1) cart
+  and cart_product REMOVED rows are excluded from both
+  sides — the purge is operational cleanup, and schema
+  proof shows neither table carries money columns (cart:
+  id, session_id, currency_id, promo_id, created_at,
+  updated_at; cart_product: id, product_id, config,
+  cart_id), so the purge has no money effect; cart
+  added/changed rows would still compare. (2) email_queue
+  ADDED rows whose subject contains "Invoice Due" are
+  excluded from both sides — the diagnostic replay proved
+  all 12 extra rows are that one reminder kind (client_id
+  1, status failed on disposable TS, no SMTP), not payment
+  confirmations or invoice-generated notifications; any
+  non-reminder added row and all email_queue CHANGED rows
+  still compare exactly. All money tables still compare
+  exactly, and the narrowing is guarded by the existing
+  negative control (4/4 PASS) plus a NEW cron-money
+  control (corrupting one invoice_item activation status
+  in a copy of the cron golden still reports MONEY-DIFF —
+  the narrowing did not blind money). Every exclusion is
+  reported in the runner's output as ` SCOPE cron-run:`
+  lines naming what was excluded and why. No golden file
+  payload byte changed (parity48's own SHA checks pass
+  for all 19 in both runs; metadata verified: full
+  `8be5ab7` SHA, dirty `[]`, fix files listed). The
+  goldens batch's own §8 rule anticipated the divergence
+  ("if a future replay diverges on cron-run only,
+  regenerate + re-review it first"); the narrowing was
+  chosen over regeneration (a date treadmill) at Josh's
+  tap, and the 19/19 claim from the order-dependent 201/0
+  run is SUPERSEDED by the post-narrowing 19/19 numbers
+  above — same counts, different proof.
+  All three D6-1 criteria being MET does NOT approve deletion:
+  deletion still needs Josh's explicit tap, and no batch may
+  delete `runtime/` as a side effect.
 - Note for that later decision: once goldens exist, the
   parity suites' PHP side must be repointed at goldens
   (or retired) BEFORE `runtime/` is deleted — deleting the

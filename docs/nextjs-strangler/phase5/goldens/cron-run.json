@@ -1,0 +1,2783 @@
+{
+ "id": "cron-run",
+ "description": "Admin cron run (all 13 jobs) on disposable stacks; diffs envelopes + invoice/order/email deltas. Email-send transport behavior is triaged as non-money if it diverges (see findings).",
+ "source": "scenario",
+ "metadata": {
+  "generator": "generate-goldens.py v1",
+  "generated_at": "2026-11-01T14:30:50.124499+00:00",
+  "ts_commit": "8be5ab7621905643ce17e24a6f4382ee8a9969df",
+  "ts_worktree_dirty_files": [],
+  "ts_worktree_note": "Goldens recorded against 8be5ab7 plus the three TS fix files listed in ts_fix_files, committed in this batch (see findings-goldens.md fix section + the batch commit message for the batch commit SHA); bare 8be5ab7 does not include those fixes.",
+  "oracle_version": "runtime/ frozen oracle (no git) \u2014 reference DB snapshot + config hash at generation",
+  "oracle_config_hash": "6e3c529673c1d089",
+  "normalization": [
+   "created_at",
+   "due_at",
+   "group_id",
+   "hash",
+   "hash_expires_at",
+   "ipn_hash",
+   "last_cron_exec",
+   "paid_at",
+   "reminded_at",
+   "updated_at",
+   "any key ending in _at",
+   "embedded 30-60 hex invoice hashes -> *HASH*",
+   "embedded datetimes -> *TS*",
+   "transaction ipn column server sub-object -> *"
+  ],
+  "payload_sha256": "34daad66673126eb7ae635ff2422f82b3c80f100a267fb868ff68821fd2462ff",
+  "ts_fix_files": [
+   "apps/nextjs/src/server/seam-call.ts",
+   "apps/nextjs/src/server/modules/cart.ts",
+   "apps/nextjs/src/server/modules/invoice.ts"
+  ]
+ },
+ "envelopes": [
+  {
+   "result": true,
+   "error": null
+  }
+ ],
+ "deltas": {
+  "cart": {
+   "added": {},
+   "removed": {
+    "1": {
+     "id": 1,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "2": {
+     "id": 2,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "3": {
+     "id": 3,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "4": {
+     "id": 4,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "5": {
+     "id": 5,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "6": {
+     "id": 6,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "7": {
+     "id": 7,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "8": {
+     "id": 8,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "9": {
+     "id": 9,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "10": {
+     "id": 10,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "11": {
+     "id": 11,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "12": {
+     "id": 12,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "13": {
+     "id": 13,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "15": {
+     "id": 15,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "16": {
+     "id": 16,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "17": {
+     "id": 17,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "18": {
+     "id": 18,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "19": {
+     "id": 19,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "20": {
+     "id": 20,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "21": {
+     "id": 21,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "22": {
+     "id": 22,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "23": {
+     "id": 23,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "24": {
+     "id": 24,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "25": {
+     "id": 25,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "26": {
+     "id": 26,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "27": {
+     "id": 27,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "28": {
+     "id": 28,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "29": {
+     "id": 29,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "30": {
+     "id": 30,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "31": {
+     "id": 31,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "32": {
+     "id": 32,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "33": {
+     "id": 33,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "34": {
+     "id": 34,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "35": {
+     "id": 35,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "36": {
+     "id": 36,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "37": {
+     "id": 37,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "38": {
+     "id": 38,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "39": {
+     "id": 39,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "40": {
+     "id": 40,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "41": {
+     "id": 41,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "42": {
+     "id": 42,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "43": {
+     "id": 43,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "44": {
+     "id": 44,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "45": {
+     "id": 45,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "46": {
+     "id": 46,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "47": {
+     "id": 47,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "48": {
+     "id": 48,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "49": {
+     "id": 49,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "50": {
+     "id": 50,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "51": {
+     "id": 51,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "52": {
+     "id": 52,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "53": {
+     "id": 53,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "60": {
+     "id": 60,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "61": {
+     "id": 61,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "62": {
+     "id": 62,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "63": {
+     "id": 63,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "64": {
+     "id": 64,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "65": {
+     "id": 65,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "66": {
+     "id": 66,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "67": {
+     "id": 67,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "68": {
+     "id": 68,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "69": {
+     "id": 69,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "70": {
+     "id": 70,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "71": {
+     "id": 71,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "72": {
+     "id": 72,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "73": {
+     "id": 73,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "74": {
+     "id": 74,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "75": {
+     "id": 75,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "76": {
+     "id": 76,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "77": {
+     "id": 77,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "78": {
+     "id": 78,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "79": {
+     "id": 79,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "80": {
+     "id": 80,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "81": {
+     "id": 81,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "82": {
+     "id": 82,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "83": {
+     "id": 83,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "84": {
+     "id": 84,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "85": {
+     "id": 85,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "86": {
+     "id": 86,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "87": {
+     "id": 87,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "88": {
+     "id": 88,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "89": {
+     "id": 89,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "90": {
+     "id": 90,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "91": {
+     "id": 91,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "92": {
+     "id": 92,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "93": {
+     "id": 93,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "94": {
+     "id": 94,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "95": {
+     "id": 95,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "96": {
+     "id": 96,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "97": {
+     "id": 97,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "98": {
+     "id": 98,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "99": {
+     "id": 99,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "100": {
+     "id": 100,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "101": {
+     "id": 101,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "102": {
+     "id": 102,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "103": {
+     "id": 103,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "104": {
+     "id": 104,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "105": {
+     "id": 105,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "106": {
+     "id": 106,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "107": {
+     "id": 107,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "108": {
+     "id": 108,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "109": {
+     "id": 109,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "110": {
+     "id": 110,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "111": {
+     "id": 111,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "112": {
+     "id": 112,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "113": {
+     "id": 113,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "114": {
+     "id": 114,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "115": {
+     "id": 115,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "116": {
+     "id": 116,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "117": {
+     "id": 117,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "118": {
+     "id": 118,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "119": {
+     "id": 119,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    },
+    "120": {
+     "id": 120,
+     "session_id": "*HASH*",
+     "currency_id": 1,
+     "promo_id": null,
+     "created_at": "*",
+     "updated_at": "*"
+    }
+   },
+   "changed": {}
+  },
+  "cart_product": {
+   "added": {},
+   "removed": {
+    "5": {
+     "id": 5,
+     "product_id": 9,
+     "config": "{\"period\":\"1M\",\"__cart_family\":\"*HASH*\"}",
+     "cart_id": 16
+    },
+    "7": {
+     "id": 7,
+     "product_id": 9,
+     "config": "{\"period\":\"1M\",\"__cart_family\":\"*HASH*\"}",
+     "cart_id": 17
+    },
+    "10": {
+     "id": 10,
+     "product_id": 3,
+     "config": "{\"__cart_family\":\"*HASH*\"}",
+     "cart_id": 18
+    },
+    "12": {
+     "id": 12,
+     "product_id": 9,
+     "config": "{\"period\":\"1M\",\"__cart_family\":\"*HASH*\"}",
+     "cart_id": 19
+    }
+   },
+   "changed": {}
+  },
+  "email_queue": {
+   "added": {},
+   "removed": {},
+   "changed": {
+    "463": {
+     "tries": [
+      0,
+      1
+     ],
+     "priority": [
+      1,
+      0
+     ],
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending",
+      "failed"
+     ],
+     "content": [
+      "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>Password Reset</h1>\n\t<p>Hello  ,</p>\n\t<p>Recently a request was submitted to reset your password for the client area.</p>\n    <p>If you did not request this, please ignore this email. This link will expire in 15 minutes.</p>\n\n    <p>To reset your password, please visit the link below:</p>\n    <a href='http://127.0.0.1:8080/client/reset-password-confirm/fbcc49d67253d52bbab0d41d1966a34b14e13d4ff14496b7060bc5c34873b70c' target=\"_blank\">Reset password.</a>\n\n    <p>You may then <a href=\"http://127.0.0.1:8080/login?email=\" target=\"_blank\">login</a> or <a href=\"http://127.0.0.1:8080/client/profile\" target=\"_blank\">edit your profile.</a>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+      "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>Password Reset</h1>\n\t<p>Hello  ,</p>\n\t<p>Recently a request was submitted to reset your password for the client area.</p>\n    <p>If you did not request this, please ignore this email. This link will expire in 15 minutes.</p>\n\n    <p>To reset your password, please visit the link below:</p>\n    <a href='http://127.0.0.1:8080/client/reset-password-confirm/fbcc49d67253d52bbab0d41d1966a34b14e13d4ff14496b7060bc5c34873b70c' target=\"_blank\">Reset password.</a>\n\n    <p>You may then <a href=\"http://127.0.0.1:8080/login?email=\" target=\"_blank\">login</a> or <a href=\"http://127.0.0.1:8080/client/profile\" target=\"_blank\">edit your profile.</a>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n\n"
+     ]
+    },
+    "464": {
+     "tries": [
+      0,
+      1
+     ],
+     "priority": [
+      1,
+      0
+     ],
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending",
+      "failed"
+     ],
+     "content": [
+      "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>Password Reset</h1>\n\t<p>Hello  ,</p>\n\t<p>The password to your account has been changed.</p>\n    <p>If you did not perform this request, please contact your support immediately.</p>\n\n    <p>You may <a href=\"http://127.0.0.1:8080/login?email=\" target=\"_blank\">login</a> or <a href=\"http://127.0.0.1:8080/client/profile\" target=\"_blank\">edit your profile.</a>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+      "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>Password Reset</h1>\n\t<p>Hello  ,</p>\n\t<p>The password to your account has been changed.</p>\n    <p>If you did not perform this request, please contact your support immediately.</p>\n\n    <p>You may <a href=\"http://127.0.0.1:8080/login?email=\" target=\"_blank\">login</a> or <a href=\"http://127.0.0.1:8080/client/profile\" target=\"_blank\">edit your profile.</a>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n\n"
+     ]
+    },
+    "465": {
+     "tries": [
+      0,
+      1
+     ],
+     "priority": [
+      1,
+      0
+     ],
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending",
+      "failed"
+     ],
+     "content": [
+      "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>Invoice Created</h1>\n\t<p>Hello Phase Zero,</p>\n\t<p>This is to notify that invoice 486 was generated on Oct 26, 2026.</p>\n    <ul>\n        <li><strong>Amount Due:</strong> $10.00</li>\n        <li><strong>Due Date:</strong>  Nov 23, 2026</li>\n        \n            \n                <li><strong>Order ID:</strong> #1</li>\n                \n                    <li><strong>Product:</strong> Phase0 Widget Hosting</li>\n                \n                \n                    <li><strong>Renewal Date:</strong> Nov 23, 2026</li>\n                \n            \n        \n    </ul>\n\n    <p>You may view and pay the invoice <a href='http://127.0.0.1:8080/invoice/*HASH*' target=\"_blank\">here.</a></p>\n    <p>You can also <a href=\"http://127.0.0.1:8080/invoice/pdf/*HASH*\" target=\"_blank\">download the invoice as a PDF</a>, <a href=\"http://127.0.0.1:8080/login?email=phase0.client%40example.com\" target=\"_blank\">login</a>, or <a href=\"http://127.0.0.1:8080/client/profile\" target=\"_blank\">edit your profile.</a></p>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+      "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>Invoice Created</h1>\n\t<p>Hello Phase Zero,</p>\n\t<p>This is to notify that invoice 486 was generated on Oct 26, 2026.</p>\n    <ul>\n        <li><strong>Amount Due:</strong> $10.00</li>\n        <li><strong>Due Date:</strong>  Nov 23, 2026</li>\n        \n            \n                <li><strong>Order ID:</strong> #1</li>\n                \n                    <li><strong>Product:</strong> Phase0 Widget Hosting</li>\n                \n                \n                    <li><strong>Renewal Date:</strong> Nov 23, 2026</li>\n                \n            \n        \n    </ul>\n\n    <p>You may view and pay the invoice <a href='http://127.0.0.1:8080/invoice/*HASH*' target=\"_blank\">here.</a></p>\n    <p>You can also <a href=\"http://127.0.0.1:8080/invoice/pdf/*HASH*\" target=\"_blank\">download the invoice as a PDF</a>, <a href=\"http://127.0.0.1:8080/login?email=phase0.client%40example.com\" target=\"_blank\">login</a>, or <a href=\"http://127.0.0.1:8080/client/profile\" target=\"_blank\">edit your profile.</a></p>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n\n"
+     ]
+    },
+    "466": {
+     "tries": [
+      0,
+      1
+     ],
+     "priority": [
+      1,
+      0
+     ],
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending",
+      "failed"
+     ],
+     "content": [
+      "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>Invoice Created</h1>\n\t<p>Hello Phase Zero,</p>\n\t<p>This is to notify that invoice 490 was generated on Oct 26, 2026.</p>\n    <ul>\n        <li><strong>Amount Due:</strong> $10.00</li>\n        <li><strong>Due Date:</strong>  Nov 23, 2026</li>\n                                    <li><strong>Order ID:</strong> #1</li>\n                                    <li><strong>Product:</strong> Phase0 Widget Hosting</li>\n                                                    <li><strong>Renewal Date:</strong> Nov 23, 2026</li>\n                                        </ul>\n\n    <p>You may view and pay the invoice <a href='http://127.0.0.1:8080/invoice/*HASH*' target=\"_blank\">here.</a></p>\n    <p>You can also <a href=\"http://127.0.0.1:8080/invoice/pdf/*HASH*\" target=\"_blank\">download the invoice as a PDF</a>, <a href=\"http://127.0.0.1:8080/login?email=phase0.client%40example.com\" target=\"_blank\">login</a>, or <a href=\"http://127.0.0.1:8080/client/profile\" target=\"_blank\">edit your profile.</a></p>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+      "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>Invoice Created</h1>\n\t<p>Hello Phase Zero,</p>\n\t<p>This is to notify that invoice 490 was generated on Oct 26, 2026.</p>\n    <ul>\n        <li><strong>Amount Due:</strong> $10.00</li>\n        <li><strong>Due Date:</strong>  Nov 23, 2026</li>\n                                    <li><strong>Order ID:</strong> #1</li>\n                                    <li><strong>Product:</strong> Phase0 Widget Hosting</li>\n                                                    <li><strong>Renewal Date:</strong> Nov 23, 2026</li>\n                                        </ul>\n\n    <p>You may view and pay the invoice <a href='http://127.0.0.1:8080/invoice/*HASH*' target=\"_blank\">here.</a></p>\n    <p>You can also <a href=\"http://127.0.0.1:8080/invoice/pdf/*HASH*\" target=\"_blank\">download the invoice as a PDF</a>, <a href=\"http://127.0.0.1:8080/login?email=phase0.client%40example.com\" target=\"_blank\">login</a>, or <a href=\"http://127.0.0.1:8080/client/profile\" target=\"_blank\">edit your profile.</a></p>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n\n"
+     ]
+    },
+    "467": {
+     "tries": [
+      0,
+      1
+     ],
+     "priority": [
+      1,
+      0
+     ],
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending",
+      "failed"
+     ],
+     "content": [
+      "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>Invoice Created</h1>\n\t<p>Hello Phase Zero,</p>\n\t<p>This is to notify that invoice 494 was generated on Oct 26, 2026.</p>\n    <ul>\n        <li><strong>Amount Due:</strong> $10.00</li>\n        <li><strong>Due Date:</strong>  Nov 23, 2026</li>\n        \n            \n                <li><strong>Order ID:</strong> #1</li>\n                \n                    <li><strong>Product:</strong> Phase0 Widget Hosting</li>\n                \n                \n                    <li><strong>Renewal Date:</strong> Nov 23, 2026</li>\n                \n            \n        \n    </ul>\n\n    <p>You may view and pay the invoice <a href='http://127.0.0.1:8080/invoice/*HASH*' target=\"_blank\">here.</a></p>\n    <p>You can also <a href=\"http://127.0.0.1:8080/invoice/pdf/*HASH*\" target=\"_blank\">download the invoice as a PDF</a>, <a href=\"http://127.0.0.1:8080/login?email=phase0.client%40example.com\" target=\"_blank\">login</a>, or <a href=\"http://127.0.0.1:8080/client/profile\" target=\"_blank\">edit your profile.</a></p>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n",
+      "\n<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset=\"utf-8\">\n\t<style type=\"text/css\">\n\t\tbody {\n\t\t\tfont-family: Arial, sans-serif;\n\t\t\tfont-size: 14px;\n\t\t\tcolor: #333333;\n\t\t}\n\n\t\th1 {\n\t\t\tfont-size: 24px;\n\t\t\tfont-weight: bold;\n\t\t\tmargin: 0 0 20px;\n\t\t}\n\n\t\tp {\n\t\t\tmargin: 0 0 10px;\n\t\t}\n\n\t\tstrong {\n\t\t\tfont-weight: bold;\n\t\t}\n\n\t\t.signature {\n\t\t\tfont-style: italic;\n\t\t\tcolor: #999999;\n\t\t\tmargin-top: 20px;\n\t\t\tborder-top: 1px solid #cccccc;\n\t\t\tpadding-top: 10px;\n\t\t}\n\t</style>\n</head>\n<body>\n\t<h1>Invoice Created</h1>\n\t<p>Hello Phase Zero,</p>\n\t<p>This is to notify that invoice 494 was generated on Oct 26, 2026.</p>\n    <ul>\n        <li><strong>Amount Due:</strong> $10.00</li>\n        <li><strong>Due Date:</strong>  Nov 23, 2026</li>\n        \n            \n                <li><strong>Order ID:</strong> #1</li>\n                \n                    <li><strong>Product:</strong> Phase0 Widget Hosting</li>\n                \n                \n                    <li><strong>Renewal Date:</strong> Nov 23, 2026</li>\n                \n            \n        \n    </ul>\n\n    <p>You may view and pay the invoice <a href='http://127.0.0.1:8080/invoice/*HASH*' target=\"_blank\">here.</a></p>\n    <p>You can also <a href=\"http://127.0.0.1:8080/invoice/pdf/*HASH*\" target=\"_blank\">download the invoice as a PDF</a>, <a href=\"http://127.0.0.1:8080/login?email=phase0.client%40example.com\" target=\"_blank\">login</a>, or <a href=\"http://127.0.0.1:8080/client/profile\" target=\"_blank\">edit your profile.</a></p>\n\n\t<div class=\"signature\">FOSSBilling.org - Client Management, Invoicing and Support Software</div>\n</body>\n</html>\n\n"
+     ]
+    }
+   }
+  },
+  "invoice_event": {
+   "added": {
+    "835": {
+     "id": 835,
+     "invoice_id": 9,
+     "type": "created",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"00009\",\"status\":\"unpaid\",\"issued\":false,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":null,\"last_name\":null,\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":null,\"city\":null,\"state\":null,\"country\":null,\"phone\":null,\"email\":null,\"zip\":null},\"seller\":{\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":null,\"phone\":null,\"email\":null},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "836": {
+     "id": 836,
+     "invoice_id": 64,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00001\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "837": {
+     "id": 837,
+     "invoice_id": 67,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00001\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":\"*TS*\",\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "838": {
+     "id": 838,
+     "invoice_id": 70,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"FOSS00050\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":\"*TS*\",\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "839": {
+     "id": 839,
+     "invoice_id": 73,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00003\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "840": {
+     "id": 840,
+     "invoice_id": 75,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00002\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "841": {
+     "id": 841,
+     "invoice_id": 81,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00004\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "842": {
+     "id": 842,
+     "invoice_id": 83,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00003\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "843": {
+     "id": 843,
+     "invoice_id": 89,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00005\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "844": {
+     "id": 844,
+     "invoice_id": 91,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00004\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "845": {
+     "id": 845,
+     "invoice_id": 97,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00006\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "846": {
+     "id": 846,
+     "invoice_id": 99,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00007\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "847": {
+     "id": 847,
+     "invoice_id": 101,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00005\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "848": {
+     "id": 848,
+     "invoice_id": 107,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00008\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "849": {
+     "id": 849,
+     "invoice_id": 109,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00006\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "850": {
+     "id": 850,
+     "invoice_id": 111,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00009\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "851": {
+     "id": 851,
+     "invoice_id": 113,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00007\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "852": {
+     "id": 852,
+     "invoice_id": 123,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00010\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "853": {
+     "id": 853,
+     "invoice_id": 125,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00008\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "854": {
+     "id": 854,
+     "invoice_id": 132,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00011\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "855": {
+     "id": 855,
+     "invoice_id": 134,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00009\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "856": {
+     "id": 856,
+     "invoice_id": 140,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00012\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "857": {
+     "id": 857,
+     "invoice_id": 142,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00010\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "858": {
+     "id": 858,
+     "invoice_id": 148,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00013\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "859": {
+     "id": 859,
+     "invoice_id": 150,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00011\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "860": {
+     "id": 860,
+     "invoice_id": 152,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00014\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "861": {
+     "id": 861,
+     "invoice_id": 154,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00012\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "862": {
+     "id": 862,
+     "invoice_id": 162,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00015\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "863": {
+     "id": 863,
+     "invoice_id": 164,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00013\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "864": {
+     "id": 864,
+     "invoice_id": 176,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00016\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "865": {
+     "id": 865,
+     "invoice_id": 178,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00014\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "866": {
+     "id": 866,
+     "invoice_id": 196,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00017\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "867": {
+     "id": 867,
+     "invoice_id": 198,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00015\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "868": {
+     "id": 868,
+     "invoice_id": 206,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00018\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "869": {
+     "id": 869,
+     "invoice_id": 208,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00016\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "870": {
+     "id": 870,
+     "invoice_id": 217,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00019\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "871": {
+     "id": 871,
+     "invoice_id": 219,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00017\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "872": {
+     "id": 872,
+     "invoice_id": 227,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00020\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "873": {
+     "id": 873,
+     "invoice_id": 229,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00018\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "874": {
+     "id": 874,
+     "invoice_id": 235,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00019\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "875": {
+     "id": 875,
+     "invoice_id": 237,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00021\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "876": {
+     "id": 876,
+     "invoice_id": 239,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00020\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":\"*TS*\",\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "877": {
+     "id": 877,
+     "invoice_id": 255,
+     "type": "created",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"FOSS00255\",\"status\":\"unpaid\",\"issued\":false,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":null,\"last_name\":null,\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":null,\"city\":null,\"state\":null,\"country\":null,\"phone\":null,\"email\":null,\"zip\":null},\"seller\":{\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":null,\"phone\":null,\"email\":null},\"paid_at\":null,\"due_at\":\"*TS*\",\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "878": {
+     "id": 878,
+     "invoice_id": 276,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00022\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "879": {
+     "id": 879,
+     "invoice_id": 278,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00021\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":\"*TS*\",\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "880": {
+     "id": 880,
+     "invoice_id": 293,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00023\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "881": {
+     "id": 881,
+     "invoice_id": 295,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00022\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":\"*TS*\",\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "882": {
+     "id": 882,
+     "invoice_id": 310,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00024\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "883": {
+     "id": 883,
+     "invoice_id": 312,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00023\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":\"*TS*\",\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "884": {
+     "id": 884,
+     "invoice_id": 327,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00025\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "885": {
+     "id": 885,
+     "invoice_id": 329,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00024\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":\"*TS*\",\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "886": {
+     "id": 886,
+     "invoice_id": 340,
+     "type": "created",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"FOSS00340\",\"status\":\"unpaid\",\"issued\":false,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":null,\"last_name\":null,\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":null,\"city\":null,\"state\":null,\"country\":null,\"phone\":null,\"email\":null,\"zip\":null},\"seller\":{\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":null,\"phone\":null,\"email\":null},\"paid_at\":null,\"due_at\":\"*TS*\",\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "887": {
+     "id": 887,
+     "invoice_id": 341,
+     "type": "created",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"FOSS00341\",\"status\":\"unpaid\",\"issued\":false,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":null,\"last_name\":null,\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":null,\"city\":null,\"state\":null,\"country\":null,\"phone\":null,\"email\":null,\"zip\":null},\"seller\":{\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":null,\"phone\":null,\"email\":null},\"paid_at\":null,\"due_at\":\"*TS*\",\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "888": {
+     "id": 888,
+     "invoice_id": 342,
+     "type": "created",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"FOSS00342\",\"status\":\"unpaid\",\"issued\":false,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":null,\"last_name\":null,\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":null,\"city\":null,\"state\":null,\"country\":null,\"phone\":null,\"email\":null,\"zip\":null},\"seller\":{\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":null,\"phone\":null,\"email\":null},\"paid_at\":null,\"due_at\":\"*TS*\",\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "889": {
+     "id": 889,
+     "invoice_id": 390,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00026\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "890": {
+     "id": 890,
+     "invoice_id": 392,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00025\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":\"*TS*\",\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "891": {
+     "id": 891,
+     "invoice_id": 433,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00027\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "892": {
+     "id": 892,
+     "invoice_id": 435,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00026\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":\"*TS*\",\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "893": {
+     "id": 893,
+     "invoice_id": 466,
+     "type": "refunded",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"CN-00028\",\"status\":\"refunded\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":\"*TS*\",\"due_at\":null,\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    },
+    "894": {
+     "id": 894,
+     "invoice_id": 468,
+     "type": "issued",
+     "admin_id": null,
+     "client_id": 1,
+     "snapshot": "{\"serie_nr\":\"DN-00027\",\"status\":\"unpaid\",\"issued\":true,\"subtotal\":null,\"tax\":null,\"total\":null,\"buyer\":{\"first_name\":\"Phase\",\"last_name\":\"Zero\",\"company\":null,\"company_vat\":null,\"company_number\":null,\"address\":\"1 Phase Way\",\"city\":\"Austin\",\"state\":\"Texas\",\"country\":\"US\",\"phone\":\"1 5125550100\",\"email\":\"phase0.client@example.com\",\"zip\":\"78701\"},\"seller\":{\"company\":\"Company Name\",\"company_vat\":null,\"company_number\":null,\"address\":\"Demo address line 1 Demo address line 2 Demo address line 3\",\"phone\":\"+123 456 12345\",\"email\":\"support@yourcompany.com\"},\"paid_at\":null,\"due_at\":\"*TS*\",\"created_at\":\"*TS*\"}",
+     "created_at": "*"
+    }
+   },
+   "removed": {},
+   "changed": {}
+  },
+  "invoice_item": {
+   "added": {},
+   "removed": {},
+   "changed": {
+    "1": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "2": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "5": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "7": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "8": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "9": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "10": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "11": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "14": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "15": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "16": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "17": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "19": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "20": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "21": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "31": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "46": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "47": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "52": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "60": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "68": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "76": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "86": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "94": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "98": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "104": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "105": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "108": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "117": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "125": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "133": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "137": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "143": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "146": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "152": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "153": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "154": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "157": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "163": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "164": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "165": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "166": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "167": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "168": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "171": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "177": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "180": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "186": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "187": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "190": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "196": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "199": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "205": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "209": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "215": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "220": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "221": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "222": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "223": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "241": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "242": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "243": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "246": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "252": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "257": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "258": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "259": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "262": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "268": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "273": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "274": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "275": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "278": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "284": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "289": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "290": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "291": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "294": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "300": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "301": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "302": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "368": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "370": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "373": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "379": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "381": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "382": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "384": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "386": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "387": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "388": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "389": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "390": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "391": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "392": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "400": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "422": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "425": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "431": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "432": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "433": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "466": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "469": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "475": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "476": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    },
+    "477": {
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ],
+     "status": [
+      "pending_setup",
+      "executed"
+     ]
+    }
+   }
+  },
+  "setting": {
+   "added": {
+    "64": {
+     "id": 64,
+     "param": "last_cron_exec",
+     "value": "*TS*",
+     "public": 0,
+     "category": null,
+     "hash": "*",
+     "created_at": "*",
+     "updated_at": "*"
+    }
+   },
+   "removed": {},
+   "changed": {
+    "37": {
+     "value": [
+      "*TS*",
+      "*TS*"
+     ],
+     "updated_at": [
+      "*TS*",
+      "*TS*"
+     ]
+    }
+   }
+  }
+ },
+ "capture": [
+  {
+   "n": 0,
+   "persona": "admin",
+   "request": {
+    "kind": "api",
+    "role": "admin",
+    "module": "cron",
+    "method": "run",
+    "params": {},
+    "json": false
+   }
+  }
+ ],
+ "scenario": {
+  "steps": [
+   {
+    "as": "admin",
+    "call": "admin/cron/run",
+    "params": {}
+   }
+  ],
+  "seed_sql": [],
+  "seed_ops": []
+ },
+ "php_review": {
+  "verdict": "TRIAGED-DIVERGENCE",
+  "envelope_diffs": 0,
+  "money_diff": false,
+  "db_diff_tables": [
+   "email_queue",
+   "setting"
+  ],
+  "triaged_table_reasons": {
+   "email_queue": "findings-r6b.md \u00a78: order-lifecycle + checkout notification gaps (PHP queues order Activated/Renewed/Canceled + New Order Placed; TS queues 0/1) and cron send-status transport (PHP sending vs TS failed, no SMTP on disposable TS). Row creation compared; send status triaged.",
+   "setting": "findings-r6b.md \u00a78: last_cron_exec typing (PHP public NULL vs TS 0 via upsertSetting default). Non-money typing."
+  },
+  "diff_fields": [],
+  "harness_reports": [
+   "report.json",
+   "report.json"
+  ],
+  "note": "TS output recorded in this golden; the verdict is the TS-vs-PHP comparison for the same steps. TRIAGED-DIVERGENCE means the gap is understood, non-money, and documented \u2014 not that the golden is 'correct'."
+ }
+}
