@@ -14,14 +14,11 @@ export default function NewTicketPage() {
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/fb/client/support/helpdesk_get_pairs", { method: "POST" })
-      .then((r) => r.json())
-      .then((j) => {
-        if (j?.result) {
-          setHelpdesks(j.result);
-          const first = Object.keys(j.result)[0];
-          if (first) setHelpdeskId(first);
-        }
+    fbPost<Record<string, string>>("client", "support", "helpdesk_get_pairs", {})
+      .then((result) => {
+        setHelpdesks(result);
+        const first = Object.keys(result)[0];
+        if (first) setHelpdeskId(first);
       })
       .catch(() => {});
   }, []);

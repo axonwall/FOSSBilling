@@ -4,7 +4,8 @@
  * This is the exact pipeline the HTTP seam route used to run inline
  * (route.ts, pre-R6a), factored out so the Next UI pages can call it
  * in-process (decision D6-7) instead of posting to the PHP dispatcher:
- *   pre-auth limiter -> CSRF -> removed-endpoint hoist -> identity
+ *   pre-auth limiter -> auth (session CSRF, or Basic api_token
+ *   login which skips CSRF) -> removed-endpoint hoist -> identity
  *   201 -> post-auth limiter -> dispatcher gates (715/725/403) ->
  *   per-endpoint limiter -> handler (or magic handler, or 740/9998).
  *
@@ -40,6 +41,7 @@ import {
   enforcePreAuthLimit,
 } from "./ratelimit";
 import { enforceDispatcherGates } from "./guards";
+import { loginWithApiToken, parseBasicAuth, type SessionInfo } from "./session";
 import { REMOVED_SYSTEM_ADMIN } from "./modules/system";
 import {
   REMOVED_EXTENSION_ADMIN,
@@ -51,6 +53,16 @@ import { REMOVED_THEME_ADMIN } from "./modules/theme";
 import "@/server/modules";
 
 export const VALID_ROLES = new Set(["admin", "client", "guest"]);
+
+/** Methods PHP's shouldPreferSessionAuth() pins to session auth when
+ * that role already holds a session (Api\Controller\Client): the
+ * profile api-key methods never accept a token login over a live
+ * session, even with a valid Basic header. */
+const SESSION_PREFERRED_METHODS = new Set([
+  "profile_api_key_get",
+  "profile_api_key_reset",
+  "profile_generate_api_key",
+]);
 
 /**
  * Expand form-encoded bracket keys (new_item[price], items[490][title],
@@ -166,11 +178,55 @@ export async function dispatchSeamCall(
 
   // R5g limiter layering, mirroring Client.php _apiCall order.
   await enforcePreAuthLimit(role, methodKey, ctx);
-  enforceCsrf(ctx, presentedCsrf);
+  // Auth for non-guest roles, mirroring Client.php _apiCall:
+  // session auth (with CSRF) is preferred only for the profile
+  // api-key methods when that role already holds a session;
+  // otherwise a Basic "<role>:<api_token>" header token-logs in
+  // (B-H2, skipping session CSRF); anything else falls back to
+  // session auth. A Basic username for the OTHER role 201s (PHP
+  // 203); a non-Basic / unparsable / foreign-username header is
+  // ignored, as PHP's getProvidedBasicAuthUsername returns null
+  // for those. Guest calls never enter this block (PHP skips auth
+  // for guest) but still run the session CSRF check below when a
+  // session exists, exactly as before.
+  // NOTE (B-H2 wiring): the HTTP route forwards the Authorization
+  // header as ctx.authorization (route.ts), so token login is
+  // reachable over HTTP as well as to in-process callers.
+  let tokenSession: SessionInfo | null = null;
+  if (role !== "guest") {
+    const hasRoleSession = role === "admin" ? !!ctx.session?.admin : !!ctx.session?.client;
+    const basic = parseBasicAuth(ctx.authorization);
+    if (SESSION_PREFERRED_METHODS.has(methodKey) && hasRoleSession) {
+      enforceCsrf(ctx, presentedCsrf);
+    } else if (basic && (basic.username === "admin" || basic.username === "client")) {
+      if (basic.username !== role) throw new FbError("Authentication Failed", 203);
+      tokenSession = await loginWithApiToken(ctx, basic.username, basic.password);
+    } else {
+      enforceCsrf(ctx, presentedCsrf);
+    }
+  } else {
+    enforceCsrf(ctx, presentedCsrf);
+  }
   if (!isRemoved) {
     if (role === "admin" && !ctx.session?.admin) throw new FbError("Authentication Failed", 201);
     if (role === "client" && !ctx.session?.client) throw new FbError("Authentication Failed", 201);
-    await enforcePostAuthLimit(role, methodKey, ctx);
+    // Post-auth limiter subject must follow the AUTHENTICATED role
+    // (PHP checkRateLimit is role-gated). The token session merges
+    // into any pre-existing session bag, so hand the limiter the
+    // token identity alone — otherwise a token login on top of an
+    // other-role session would consume that role's bucket (the B-L1
+    // mechanism; the session path itself is untouched by this).
+    const limitCtx =
+      tokenSession && role !== "guest"
+        ? {
+            ...ctx,
+            session:
+              role === "admin"
+                ? { id: tokenSession.id, admin: tokenSession.admin }
+                : { id: tokenSession.id, client: tokenSession.client },
+          }
+        : ctx;
+    await enforcePostAuthLimit(role, methodKey, limitCtx);
     // R2a dispatcher gates (Api\Dispatcher order: identity 201,
     // activation 715, admin module access 725, method guards 403).
     await enforceDispatcherGates(ctx, role, module, gateMethod);

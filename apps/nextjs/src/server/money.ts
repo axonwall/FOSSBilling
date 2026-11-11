@@ -36,6 +36,8 @@ import { queueInvoiceEmail } from "./emailer";
  *
  * Rounding: money is rounded to cents per item tax, matching PHP's
  * ServiceInvoiceItem::getTax / getTotal arithmetic on the fixture set.
+ * Invoice-level tax, however, is rounded ONCE on the taxable subtotal
+ * (Invoice\Service::getTax), not per line — see invoiceTotals.
  */
 
 export function round2(n: number): number {
@@ -78,21 +80,24 @@ export interface InvoiceItemInput {
   task?: string;
 }
 
-/** Invoice totals exactly as the PHP `get` array computes them. */
+/** Invoice totals exactly as the PHP `get` array computes them:
+ * subtotal is the sum of line totals; tax is rounded ONCE on the
+ * taxable subtotal (Invoice\Service::getTax: round(sum of taxed
+ * line totals * rate / 100, 2)) — never per line. */
 export function invoiceTotals(
   items: { price: number; quantity: number; taxed: number | boolean }[],
   taxrate: string,
 ): { subtotal: number; tax: number; total: number } {
   const rate = parseFloat(taxrate || "0");
   let subtotal = 0;
-  let tax = 0;
+  let taxable = 0;
   for (const it of items) {
     const line = it.price * it.quantity;
     subtotal += line;
-    if (it.taxed) tax += round2((line * rate) / 100);
+    if (it.taxed) taxable += line;
   }
   subtotal = round2(subtotal);
-  tax = round2(tax);
+  const tax = round2((taxable * rate) / 100);
   return { subtotal, tax, total: round2(subtotal + tax) };
 }
 

@@ -137,6 +137,7 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
         ),
       session,
       hasSessionCookie: !!cookieHeader?.includes("fossbilling_session="),
+      authorization: req.headers.get("authorization") ?? undefined,
       setCookies: [] as string[],
     };
     return await dispatchSeamCall(

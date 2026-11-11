@@ -5,6 +5,7 @@ import {
   findClientById,
   findCurrencyByCode,
   findDefaultCurrency,
+  findInvoiceById,
   findOrderById,
   findProductById,
   insertCustomService,
@@ -32,7 +33,7 @@ import {
 } from "../dispatch";
 import { requirePermission } from "../permissions";
 import { clientBlock } from "./invoice";
-import { issueInvoice, prepareInvoice, round2 } from "../money";
+import { isClientTaxable, issueInvoice, prepareInvoice, round2 } from "../money";
 import { exportCsvResponse, requestedCsvHeaders } from "../csv";
 import { readExtensionConfig } from "../crypt";
 import { companyContext, findEmailTemplate, queueEmail } from "../emailer";
@@ -274,7 +275,8 @@ register("admin", "order", "create", async (ctx: CallContext) => {
   // price (period required), free -> 0. Domain catalog pricing is a
   // documented gap (TS prices domain orders at 0).
   let price: number;
-  if (ctx.params["price"] !== undefined) {
+  const priceOverride = ctx.params["price"] !== undefined;
+  if (priceOverride) {
     price = Number(ctx.params["price"]);
   } else if (!payment) {
     price = 0;
@@ -296,17 +298,36 @@ register("admin", "order", "create", async (ctx: CallContext) => {
   // Currency: explicit param -> client currency -> default currency;
   // an unresolvable code throws, as PHP's createOrder does.
   let currency: string;
+  let currencyRow: { code: string; conversion_rate: number | null } | undefined;
   {
     const wanted = ctx.params["currency"] || client.currency || null;
     if (wanted) {
       const found = await findCurrencyByCode(wanted);
       if (!found) throw new FbError("Currency could not be determined for order");
       currency = found.code;
+      currencyRow = found;
     } else {
-      const def = await getDb().prepare("SELECT code FROM currency WHERE is_default = 1").get() as { code: string } | undefined;
+      const def = await findDefaultCurrency();
       if (!def) throw new FbError("Currency could not be determined for order");
       currency = def.code;
+      currencyRow = def;
     }
+  }
+  // PHP Order\Service::createOrder: an explicit price is used as-is;
+  // otherwise the catalog line price is converted into the order
+  // currency (line price * conversion rate) — an EUR order at rate
+  // 0.5 costs 5 for a $10 product, not 10.
+  if (!priceOverride) {
+    const rawRate = currencyRow?.conversion_rate;
+    if (rawRate === null || rawRate === undefined || !Number.isFinite(Number(rawRate))) {
+      throw new FbError(`Currency rate for '${currency}' is not configured`);
+    }
+    price = price * Number(rawRate);
+  }
+  // PHP checks stock before creating the order (Product stock
+  // control: quantity_in_stock must cover the quantity), code 831.
+  if (product.stock_control && product.quantity_in_stock < quantity) {
+    throw new FbError(`Product ${product.id} is out of stock.`, 831);
   }
   const invoiceOption = ctx.params["invoice_option"] ?? "no-invoice";
   // Addon orders must join an existing master group; anything else
@@ -374,10 +395,12 @@ register("admin", "order", "create", async (ctx: CallContext) => {
           quantity,
           unit: product.unit,
           period,
-          taxed: true,
+          // PHP generateForOrder → generateFromOrder: the item task
+          // is 'renew' and taxed follows isClientTaxable.
+          taxed: await isClientTaxable(client),
           type: "order",
           rel_id: orderId,
-          task: "activate",
+          task: "renew",
         },
       ],
       ctx.params["gateway_id"] ? Number(ctx.params["gateway_id"]) : null,
@@ -402,8 +425,20 @@ register("admin", "order", "update", async (ctx: CallContext) => {
 
 // --- State machine --------------------------------------------------------------
 
-/** Shared activation path (single activate + invoice batch job). */
+/** Shared activation path (single activate + invoice batch job).
+ * PHP Order\Service::activateOrder: an already-active order is a
+ * no-op (returns true with no status row and no expiry change)
+ * unless force is passed; only pending_setup / failed_setup orders
+ * may activate, anything else throws. The expiry itself still
+ * extends from the order's EXISTING expiry (or now when unset) —
+ * createFromOrder's $from_time rule — so the guard, not the
+ * arithmetic, is what stops repeat activation granting free months.
+ */
 export async function activateOrderRow(order: OrderRowFull): Promise<void> {
+  if (order.status === "active") return;
+  if (order.status !== "pending_setup" && order.status !== "failed_setup") {
+    throw new FbError("Only pending setup or failed orders can be activated");
+  }
   const now = new Date();
   const config = parseConfig(order.config) as Record<string, unknown>;
   const period = order.period ?? (typeof config["period"] === "string" ? config["period"] : null);
@@ -419,6 +454,8 @@ export async function activateOrderRow(order: OrderRowFull): Promise<void> {
     activated_at: fmtTs(now),
     expires_at: period ? fmtTs(addPeriod(from, period)) : order.expires_at,
     service_id: serviceId,
+    suspended_at: null,
+    canceled_at: null,
   });
   await insertOrderStatus(order.id, "active", "Order activated");
 }
@@ -618,21 +655,69 @@ export async function runBatchCancelSuspended(): Promise<boolean> {
 }
 
 /**
- * Order\Service::batchCancelUnpaid — GATE ONLY in R5f. The config
- * gate (batch_cancel_unpaid falsy/missing → false) is added because
- * it fixes the live reference divergence (PHP no-ops with no
- * mod_order config; old TS cancelled). The enabled path stays
- * PINNED DIVERGENT: PHP DELETES stale pending_setup orders (after
- * removing their linked unpaid invoice), TS marks them canceled —
- * a full cascade rewrite is out of R5f scope, so parity39 asserts
- * the gate only, never the enabled path.
+ * Order\Service::batchCancelUnpaid — SELECTION, mirroring PHP's
+ * OrderRepository::getStaleUnpaid + the per-invoice group guard in
+ * batchCancelUnpaid. The config gate (batch_cancel_unpaid
+ * falsy/missing → false) is unchanged. Selection rules: days from
+ * batch_cancel_unpaid_after_days (default 7, blank/negative → 7);
+ * a CALENDAR-day cutoff (today-days 00:00:00, not a rolling
+ * now-7d); pending_setup orders only; orders any PAID invoice ever
+ * referenced via an order item are excluded; staleness is the
+ * linked unpaid invoice's due_at (falling back to the order's
+ * created_at), or the order's own created_at when no live unpaid
+ * invoice is linked. The per-invoice group guard re-checks the
+ * linked invoice at processing time: a group whose invoice is PAID
+ * is skipped whole. The enabled-path OUTCOME stays PINNED
+ * DIVERGENT (PHP deletes the order + its unpaid invoice; TS marks
+ * it canceled) — F4 is about WHICH orders are selected, not the
+ * outcome.
  */
 export async function runBatchCancelUnpaid(): Promise<boolean> {
   const config = await readExtensionConfig("mod_order");
   if (!phpTruthy(config["batch_cancel_unpaid"])) return false;
-  const cutoff = fmtTs(new Date(Date.now() - 7 * 24 * 3600 * 1000));
-  for (const order of await listOrders({ status: "pending_setup" })) {
-    if (!order.created_at || order.created_at >= cutoff) continue;
+  const days = resolveBatchAfterDays(config["batch_cancel_unpaid_after_days"]);
+  const cutoff = zoneTodayString(-days);
+  const stale = (await getDb()
+    .prepare(
+      `SELECT o.id, o.unpaid_invoice_id FROM client_order o
+        WHERE o.status = 'pending_setup'
+          AND NOT EXISTS (
+            SELECT 1 FROM invoice_item ii
+            INNER JOIN invoice pi ON pi.id = ii.invoice_id
+            WHERE CAST(ii.rel_id AS INTEGER) = o.id AND ii.type = 'order' AND pi.status = 'paid'
+          )
+          AND (
+            EXISTS (
+              SELECT 1 FROM invoice i
+              WHERE i.id = o.unpaid_invoice_id
+                AND i.status = 'unpaid'
+                AND COALESCE(i.due_at, o.created_at) < ?
+            )
+            OR (
+              NOT EXISTS (
+                SELECT 1 FROM invoice i
+                WHERE i.id = o.unpaid_invoice_id AND i.status = 'unpaid'
+              )
+              AND o.created_at < ?
+            )
+          )
+        ORDER BY o.id`,
+    )
+    .all(cutoff, cutoff)) as unknown as { id: number; unpaid_invoice_id: number | null }[];
+  // Whether each invoice's group may proceed — set once per
+  // invoice, so a paid invoice leaves every order tied to it alone.
+  const invoiceHandled = new Map<number, boolean>();
+  for (const row of stale) {
+    const order = await findOrderById(row.id);
+    if (!order || order.status !== "pending_setup") continue;
+    const invoiceId = order.unpaid_invoice_id;
+    if (invoiceId !== null && invoiceId !== undefined) {
+      if (!invoiceHandled.has(invoiceId)) {
+        const inv = await findInvoiceById(invoiceId);
+        invoiceHandled.set(invoiceId, !(inv && inv.status === "paid"));
+      }
+      if (!invoiceHandled.get(invoiceId)) continue;
+    }
     await updateOrderRow(order.id, { status: "canceled", canceled_at: fmtTs(new Date()) });
     await insertOrderStatus(order.id, "canceled", "Order canceled (unpaid)");
   }

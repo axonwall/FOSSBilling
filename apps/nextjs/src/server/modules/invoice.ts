@@ -91,6 +91,7 @@ import {
   isClientTaxable,
   issueInvoice,
   markInvoicePaid,
+  nextInvoiceNumber,
   prepareInvoice,
   resolveTaxForClient,
   round2,
@@ -682,6 +683,14 @@ register("admin", "invoice", "item_delete", async (ctx: CallContext) => {
   if (!id) throw new FbError("Invoice item ID was not passed");
   const item = await findInvoiceItemRow(Number(id));
   if (!item) throw new FbError("Invoice item was not found");
+  // PHP ServiceInvoiceItem::remove → runInvoiceMutation refuses
+  // non-editable invoices (paid/refunded/canceled; issued unpaid
+  // unless immutability is relaxed — relaxed is false under the
+  // reference config, so isEditable agrees there).
+  const inv = await findInvoiceById(item.invoice_id);
+  if (!inv || !isEditable(inv)) {
+    throw new FbError("This invoice can no longer be edited. Issued invoices are immutable; correct them with a credit note or a replacement invoice.");
+  }
   await deleteInvoiceItemRow(Number(id));
   return true;
 });
@@ -1615,13 +1624,48 @@ async function hashExpiry(): Promise<string> {
 
 /** Shared refund core: the admin handler and the PayPal Refunded
  * IPN branch both land here. onlyIds restricts the note to given
- * lines; null means a full refund of the remaining amount. */
+ * lines; null means a full refund of the REMAINING amount.
+ * PHP Invoice\Service::resolveRefundLines: credited quantities
+ * (across all earlier credit notes) cap every line — a line already
+ * fully credited throws, and a full refund credits only the lines
+ * with a remaining quantity. The stored refund is the credit note's
+ * own total with tax (round(abs(getTotalWithTax(note)), 2)), never
+ * the no-tax line sum. */
 export async function refundInvoiceCore(inv: InvoiceRowFull, onlyIds: Set<number> | null): Promise<number> {
-  const totals = invoiceTotals(await listInvoiceItems(inv.id), inv.taxrate ?? "0");
+  const allItems = await listInvoiceItems(inv.id);
+  const totals = invoiceTotals(allItems, inv.taxrate ?? "0");
   const alreadyRefunded = round2(inv.refund ?? 0);
   const remaining = round2(totals.total - alreadyRefunded);
   if (remaining <= 0) {
     throw new FbError("Only paid invoices can be refunded");
+  }
+  // Resolve the credited lines against remaining quantities before
+  // anything is written, exactly as PHP's resolveRefundLines does.
+  const credited = await refundedQuantities(inv.id);
+  const resolved: { item: (typeof allItems)[number]; qty: number }[] = [];
+  if (onlyIds === null) {
+    for (const l of allItems) {
+      const left = (l.quantity ?? 1) - (credited.get(l.id) ?? 0);
+      if (left > 0) resolved.push({ item: l, qty: left });
+    }
+    if (resolved.length === 0) {
+      throw new FbError("No remaining refundable amount on this invoice");
+    }
+  } else {
+    for (const id of onlyIds) {
+      const l = allItems.find((x) => x.id === id);
+      if (!l) throw new FbError(`Invoice line #${id} was not found`);
+      if ((l.price ?? 0) <= 0) throw new FbError("Only charge lines can be refunded");
+      const left = (l.quantity ?? 1) - (credited.get(l.id) ?? 0);
+      const wanted = l.quantity ?? 1;
+      if (wanted > left) {
+        throw new FbError(`Refund quantity exceeds the remaining refundable quantity of ${left}`);
+      }
+      resolved.push({ item: l, qty: wanted });
+    }
+    if (resolved.length === 0) {
+      throw new FbError("No invoice lines selected for refund");
+    }
   }
   // R5b review fix: PHP wraps refund in wrapInTransaction, so a
   // countIncome throw rolls the note back too. Validate BEFORE the
@@ -1629,12 +1673,17 @@ export async function refundInvoiceCore(inv: InvoiceRowFull, onlyIds: Set<number
   // matches: error + nothing changed. Placed after the remaining
   // check so PHP's validation-error precedence is preserved.
   await assertCountIncomeWritable(String(inv.currency ?? "USD"));
-  const lines = (await listInvoiceItems(inv.id)).filter((l) => !onlyIds || onlyIds.has(l.id));
-  const refundAmount = round2(
-    lines.reduce((s, l) => s + Math.abs(round2(l.price * l.quantity)), 0) *
-      (lines.length === (await listInvoiceItems(inv.id)).length ? remaining / Math.max(totals.total, remaining) : 1),
-  );
-  const amount = onlyIds ? refundAmount : remaining;
+  // The credit amount is the note's own total with tax, computed
+  // from the resolved (remaining-quantity) lines.
+  const noteLines = resolved.map(({ item, qty }) => ({
+    price: -Math.abs(item.price),
+    quantity: qty,
+    taxed: item.taxed,
+  }));
+  const amount = round2(Math.abs(invoiceTotals(noteLines, inv.taxrate ?? "0").total));
+  if (amount - remaining > 0.005) {
+    throw new FbError(`Refund amount exceeds the remaining refundable amount of ${remaining}`);
+  }
   const serie = "CN-";
   // R6b: PHP numbers credit notes from the dedicated counter, not
   // MAX(nr)+1 (see reserveNumericParamValue).
@@ -1650,7 +1699,10 @@ export async function refundInvoiceCore(inv: InvoiceRowFull, onlyIds: Set<number
       hash_expires_at: await hashExpiry(),
     }),
   );
-  for (const l of lines) {
+  // PHP copies text_1/text_2 onto the note (insertInvoiceNote writes
+  // NULL for them); same for debit notes below.
+  await updateInvoiceFields(noteId, { text_1: inv.text_1, text_2: inv.text_2 });
+  for (const { item: l, qty } of resolved) {
     await insertInvoiceItem({
       invoice_id: noteId,
       type: l.type ?? "custom",
@@ -1660,7 +1712,7 @@ export async function refundInvoiceCore(inv: InvoiceRowFull, onlyIds: Set<number
       status: "executed",
       title: l.title ?? "",
       period: l.period,
-      quantity: l.quantity,
+      quantity: qty,
       unit: l.unit,
       price: -Math.abs(l.price),
       taxed: l.taxed ? 1 : 0,
@@ -1671,12 +1723,13 @@ export async function refundInvoiceCore(inv: InvoiceRowFull, onlyIds: Set<number
     if (created) {
       await getDbWrite()
         .prepare("UPDATE invoice_item SET charged = ? WHERE id = ?")
-        .run(l.quantity, created.id);
+        .run(qty, created.id);
     }
   }
   const newRefundTotal = round2(alreadyRefunded + amount);
   await updateInvoiceFields(inv.id, {
-    status: newRefundTotal >= totals.total ? "refunded" : inv.status,
+    // PHP: refunded once round(total - refund, 2) <= 0.005.
+    status: round2(totals.total - newRefundTotal) <= 0.005 ? "refunded" : inv.status,
     notes: appendNote(inv.notes, `Refund invoice #${noteId} generated.`),
   });
   // refund is a DECIMAL column — bind as a string like PHP.
@@ -1735,8 +1788,105 @@ register("admin", "invoice", "refund", async (ctx: CallContext) => {
         ),
       )
     : null;
+  // PHP Invoice\Service::planGatewayRefund: when a gateway refund was
+  // requested, a refund-supporting gateway (Stripe is the only
+  // adapter with supportsRefunds) needs a refundable payment
+  // transaction (processed, pi_/ch_/in_ id, not a SetupIntent id);
+  // with none, PHP throws instead of recording an offline refund
+  // for money that never moved. Adapters without refund support
+  // (Custom, PayPal) plan nothing and refund offline, as before.
+  // A refundable transaction found here is NOT executed live by TS
+  // (no live Stripe call is faked); only the no-payment throw leg
+  // is mirrored.
+  if (gatewayRefund && inv.gateway_id) {
+    const gw = await findGateway(inv.gateway_id);
+    if (gw && gw.gateway === "Stripe") {
+      const txs = await listTransactions({ invoice_id: inv.id, status: "processed" });
+      let refundable = false;
+      for (const tx of txs) {
+        const txnId = tx.txn_id ?? "";
+        if (txnId === "" || txnId.startsWith("seti_")) continue;
+        const txGw = tx.gateway_id ? await findGateway(tx.gateway_id) : undefined;
+        if ((txGw?.gateway ?? null) !== "Stripe" && tx.gateway_id !== inv.gateway_id) continue;
+        if (!txnId.startsWith("pi_") && !txnId.startsWith("ch_") && !txnId.startsWith("in_")) continue;
+        refundable = true;
+        break;
+      }
+      if (!refundable) {
+        // PHP's message carries a genuine upstream quirk: the
+        // throw passes ['id' => $id] (not ':id') to strtr, so the
+        // ":id" placeholder renders as ":489", not "489".
+        throw new FbError(
+          `No refundable gateway payment found for invoice #:${inv.id}. Return the payment in the gateway dashboard, or record an offline-only refund.`,
+        );
+      }
+    }
+  }
   return await refundInvoiceCore(inv, onlyIds);
 });
+
+/** PHP Invoice\Service::isDebitable: issued + unpaid-or-paid + not
+ * itself a credit note. */
+function isDebitable(inv: InvoiceRowFull): boolean {
+  return (
+    !!inv.issued &&
+    (inv.status === "unpaid" || inv.status === "paid") &&
+    inv.credit_note_for_invoice_id === null
+  );
+}
+
+/** PHP Invoice\Service::resolveDebitLines (via PriceValidator):
+ * empty titles are skipped; a non-numeric price throws
+ * "Price must be a valid number.", a negative one "Price cannot be
+ * negative.", a zero one "Debit lines must charge a positive
+ * amount"; quantities validate to >= 1. No valid lines at all
+ * throws "No debit lines given". Validated before anything is
+ * written, so a bad line never leaves a half-created debit note. */
+function resolveDebitLines(items: unknown[]): {
+  title: string;
+  price: number;
+  quantity: number;
+  unit: string | null;
+  taxed: boolean;
+}[] {
+  const lines: { title: string; price: number; quantity: number; unit: string | null; taxed: boolean }[] = [];
+  for (const entry of items) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      throw new FbError("Debit lines are invalid");
+    }
+    const it = entry as Record<string, unknown>;
+    const title = typeof it["title"] === "string" ? it["title"].trim() : "";
+    if (title === "") continue;
+    const priceRaw = it["price"];
+    if (
+      typeof priceRaw !== "number" &&
+      (typeof priceRaw !== "string" || priceRaw.trim() === "" || Number.isNaN(Number(priceRaw)))
+    ) {
+      throw new FbError("Price must be a valid number.");
+    }
+    const price = Number(priceRaw);
+    if (!Number.isFinite(price)) throw new FbError("Price must be a valid number.");
+    if (price < 0) throw new FbError("Price cannot be negative.");
+    if (price <= 0) throw new FbError("Debit lines must charge a positive amount");
+    const qtyRaw = it["quantity"] ?? 1;
+    if (
+      typeof qtyRaw !== "number" &&
+      (typeof qtyRaw !== "string" || qtyRaw.trim() === "" || Number.isNaN(Number(qtyRaw)))
+    ) {
+      throw new FbError("Quantity must be a valid number.");
+    }
+    const quantity = Math.max(1, Math.trunc(Number(qtyRaw)));
+    lines.push({
+      title,
+      price,
+      quantity,
+      unit: typeof it["unit"] === "string" ? it["unit"] : null,
+      taxed: !!it["taxed"],
+    });
+  }
+  if (lines.length === 0) throw new FbError("No debit lines given");
+  return lines;
+}
 
 register("admin", "invoice", "debit", async (ctx: CallContext) => {
   requireAdmin(ctx);
@@ -1745,6 +1895,10 @@ register("admin", "invoice", "debit", async (ctx: CallContext) => {
   if (!Array.isArray(items) || items.length === 0) {
     throw new FbError("Debit items are missing", 9998);
   }
+  if (!isDebitable(inv)) {
+    throw new FbError("Only issued unpaid or paid invoices can be debited");
+  }
+  const debitLines = resolveDebitLines(items);
   const client = await findClientById(inv.client_id);
   if (!client) throw new FbError("Client not found");
   // R5b review fix: PHP wraps debit in wrapInTransaction, so a
@@ -1771,23 +1925,24 @@ register("admin", "invoice", "debit", async (ctx: CallContext) => {
       hash_expires_at: await hashExpiry(),
     }),
   );
+  // PHP copies text_1/text_2 onto the debit note.
+  await updateInvoiceFields(noteId, { text_1: inv.text_1, text_2: inv.text_2 });
   await updateInvoiceFields(inv.id, {
     notes: appendNote(inv.notes, `Debit invoice #${noteId} generated.`),
   });
-  for (const item of items) {
-    const it = item as Record<string, unknown>;
+  for (const item of debitLines) {
     await insertInvoiceItem({
       invoice_id: noteId,
       type: "custom",
       rel_id: null,
       task: "void",
       status: "pending_payment",
-      title: typeof it["title"] === "string" ? it["title"] : "",
+      title: item.title,
       period: null,
-      quantity: Number(it["quantity"] ?? 1),
-      unit: null,
-      price: Number(it["price"] ?? 0),
-      taxed: it["taxed"] ? 1 : 0,
+      quantity: item.quantity,
+      unit: item.unit,
+      price: item.price,
+      taxed: item.taxed ? 1 : 0,
     });
   }
   // PHP debitInvoice: countIncome(note) after items exist — note
@@ -1811,6 +1966,9 @@ register("admin", "invoice", "debit", async (ctx: CallContext) => {
 register("admin", "invoice", "cancel", async (ctx: CallContext) => {
   requireAdmin(ctx);
   const inv = await getInvoiceOrThrow(ctx);
+  if (!isCancellable(inv)) {
+    throw new FbError("Only issued unpaid invoices can be canceled. Delete drafts, or refund paid invoices instead.");
+  }
   await updateInvoiceFields(inv.id, {
     status: "canceled",
     notes: appendNote(inv.notes, "Invoice canceled (voided) without replacement."),
@@ -1830,35 +1988,94 @@ register("admin", "invoice", "reissue", async (ctx: CallContext) => {
     await requirePermission(ctx, "order", "manage");
   }
   const inv = await getInvoiceOrThrow(ctx);
-  const client = await findClientById(inv.client_id);
-  if (!client) throw new FbError("Client not found");
-  const totals = invoiceTotals(await listInvoiceItems(inv.id), inv.taxrate ?? "0");
-  void totals;
-  const newId = await prepareInvoice(
-    client,
-    (await listInvoiceItems(inv.id)).map((l) => ({
+  // PHP Invoice\Service::reissueInvoice guards, in order: only
+  // issued unpaid invoices; notes can never be reissued; an invoice
+  // already reissued reports its replacement.
+  if (!inv.issued || inv.status !== "unpaid") {
+    throw new FbError("Only issued unpaid invoices can be reissued");
+  }
+  if (inv.credit_note_for_invoice_id !== null || inv.debit_note_for_invoice_id !== null) {
+    throw new FbError("Credit and debit notes cannot be reissued");
+  }
+  if (inv.replaced_by_invoice_id !== null) {
+    throw new FbError(`This invoice has already been reissued as invoice #${inv.replaced_by_invoice_id}`);
+  }
+  // PHP builds the replacement FROM the original row — frozen
+  // buyer/seller snapshot, tax name/rate, currency, gateway and
+  // due_at verbatim — never from the live client record. (The old
+  // code ran prepareInvoice + issueInvoice off the live client, so
+  // a moved client re-billed the new jurisdiction and reset the
+  // payment deadline.)
+  const origLines = await listInvoiceItems(inv.id);
+  // Validate every attached order BEFORE creating the replacement,
+  // so a missing/foreign order cannot leave a partial invoice
+  // behind (PHP does the same checks inside its transaction).
+  const movedOrderIds = new Set<number>();
+  for (const l of origLines) {
+    if (l.type === "order" && l.rel_id !== null && l.rel_id !== undefined) {
+      const linked = await findOrderById(l.rel_id);
+      if (!linked) {
+        throw new FbError(`Order #${l.rel_id} attached to this invoice could not be found`);
+      }
+      if (linked.client_id !== inv.client_id) {
+        throw new FbError(`Order #${linked.id} does not belong to this invoice's client`);
+      }
+      movedOrderIds.add(linked.id);
+    }
+  }
+  const serie = await getSetting("invoice_series");
+  const nr = await nextInvoiceNumber(serie);
+  const newId = await insertInvoiceNote(
+    noteRowFrom(inv, {
+      serie: serie ?? "",
+      nr,
+      status: "unpaid",
+      replaces_invoice_id: inv.id,
+      due_at: inv.due_at,
+      gateway_id: inv.gateway_id,
+      hash_expires_at: await hashExpiry(),
+    }),
+  );
+  await updateInvoiceFields(newId, { text_1: inv.text_1, text_2: inv.text_2 });
+  for (const l of origLines) {
+    await insertInvoiceItem({
+      invoice_id: newId,
+      type: l.type ?? "custom",
+      rel_id: l.rel_id,
+      task: l.task ?? "void",
+      status: "pending_payment",
       title: l.title ?? "",
-      price: l.price,
+      period: l.period,
       quantity: l.quantity,
       unit: l.unit,
-      period: l.period,
-      taxed: !!l.taxed,
-      type: l.type ?? undefined,
-      rel_id: l.rel_id,
-      task: l.task ?? undefined,
-    })),
-    inv.gateway_id,
-  );
-  await getDbWrite()
-    .prepare("UPDATE invoice SET replaces_invoice_id = ? WHERE id = ?")
-    .run(inv.id, newId);
-  await issueInvoice(newId, client, {});
+      price: l.price,
+      taxed: l.taxed ? 1 : 0,
+      charged: 0,
+    });
+  }
+  // PHP moves order unpaid-invoice pointers onto the replacement;
+  // orders still pointing at the original with no moved line are
+  // unpointed (their promo hold is released on PHP; pointer-only
+  // here).
+  const linkedOrders = (await getDb()
+    .prepare("SELECT id FROM client_order WHERE unpaid_invoice_id = ?")
+    .all(inv.id)) as unknown as { id: number }[];
+  for (const o of linkedOrders) {
+    await updateOrderRow(o.id, {
+      unpaid_invoice_id: movedOrderIds.has(o.id) ? newId : null,
+    });
+  }
   await updateInvoiceFields(newId, { notes: auditLine(`Replacement for invoice #${inv.id}.`) });
   await updateInvoiceFields(inv.id, {
     status: "canceled",
     replaced_by_invoice_id: newId,
     notes: appendNote(inv.notes, `Reissued as invoice #${newId}.`),
   });
+  await insertInvoiceEvent(inv.id, "reissued", { status: "canceled", replacement_id: newId });
+  // PHP resends the replacement invoice email; the created email
+  // goes out only for a positive total, as issueInvoice gates it.
+  const { total } = invoiceTotals(origLines, inv.taxrate ?? "0");
+  if (total > 0) await queueInvoiceEmail("mod_invoice_created", newId);
   return newId;
 });
 
@@ -1870,6 +2087,19 @@ register("admin", "invoice", "renewal_invoice", async (ctx: CallContext) => {
   if (!order) throw new FbError("Order not found");
   const client = await findClientById(order.client_id);
   if (!client) throw new FbError("Client not found");
+  // PHP Invoice\Service::generateForOrder returns the order's
+  // existing UNPAID invoice instead of minting a second billable
+  // one; renewInvoice then issues it with use_credits=true. A link
+  // to a no-longer-unpaid invoice is cleared so a fresh invoice is
+  // generated below.
+  if (order.unpaid_invoice_id !== null && order.unpaid_invoice_id !== undefined) {
+    const existing = await findInvoiceById(order.unpaid_invoice_id);
+    if (existing && existing.status === "unpaid") {
+      await issueInvoice(existing.id, client, { useCredits: true });
+      return existing.id;
+    }
+    await updateOrderRow(order.id, { unpaid_invoice_id: null });
+  }
   const invoiceId = await prepareInvoice(
     client,
     [
@@ -1879,7 +2109,9 @@ register("admin", "invoice", "renewal_invoice", async (ctx: CallContext) => {
         quantity: order.quantity,
         unit: order.unit,
         period: order.period,
-        taxed: true,
+        // PHP generateFromOrder uses isClientTaxable, not a
+        // hardcoded taxed flag.
+        taxed: await isClientTaxable(client),
         type: "order",
         rel_id: order.id,
         task: "renew",
@@ -1887,7 +2119,7 @@ register("admin", "invoice", "renewal_invoice", async (ctx: CallContext) => {
     ],
     null,
   );
-  await issueInvoice(invoiceId, client, {});
+  await issueInvoice(invoiceId, client, { useCredits: true });
   await updateOrderRow(order.id, { unpaid_invoice_id: invoiceId });
   return invoiceId;
 });

@@ -1,8 +1,9 @@
+import { randomBytes } from "node:crypto";
 import { dirname, join } from "node:path";
 import { readFileSync } from "node:fs";
 import { FbError, register, requireAdmin, type CallContext } from "../dispatch";
 import { getDbWrite, getSetting, setSettingValue } from "../db";
-import { readExtensionConfig } from "../crypt";
+import { readExtensionConfig, writeExtensionConfig } from "../crypt";
 import { getConfigProperty } from "../config-store";
 import { parseZoneDateTime, resolveZone } from "../tz";
 import { runCurrencyRatesBeforeCron } from "./currency";
@@ -325,12 +326,77 @@ register("guest", "cron", "run", async (ctx: CallContext) => {
   return await runCronJobs();
 });
 
-register("admin", "cron", "save_settings", (ctx: CallContext) => {
+/**
+ * PHP `!empty($v)` for a request value: undefined/null, false, 0,
+ * `""`, `"0"`, and an empty array are empty; anything else — including
+ * the string `"false"` and boolean true — is not. JSON posts carry
+ * real types in rawParams; urlencoded posts carry strings in params —
+ * prefer rawParams when the body was JSON, as extension config_save
+ * does. (C-F6: save_settings' guest_cron flag.)
+ */
+function phpNotEmpty(v: unknown): boolean {
+  if (v === undefined || v === null) return false;
+  if (v === false || v === 0) return false;
+  if (v === "" || v === "0") return false;
+  if (Array.isArray(v)) return v.length > 0;
+  return true;
+}
+
+function freshCronHash(): string {
+  return randomBytes(32).toString("hex");
+}
+
+/**
+ * Cron\Api\Admin::save_settings — NOT a stub: writes the mod_cron
+ * extension config, managing the cron_hash lifecycle exactly as PHP
+ * does. The endpoint is specific to the cron module: the stored
+ * config is rebuilt as {ext, guest_cron, cron_hash} (setConfig
+ * replaces the whole row, it does not merge). Enabling keeps an
+ * existing non-empty hash and generates a fresh 64-hex hash only
+ * when none exists; disabling clears the hash. Returns setConfig's
+ * bool (true). A failed write (unkeyed encryption) throws, as
+ * extension config_save does, rather than reporting success.
+ */
+register("admin", "cron", "save_settings", async (ctx: CallContext) => {
   requireAdmin(ctx);
+  const raw = ctx.rawParams;
+  const value =
+    raw && Object.keys(raw).length > 0 ? raw["guest_cron"] : ctx.params["guest_cron"];
+  const guestCron = phpNotEmpty(value);
+  let cronHash = "";
+  if (guestCron) {
+    const existing = await readExtensionConfig("mod_cron");
+    const existingHash = existing["cron_hash"];
+    cronHash =
+      typeof existingHash === "string" && existingHash !== ""
+        ? existingHash
+        : freshCronHash();
+  }
+  const ok = await writeExtensionConfig("mod_cron", {
+    ext: "mod_cron",
+    guest_cron: guestCron,
+    cron_hash: cronHash,
+  });
+  if (!ok) throw new FbError("Failed to encrypt extension configuration");
   return true;
 });
 
-register("admin", "cron", "regenerate_cron_hash", (ctx: CallContext) => {
+/**
+ * Cron\Api\Admin::regenerate_cron_hash — NOT a stub: reads the
+ * existing mod_cron config, replaces cron_hash with a fresh 64-hex
+ * hash, writes the whole config back (preserving guest_cron and any
+ * other stored keys, as PHP's getConfig + setConfig round-trip
+ * does), and returns {cron_hash}.
+ */
+register("admin", "cron", "regenerate_cron_hash", async (ctx: CallContext) => {
   requireAdmin(ctx);
-  return true;
+  const config = await readExtensionConfig("mod_cron");
+  const cronHash = freshCronHash();
+  const ok = await writeExtensionConfig("mod_cron", {
+    ...config,
+    ext: "mod_cron",
+    cron_hash: cronHash,
+  });
+  if (!ok) throw new FbError("Failed to encrypt extension configuration");
+  return { cron_hash: cronHash };
 });

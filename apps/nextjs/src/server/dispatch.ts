@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import type { SessionInfo } from "./session";
 
 /**
@@ -31,6 +32,11 @@ export interface CallContext {
   session: SessionInfo | null;
   /** Whether any session cookie was presented (drives CSRF enforcement). */
   hasSessionCookie: boolean;
+  /** Raw Authorization header value, when the caller forwarded one.
+   * The seam reads it for PHP's Basic api_token login (see
+   * session.ts loginWithApiToken); it is never logged. The HTTP
+   * route forwards the header here (route.ts). */
+  authorization?: string;
   /** Uploaded files for multipart/form-data calls, keyed by field name
    * (the $_FILES equivalent; only populated for multipart requests). */
   files?: Record<string, { name: string; type: string; bytes: Buffer }>;
@@ -160,13 +166,38 @@ export function requireClient(ctx: CallContext) {
 }
 
 /**
- * CSRF double-submit check, mirroring the PHP API controller: when a
- * session is in play, the CSRFToken param must equal the token stored
- * in the session. Mirrors the observed PHP error (403).
+ * Length-guarded constant-time string comparison (PHP hash_equals
+ * semantics: false on length mismatch, timing-safe otherwise).
+ * Used for the CSRF pair and for api_token comparison.
+ */
+export function timingSafeTokenEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  return ab.length === bb.length && timingSafeEqual(ab, bb);
+}
+
+/**
+ * CSRF double-submit check, mirroring the PHP API controller
+ * (_checkCSRFToken): when a session is in play, the CSRFToken param
+ * must equal the token stored in the session. Mirrors the observed
+ * PHP error (403). Additionally (B-H1), a non-empty fossbilling_csrf
+ * cookie (or legacy csrf_token cookie, carried on the session by
+ * readSession) must also equal the session token — PHP rejects the
+ * call when the cookie is present and differs, even when the param
+ * is correct. An absent or empty cookie is not validated, exactly
+ * as in PHP.
  */
 export function enforceCsrf(ctx: CallContext, presented: string | undefined) {
   if (!ctx.session) return;
-  if (!presented || presented !== ctx.session.csrfToken) {
+  if (!presented || !ctx.session.csrfToken || !timingSafeTokenEqual(presented, ctx.session.csrfToken)) {
+    throw new FbError("CSRF token invalid", 403);
+  }
+  const cookie = ctx.session.csrfCookie;
+  if (
+    typeof cookie === "string" &&
+    cookie !== "" &&
+    !timingSafeTokenEqual(cookie, ctx.session.csrfToken)
+  ) {
     throw new FbError("CSRF token invalid", 403);
   }
 }

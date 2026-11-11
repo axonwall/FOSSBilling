@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
-import { findSession, insertSession } from "./db";
+import { findSession, getDb, insertSession } from "./db";
 import { parseSessionContent, phpSerialize } from "./php-serialize";
-import type { CallContext } from "./dispatch";
+import { FbError, timingSafeTokenEqual, type CallContext } from "./dispatch";
 
 /**
  * PHP-session authentication for TS-ported modules.
@@ -25,6 +25,12 @@ export interface Identity {
 export interface SessionInfo {
   id: string;
   csrfToken?: string;
+  /** The fossbilling_csrf cookie (or legacy csrf_token cookie) the
+   * browser presented with this request, when one was sent. PHP's
+   * _checkCSRFToken validates a non-empty CSRF cookie against the
+   * session token (B-H1); readSession captures it here because the
+   * seam otherwise never sees the raw cookie header. */
+  csrfCookie?: string;
   admin?: Identity;
   client?: Identity;
 }
@@ -53,6 +59,11 @@ export async function readSession(cookieHeader: string | null): Promise<SessionI
   }
   const info: SessionInfo = { id: sid };
   if (typeof attrs["csrf_token"] === "string") info.csrfToken = attrs["csrf_token"];
+  // PHP reads the CSRF cookie first, falling back to the legacy name
+  // (CookieNames::CSRF ?? CookieNames::LEGACY_CSRF); ?? keeps a
+  // present-but-empty cookie instead of falling through to legacy.
+  const csrfCookie = cookieValue(cookieHeader, "fossbilling_csrf") ?? cookieValue(cookieHeader, "csrf_token");
+  if (csrfCookie !== undefined) info.csrfCookie = csrfCookie;
   for (const key of ["admin", "client"] as const) {
     const raw = attrs[key] as { id?: unknown; email?: unknown; name?: unknown } | undefined;
     if (raw && typeof raw.id === "number") {
@@ -102,7 +113,7 @@ export async function loginAsAdmin(ctx: CallContext, admin: Identity): Promise<S
   // Deliberately no deleteSessionRow(old.id): PHP leaves the old row.
   ctx.setCookies.push(`fossbilling_session=${id}; Path=/; HttpOnly; SameSite=Lax`);
   ctx.setCookies.push(`fossbilling_csrf=${token}; Path=/`);
-  ctx.session = { id, csrfToken: token, admin: { id: admin.id, email: admin.email, name: admin.name } };
+  ctx.session = { id, csrfToken: token, csrfCookie: token, admin: { id: admin.id, email: admin.email, name: admin.name } };
   return ctx.session;
 }
 export async function ensureSession(ctx: CallContext): Promise<SessionInfo> {
@@ -122,6 +133,122 @@ export async function ensureSession(ctx: CallContext): Promise<SessionInfo> {
   await insertSession(id, content, Math.floor(Date.now() / 1000) + 86400);
   ctx.setCookies.push(`fossbilling_session=${id}; Path=/; HttpOnly; SameSite=Lax`);
   ctx.setCookies.push(`fossbilling_csrf=${token}; Path=/`);
-  ctx.session = { id, csrfToken: token };
+  ctx.session = { id, csrfToken: token, csrfCookie: token };
   return ctx.session;
+}
+
+/**
+ * PHP Api\Controller\Client::tryParseBasicAuthHeader, transcribed:
+ * `Basic base64("<username>:<password>")`, case-insensitive scheme,
+ * strict base64, and a colon separating the two parts. Returns null
+ * for anything else (absent header, non-Basic scheme, undecodable
+ * base64, no colon) — PHP treats those as "no token login attempted"
+ * and falls back to session auth. The password may itself contain
+ * colons (explode with limit 2); it may be empty (the caller maps
+ * that to PHP getAuth's 206).
+ */
+export function parseBasicAuth(
+  authorization: string | undefined,
+): { username: string; password: string } | null {
+  if (!authorization) return null;
+  const header = authorization.trim();
+  if (header.slice(0, 6).toLowerCase() !== "basic ") return null;
+  const encoded = header.slice(6).trim();
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || encoded.length % 4 !== 0) return null;
+  const decoded = Buffer.from(encoded, "base64");
+  // Strict decode: a lenient re-encode must round-trip exactly.
+  if (decoded.toString("base64") !== encoded) return null;
+  const text = decoded.toString("utf-8");
+  const sep = text.indexOf(":");
+  if (sep < 0) return null;
+  return { username: text.slice(0, sep), password: text.slice(sep + 1) };
+}
+
+/**
+ * PHP Api\Controller\Client::_tryTokenLogin, transcribed (B-H2).
+ * `Basic base64("<role>:<api_token>")` establishes a session
+ * identity for the call, skipping session CSRF (the seam runs this
+ * in place of enforceCsrf). Role/token lookup mirrors PHP exactly:
+ *   - client: client row with matching api_token and status active
+ *     (ClientEntity::ACTIVE); sets session client_id.
+ *   - admin: admin row with matching api_token and status active,
+ *     excluding the cron admin (Admin::isCron, system_name 'cron');
+ *     sets session admin {id, email, name}.
+ * Failure codes mirror PHP getAuth/_tryTokenLogin: 206 empty token,
+ * 204 client token not found, 205 admin token not found / cron.
+ * (PHP's 202 "no password" is a server-var shape with no header
+ * equivalent; the cli-server oracle shows 202 for an empty password
+ * because its SAPI drops the empty PHP_AUTH_PW var, while
+ * FOSSBilling's own code gives 206 when the var is set — this port
+ * follows the code, 206.)
+ *
+ * Comparison is constant-time: every active token-holder row for the
+ * role is compared with timingSafeTokenEqual and no early exit, so
+ * the lookup does not leak which row (if any) matched. PHP itself
+ * does a DB equality lookup; the constant-time loop is this port's
+ * hardening of that step, per the fix brief.
+ *
+ * The token identity is MERGED into the existing session bag (PHP
+ * keeps the bag, setting only its own key), and the session id is
+ * kept when one exists. When there is no prior session the identity
+ * is in-memory only for this call (synthetic id `token:<role>:<id>`):
+ * PHP does persist a Symfony session row and set its cookie, but
+ * that session carries no csrf_token, so a cookie-only follow-up
+ * still 403s on PHP (probed 2026-11-05) — persisting here would buy
+ * nothing and would write a session row on every external API call.
+ * Callers that need the token identity alone (the post-auth rate
+ * limiter, whose subject PHP selects by route role — see
+ * seam-call.ts) use the returned session as-is.
+ */
+export async function loginWithApiToken(
+  ctx: CallContext,
+  role: "admin" | "client",
+  password: string,
+): Promise<SessionInfo> {
+  if (password === "") throw new FbError("Authentication Failed", 206);
+  if (role === "client") {
+    const rows = (await getDb()
+      .prepare("SELECT id, api_token FROM client WHERE api_token IS NOT NULL AND status = 'active'")
+      .all()) as unknown as { id: number; api_token: string | null }[];
+    let match: { id: number } | undefined;
+    for (const row of rows) {
+      if (!match && typeof row.api_token === "string" && timingSafeTokenEqual(password, row.api_token)) {
+        match = row;
+      }
+    }
+    if (!match) throw new FbError("Authentication Failed", 204);
+    const session: SessionInfo = {
+      ...(ctx.session ?? { id: `token:client:${match.id}` }),
+      client: { id: match.id },
+    };
+    ctx.session = session;
+    return session;
+  }
+  const rows = (await getDb()
+    .prepare(
+      "SELECT id, email, name, api_token, system_name FROM admin WHERE api_token IS NOT NULL AND status = 'active'",
+    )
+    .all()) as unknown as {
+    id: number;
+    email: string;
+    name: string | null;
+    api_token: string | null;
+    system_name: string | null;
+  }[];
+  let match: { id: number; email: string; name: string | null } | undefined;
+  for (const row of rows) {
+    // Cron admin (system_name 'cron') can never token-login (PHP
+    // rejects isCron() and, separately, the cron-admin id).
+    if (row.system_name === "cron") continue;
+    if (!match && typeof row.api_token === "string" && timingSafeTokenEqual(password, row.api_token)) {
+      match = row;
+    }
+  }
+  if (!match) throw new FbError("Authentication Failed", 205);
+  const session: SessionInfo = {
+    ...(ctx.session ?? { id: `token:admin:${match.id}` }),
+    admin: { id: match.id, email: match.email, name: match.name ?? undefined },
+  };
+  ctx.session = session;
+  return session;
 }

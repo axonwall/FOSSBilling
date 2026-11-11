@@ -6,6 +6,7 @@ import {
   countPromoRedemptionsForClient,
   deleteCartProductRow,
   deleteCartRow,
+  deleteInvoiceCascade,
   findCartById,
   findCartBySession,
   findClientById,
@@ -294,7 +295,9 @@ register("guest", "cart", "add_item", async (ctx: CallContext) => {
   const idRaw = ctx.params["id"];
   if (!idRaw) throw new FbError("Product ID was not passed");
   const product = await findProductById(Number(idRaw));
-  if (!product || product.active !== 1) throw new FbError("Product not found");
+  // PHP guest add uses findOneActiveById (active + status enabled);
+  // a disabled product is "not found" at add time, not at checkout.
+  if (!product || product.active !== 1 || product.status !== "enabled") throw new FbError("Product not found");
   if (product.is_addon) {
     throw new FbError("Addon products cannot be added separately.");
   }
@@ -316,6 +319,20 @@ register("guest", "cart", "add_item", async (ctx: CallContext) => {
     config[k] = v;
   }
   config[CART_FAMILY_KEY] = randomBytes(16).toString("hex");
+  // PHP Cart\Service::addItem checks stock at add time (reserved
+  // quantities already in the cart + the quantity being added, vs
+  // quantity_in_stock for stock-controlled products).
+  if (product.stock_control) {
+    const wanted = Math.max(1, parseInt(String(config["quantity"] ?? "1"), 10) || 1);
+    let reserved = 0;
+    for (const cp of await listCartProducts(cart.id)) {
+      if (cp.product_id !== product.id) continue;
+      reserved += Math.max(1, parseInt(String(parseConfig(cp.config)["quantity"] ?? "1"), 10) || 1);
+    }
+    if (product.quantity_in_stock < reserved + wanted) {
+      throw new FbError("This item is currently out of stock");
+    }
+  }
   await insertCartProduct(cart.id, product.id, JSON.stringify(config));
   return true;
 });
@@ -450,15 +467,49 @@ register("client", "cart", "checkout", async (ctx: CallContext) => {
 
   const rate = currency.conversion_rate;
   const taxed = await isClientTaxable(client);
+  // PHP Cart\Service::createOrdersFromCart validates every line
+  // before creating anything (inside wrapInTransaction): a disabled
+  // product fails the whole checkout, and stock is checked against
+  // cumulative requested quantities per product — the staff
+  // checkout's check, which the client path lacked. Validating up
+  // front keeps a failed checkout from leaving an orphan order, an
+  // invoice-less order, or a half-emptied cart behind.
+  {
+    const requestedQty = new Map<number, number>();
+    for (const cp of await listCartProducts(cart.id)) {
+      const product = await findProductById(cp.product_id);
+      if (!product) continue;
+      if (product.status !== "enabled") {
+        throw new FbError("Unable to complete order. One or more of the selected products are invalid.");
+      }
+      const qty = Math.max(1, parseInt(String(parseConfig(cp.config)["quantity"] ?? "1"), 10) || 1);
+      requestedQty.set(product.id, (requestedQty.get(product.id) ?? 0) + qty);
+      if (product.stock_control && product.quantity_in_stock < (requestedQty.get(product.id) ?? 0)) {
+        throw new FbError("Unable to complete order. One or more selected products are out of stock.");
+      }
+    }
+  }
   const familyGroups = new Map<string, string>();
   const lastGroupByProduct = new Map<number, string>();
   let familyIndex = 0;
   const nextGroup = () => `${cart.id}_${++familyIndex}`;
 
+  // No literal transaction threads through the db helpers (they
+  // read via the read connection and write via the write connection,
+  // so a withTransaction would hide uncommitted rows from the reads
+  // issueInvoice/tryPayWithCredits do — threading a tx handle
+  // through db.ts is out of scope here). The validation pass above
+  // rules out every data-dependent failure before the first write;
+  // if a later step still throws, the catch below compensates by
+  // removing the orders/invoice this checkout created, so no orphan
+  // survives and a retry starts clean.
+  let promoIncrements = 0;
   const orderIds: number[] = [];
   const invoiceItems: InvoiceItemInput[] = [];
   const discountsByOrder = new Map<number, number>();
-
+  let invoiceHash: string | null = null;
+  let invoiceId: number | null = null;
+  try {
   for (const cp of await listCartProducts(cart.id)) {
     const item = await cartItemArray(cp, promo);
     const product = await findProductById(cp.product_id);
@@ -510,6 +561,7 @@ register("client", "cart", "checkout", async (ctx: CallContext) => {
     await insertOrderStatus(orderId, "pending_setup", "Order Created");
     if (promo) {
       await incrementPromoUsed(promo.id);
+      promoIncrements += 1;
       discountsByOrder.set(orderId, round2(item.discount_price * rate));
     }
 
@@ -551,8 +603,6 @@ register("client", "cart", "checkout", async (ctx: CallContext) => {
   }
 
   const total = view["total"] as number;
-  let invoiceHash: string | null = null;
-  let invoiceId: number | null = null;
   if (total > 0) {
     const gatewayId = ctx.params["gateway_id"] ? Number(ctx.params["gateway_id"]) : null;
     invoiceId = await prepareInvoice(client, invoiceItems, gatewayId);
@@ -583,6 +633,25 @@ register("client", "cart", "checkout", async (ctx: CallContext) => {
   }
 
   await deleteCartRow(cart.id);
+  } catch (e) {
+    // Compensate for a mid-checkout failure: remove every order and
+    // the invoice this checkout created (plus their status rows,
+    // promo redemptions and promo-use increments) so no orphan order
+    // or invoice-less order survives; the cart itself is left intact
+    // for a clean retry.
+    for (const oid of orderIds) {
+      await getDbWrite().prepare("DELETE FROM client_order_status WHERE client_order_id = ?").run(oid);
+      await getDbWrite().prepare("DELETE FROM promo_redemption WHERE client_order_id = ?").run(oid);
+      await getDbWrite().prepare("DELETE FROM client_order WHERE id = ?").run(oid);
+    }
+    if (invoiceId !== null) await deleteInvoiceCascade(invoiceId);
+    if (promo && promoIncrements > 0) {
+      await getDbWrite()
+        .prepare("UPDATE promo SET used = COALESCE(used, 0) - ? WHERE id = ?")
+        .run(promoIncrements, promo.id);
+    }
+    throw e;
+  }
   return {
     gateway_id: ctx.params["gateway_id"] ?? null,
     invoice_hash: invoiceHash,
