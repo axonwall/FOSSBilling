@@ -1622,16 +1622,49 @@ async function hashExpiry(): Promise<string> {
   return new Date(Date.now() + days * 86400_000).toISOString().slice(0, 19).replace("T", " ");
 }
 
+/** PHP is_numeric: a finite number, or a string that looks like a
+ * number (optional sign, digits with an optional fraction and
+ * exponent, optional surrounding whitespace). Hex strings, empty
+ * strings, booleans, null, NaN and INF are not numeric. */
+function isPhpNumeric(v: unknown): boolean {
+  if (typeof v === "number") return Number.isFinite(v);
+  if (typeof v !== "string") return false;
+  const t = v.trim();
+  if (t === "") return false;
+  return /^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/.test(t);
+}
+
+/** PHP (int) cast of an array key: leading whitespace, optional
+ * sign, leading digits; no digits at all → 0. */
+function phpIntCastKey(k: string): number {
+  const m = /^\s*[+-]?\d+/.exec(k);
+  return m ? parseInt(m[0], 10) : 0;
+}
+
+/** PHP PriceValidator::validateQuantity, called after is_numeric
+ * and the qty > 0 check: integer quantities pass through,
+ * fractional ones truncate toward zero with a floor of 1,
+ * non-finite or >= PHP_INT_MAX throws. */
+function validateRefundQuantity(q: number): number {
+  if (!Number.isFinite(q) || q >= 9223372036854775807) {
+    throw new FbError("Quantity must be a valid number.");
+  }
+  return Math.max(1, Math.trunc(q));
+}
+
 /** Shared refund core: the admin handler and the PayPal Refunded
- * IPN branch both land here. onlyIds restricts the note to given
- * lines; null means a full refund of the REMAINING amount.
- * PHP Invoice\Service::resolveRefundLines: credited quantities
- * (across all earlier credit notes) cap every line — a line already
- * fully credited throws, and a full refund credits only the lines
- * with a remaining quantity. The stored refund is the credit note's
- * own total with tax (round(abs(getTotalWithTax(note)), 2)), never
- * the no-tax line sum. */
-export async function refundInvoiceCore(inv: InvoiceRowFull, onlyIds: Set<number> | null): Promise<number> {
+ * IPN branch both land here. onlyLines restricts the note to given
+ * lines; null means a full refund of the REMAINING amount. A Set is
+ * the TS list shape (full line quantities); a Map is PHP's native
+ * id→qty shape, with per-line wanted quantities validated exactly
+ * as PHP Invoice\Service::resolveRefundLines does (non-numeric qty
+ * throws, qty <= 0 skips the line, fractional qty truncates with a
+ * floor of 1). Credited quantities (across all earlier credit
+ * notes) cap every line — a line already fully credited throws, and
+ * a full refund credits only the lines with a remaining quantity.
+ * The stored refund is the credit note's own total with tax
+ * (round(abs(getTotalWithTax(note)), 2)), never the no-tax line sum. */
+export async function refundInvoiceCore(inv: InvoiceRowFull, onlyLines: Set<number> | Map<number, unknown> | null): Promise<number> {
   const allItems = await listInvoiceItems(inv.id);
   const totals = invoiceTotals(allItems, inv.taxrate ?? "0");
   const alreadyRefunded = round2(inv.refund ?? 0);
@@ -1643,7 +1676,7 @@ export async function refundInvoiceCore(inv: InvoiceRowFull, onlyIds: Set<number
   // anything is written, exactly as PHP's resolveRefundLines does.
   const credited = await refundedQuantities(inv.id);
   const resolved: { item: (typeof allItems)[number]; qty: number }[] = [];
-  if (onlyIds === null) {
+  if (onlyLines === null) {
     for (const l of allItems) {
       const left = (l.quantity ?? 1) - (credited.get(l.id) ?? 0);
       if (left > 0) resolved.push({ item: l, qty: left });
@@ -1651,8 +1684,29 @@ export async function refundInvoiceCore(inv: InvoiceRowFull, onlyIds: Set<number
     if (resolved.length === 0) {
       throw new FbError("No remaining refundable amount on this invoice");
     }
+  } else if (onlyLines instanceof Map) {
+    // PHP id→qty map: resolveRefundLines iterates entries in order —
+    // unknown line, non-numeric qty, qty <= 0 skipped, zero-price
+    // line, then the remaining-quantity guard on the validated qty.
+    for (const [id, rawQty] of onlyLines) {
+      const l = allItems.find((x) => x.id === id);
+      if (!l) throw new FbError(`Invoice line #${id} was not found`);
+      if (!isPhpNumeric(rawQty)) throw new FbError("Refund quantity must be a valid number.");
+      const qtyNum = Number(rawQty);
+      if (qtyNum <= 0) continue;
+      if ((l.price ?? 0) <= 0) throw new FbError("Only charge lines can be refunded");
+      const left = (l.quantity ?? 1) - (credited.get(l.id) ?? 0);
+      const wanted = validateRefundQuantity(qtyNum);
+      if (wanted > left) {
+        throw new FbError(`Refund quantity exceeds the remaining refundable quantity of ${left}`);
+      }
+      resolved.push({ item: l, qty: wanted });
+    }
+    if (resolved.length === 0) {
+      throw new FbError("No invoice lines selected for refund");
+    }
   } else {
-    for (const id of onlyIds) {
+    for (const id of onlyLines) {
       const l = allItems.find((x) => x.id === id);
       if (!l) throw new FbError(`Invoice line #${id} was not found`);
       if ((l.price ?? 0) <= 0) throw new FbError("Only charge lines can be refunded");
@@ -1717,13 +1771,16 @@ export async function refundInvoiceCore(inv: InvoiceRowFull, onlyIds: Set<number
       price: -Math.abs(l.price),
       taxed: l.taxed ? 1 : 0,
     });
-    // 'charged' on credit-note lines mirrors the refunded quantity.
+    // PHP sets charged = 1 (a boolean flag) on every credit-note
+    // line — Service::createRefundDocument calls setCharged(1)
+    // unconditionally, NOT the refunded quantity. A qty-2 refund
+    // proved it: PHP wrote charged 1 where TS wrote 2 (e02).
     const items = await listInvoiceItems(noteId);
     const created = items[items.length - 1];
     if (created) {
       await getDbWrite()
         .prepare("UPDATE invoice_item SET charged = ? WHERE id = ?")
-        .run(qty, created.id);
+        .run(1, created.id);
     }
   }
   const newRefundTotal = round2(alreadyRefunded + amount);
@@ -1777,17 +1834,33 @@ register("admin", "invoice", "refund", async (ctx: CallContext) => {
   }
   const client = await findClientById(inv.client_id);
   if (!client) throw new FbError("Client not found");
-  // Full-refund path (optionally restricted to the given line ids).
-  // Partial-quantity refunds and live gateway refunds are deferred:
-  // for the Custom gateway there is no gateway money movement.
+  // Refund line selection. PHP Admin::refund: items absent/null
+  // means a full refund; a present-but-empty items (either shape)
+  // or a non-array items throws "Refund lines are invalid". A list
+  // is the TS shape (full line quantities); a plain object is PHP's
+  // native id→qty map — keys are invoice_item ids, values wanted
+  // quantities. Form posts arrive with string values, JSON bodies
+  // with numbers; the core coerces/validates exactly as PHP does.
+  // Live gateway refunds are deferred: for the Custom gateway there
+  // is no gateway money movement.
   const itemsParam = ctx.rawParams["items"];
-  const onlyIds = Array.isArray(itemsParam)
-    ? new Set(
+  let onlyLines: Set<number> | Map<number, unknown> | null = null;
+  if (itemsParam !== undefined && itemsParam !== null) {
+    if (Array.isArray(itemsParam)) {
+      if (itemsParam.length === 0) throw new FbError("Refund lines are invalid");
+      onlyLines = new Set(
         itemsParam.map((x) =>
           typeof x === "object" && x !== null ? Number((x as { id?: unknown }).id) : Number(x),
         ),
-      )
-    : null;
+      );
+    } else if (typeof itemsParam === "object") {
+      const entries = Object.entries(itemsParam as Record<string, unknown>);
+      if (entries.length === 0) throw new FbError("Refund lines are invalid");
+      onlyLines = new Map(entries.map(([k, v]) => [phpIntCastKey(k), v] as [number, unknown]));
+    } else {
+      throw new FbError("Refund lines are invalid");
+    }
+  }
   // PHP Invoice\Service::planGatewayRefund: when a gateway refund was
   // requested, a refund-supporting gateway (Stripe is the only
   // adapter with supportsRefunds) needs a refundable payment
@@ -1822,7 +1895,7 @@ register("admin", "invoice", "refund", async (ctx: CallContext) => {
       }
     }
   }
-  return await refundInvoiceCore(inv, onlyIds);
+  return await refundInvoiceCore(inv, onlyLines);
 });
 
 /** PHP Invoice\Service::isDebitable: issued + unpaid-or-paid + not
